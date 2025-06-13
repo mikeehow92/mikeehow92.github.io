@@ -1,0 +1,129 @@
+/* === ESTILOS GENERALES === */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f4f4f4;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* === ENCABEZADO Y NAVEGACIÓN === */
+header {
+  background-color: #0d47a1;
+  color: white;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+header img {
+  max-width: 120px;
+  margin-bottom: 15px;
+}
+
+nav {
+  background-color: #1976d2;
+  padding: 10px 0;
+  text-align: center;
+}
+
+nav a {
+  color: white;
+  margin: 0 15px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+nav a:hover {
+  color: #cfd8dc;
+}
+
+/* === BANNER (CARRUSEL) === */
+.banner {
+  position: relative;
+  height: 80vh;
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+}
+
+.slide.active {
+  opacity: 1;
+}
+
+.banner-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
+  text-shadow: 0 0 10px black;
+  padding: 20px;
+}
+
+/* === BOTÓN PRINCIPAL === */
+.cta-button {
+  background-color: #0d47a1;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cta-button:hover {
+  background-color: #1565c0;
+}
+
+/* === SECCIONES === */
+.section {
+  padding: 50px 20px;
+  text-align: center;
+}
+
+.section h2 {
+  color: #0d47a1;
+}
+
+.section-content {
+  margin-top: 30px;
+}
+
+@media (min-width: 768px) {
+  .section-content {
+    display: flex;
+    justify-content: space-around;
+    text-align: left;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .section-content div {
+    flex: 1;
+    margin: 0 20px;
+  }
+}
+
+/* === PIE DE PÁGINA === */
+.footer {
+  background-color: #0d47a1;
+  color: white;
+  text-align: center;
+  padding: 30px 20px;
+  margin-top: 50px;
+}
