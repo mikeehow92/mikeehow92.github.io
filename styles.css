@@ -1,129 +1,152 @@
-/* === ESTILOS GENERALES === */
+/* Reset básico */
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
 body {
-  margin: 0;
   font-family: 'Segoe UI', sans-serif;
+  line-height: 1.6;
   background-color: #f4f4f4;
   color: #333;
-  line-height: 1.6;
 }
 
-/* === ENCABEZADO Y NAVEGACIÓN === */
+/* Contenedor general */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Header */
 header {
-  background-color: #0d47a1;
-  color: white;
-  padding: 40px 20px;
-  text-align: center;
-}
-
-header img {
-  max-width: 120px;
-  margin-bottom: 15px;
-}
-
-nav {
-  background-color: #1976d2;
+  background-color: #0d47a1; /* Azul fuerte */
   padding: 10px 0;
-  text-align: center;
 }
 
-nav a {
+header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header .logo img {
+  max-height: 50px;
+}
+
+header nav ul {
+  list-style: none;
+  display: flex;
+  gap: 20px;
+}
+
+header nav a {
   color: white;
-  margin: 0 15px;
   text-decoration: none;
   font-weight: bold;
-  transition: color 0.3s;
+  transition: color 0.3s ease;
 }
 
-nav a:hover {
-  color: #cfd8dc;
+header nav a:hover {
+  color: #ffcc00;
 }
 
-/* === BANNER (CARRUSEL) === */
-.banner {
-  position: relative;
-  height: 80vh;
-  overflow: hidden;
-}
-
-.slide {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  opacity: 0;
-  transition: opacity 1.5s ease-in-out;
-}
-
-.slide.active {
-  opacity: 1;
-}
-
-.banner-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+/* Hero */
+.hero {
+  background: url('img/hero.jpg') center/cover no-repeat;
+  color: white;
   text-align: center;
-  color: white;
-  text-shadow: 0 0 10px black;
-  padding: 20px;
+  padding: 100px 20px;
+  position: relative;
 }
 
-/* === BOTÓN PRINCIPAL === */
-.cta-button {
-  background-color: #0d47a1;
-  color: white;
-  padding: 12px 24px;
-  border: none;
+.hero::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+}
+
+.btn {
+  background-color: #ffcc00;
+  color: #0d47a1;
+  padding: 12px 25px;
+  text-decoration: none;
+  font-weight: bold;
   border-radius: 5px;
-  font-size: 1em;
-  cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
-.cta-button:hover {
-  background-color: #1565c0;
+.btn:hover {
+  background-color: #e6b800;
 }
 
-/* === SECCIONES === */
-.section {
-  padding: 50px 20px;
+/* Secciones */
+section {
+  padding: 60px 20px;
+  background-color: white;
+}
+
+section:nth-child(even) {
+  background-color: #f0f0f0;
+}
+
+section h2 {
   text-align: center;
-}
-
-.section h2 {
   color: #0d47a1;
+  margin-bottom: 20px;
 }
 
-.section-content {
-  margin-top: 30px;
-}
-
-@media (min-width: 768px) {
-  .section-content {
-    display: flex;
-    justify-content: space-around;
-    text-align: left;
-    max-width: 1000px;
-    margin: 0 auto;
-  }
-
-  .section-content div {
-    flex: 1;
-    margin: 0 20px;
-  }
-}
-
-/* === PIE DE PÁGINA === */
-.footer {
+/* Footer */
+footer {
   background-color: #0d47a1;
   color: white;
   text-align: center;
-  padding: 30px 20px;
-  margin-top: 50px;
+  padding: 20px;
+  font-size: 0.9rem;
+}
+
+/* Responsive básico */
+@media (max-width: 768px) {
+  header .container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  header nav ul {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .hero {
+    padding: 60px 20px;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero p {
+    font-size: 1rem;
+  }
 }
