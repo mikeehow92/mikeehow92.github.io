@@ -1,185 +1,129 @@
-/* Reset básico */
+/* === ESTILOS GENERALES === */
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
 body {
+  margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  line-height: 1.6;
-  color: #333;
   background-color: #f4f4f4;
+  color: #333;
+  line-height: 1.6;
 }
 
-/* Colores principales */
-:root {
-  --azul-oscuro: #0b3d91;
-  --azul-medio: #1e60c7;
-  --azul-claro: #e6f0ff;
-  --blanco: #ffffff;
-}
-
-/* Contenedor general */
-.container {
-  width: 90%;
-  max-width: 1200px;
-  margin: auto;
-}
-
-/* Encabezado */
+/* === ENCABEZADO Y NAVEGACIÓN === */
 header {
-  background-color: var(--azul-oscuro);
-  padding: 10px 0;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-}
-
-header .container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-header .logo img {
-  max-height: 50px;
-}
-
-header nav ul {
-  list-style: none;
-  display: flex;
-  gap: 20px;
-}
-
-header nav a {
-  color: var(--blanco);
-  text-decoration: none;
-  font-weight: bold;
-  transition: color 0.3s ease;
-}
-
-header nav a:hover {
-  color: var(--azul-claro);
-}
-
-/* Hero section */
-.hero {
-  background: url('img/banner.jpg') no-repeat center center/cover;
-  color: var(--blanco);
-  padding: 120px 20px;
+  background-color: #0d47a1;
+  color: white;
+  padding: 40px 20px;
   text-align: center;
-  position: relative;
 }
 
-.hero::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(11, 61, 145, 0.6);
-  z-index: 0;
-}
-
-.hero-content {
-  position: relative;
-  z-index: 1;
-  max-width: 800px;
-  margin: auto;
-}
-
-.hero h1 {
-  font-size: 2.5rem;
+header img {
+  max-width: 120px;
   margin-bottom: 15px;
 }
 
-.hero p {
-  font-size: 1.2rem;
-  margin-bottom: 20px;
-}
-
-.btn {
-  background-color: var(--azul-medio);
-  color: var(--blanco);
-  padding: 10px 25px;
-  border: none;
-  border-radius: 5px;
-  font-size: 1rem;
-  text-decoration: none;
-  transition: background 0.3s ease;
-}
-
-.btn:hover {
-  background-color: var(--azul-claro);
-  color: var(--azul-oscuro);
-}
-
-/* Secciones */
-.section {
-  padding: 60px 20px;
-  background-color: var(--blanco);
+nav {
+  background-color: #1976d2;
+  padding: 10px 0;
   text-align: center;
 }
 
-.section.alt {
-  background-color: var(--azul-claro);
+nav a {
+  color: white;
+  margin: 0 15px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+nav a:hover {
+  color: #cfd8dc;
+}
+
+/* === BANNER (CARRUSEL) === */
+.banner {
+  position: relative;
+  height: 80vh;
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+}
+
+.slide.active {
+  opacity: 1;
+}
+
+.banner-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
+  text-shadow: 0 0 10px black;
+  padding: 20px;
+}
+
+/* === BOTÓN PRINCIPAL === */
+.cta-button {
+  background-color: #0d47a1;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cta-button:hover {
+  background-color: #1565c0;
+}
+
+/* === SECCIONES === */
+.section {
+  padding: 50px 20px;
+  text-align: center;
 }
 
 .section h2 {
-  font-size: 2rem;
-  margin-bottom: 20px;
-  color: var(--azul-oscuro);
+  color: #0d47a1;
 }
 
-.section p, .section ul {
-  font-size: 1rem;
-  color: #444;
+.section-content {
+  margin-top: 30px;
 }
 
-.section ul {
-  list-style-type: disc;
-  margin: 0 auto;
-  text-align: left;
-  max-width: 600px;
+@media (min-width: 768px) {
+  .section-content {
+    display: flex;
+    justify-content: space-around;
+    text-align: left;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .section-content div {
+    flex: 1;
+    margin: 0 20px;
+  }
 }
 
-/* Formulario */
-form {
-  max-width: 600px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-form input, form textarea {
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-form button {
-  background-color: var(--azul-medio);
-  color: var(--blanco);
-  padding: 10px;
-  border: none;
-  font-size: 1rem;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-form button:hover {
-  background-color: var(--azul-oscuro);
-}
-
-/* Footer */
-footer {
-  background-color: var(--azul-oscuro);
-  color: var(--blanco);
+/* === PIE DE PÁGINA === */
+.footer {
+  background-color: #0d47a1;
+  color: white;
   text-align: center;
-  padding: 20px;
-  font-size: 0.9rem;
+  padding: 30px 20px;
+  margin-top: 50px;
 }
