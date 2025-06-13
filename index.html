@@ -4,148 +4,46 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TecnoExpress</title>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f4f4f4;
-      color: #333;
-      line-height: 1.6;
-    }
-
-    header {
-      background-color: #0d47a1;
-      color: white;
-      padding: 40px 20px;
-      text-align: center;
-    }
-
-    header img {
-      max-width: 120px;
-      margin-bottom: 15px;
-    }
-
-    nav {
-      background-color: #1976d2;
-      padding: 10px 0;
-      text-align: center;
-    }
-
-    nav a {
-      color: white;
-      margin: 0 15px;
-      text-decoration: none;
-      font-weight: bold;
-      transition: color 0.3s;
-    }
-
-    nav a:hover {
-      color: #cfd8dc;
-    }
-
-    .hero {
-      background: #e3f2fd;
-      padding: 60px 20px;
-      text-align: center;
-    }
-
-    .hero h1 {
-      font-size: 2.5em;
-      margin-bottom: 10px;
-      color: #0d47a1;
-    }
-
-    .hero p {
-      font-size: 1.2em;
-      margin-bottom: 20px;
-    }
-
-    .cta-button {
-      background-color: #0d47a1;
-      color: white;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 5px;
-      font-size: 1em;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    .cta-button:hover {
-      background-color: #1565c0;
-    }
-
-    .section {
-      padding: 50px 20px;
-      text-align: center;
-    }
-
-    .section h2 {
-      color: #0d47a1;
-    }
-
-    .footer {
-      background-color: #0d47a1;
-      color: white;
-      text-align: center;
-      padding: 30px 20px;
-      margin-top: 50px;
-    }
-
-    @media (min-width: 768px) {
-      .section-content {
-        display: flex;
-        justify-content: space-around;
-        text-align: left;
-        max-width: 1000px;
-        margin: 0 auto;
-      }
-
-      .section-content div {
-        flex: 1;
-        margin: 0 20px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
+  <!-- ENCABEZADO CON LOGO Y TÍTULO -->
   <header>
     <img src="img/logo.webp" alt="Logo TecnoExpress" />
     <h1>TecnoExpress</h1>
     <p>Tu tienda de tecnología rápida y confiable</p>
   </header>
 
+  <!-- MENÚ DE NAVEGACIÓN -->
   <nav>
     <a href="#nosotros">Nosotros</a>
     <a href="#servicios">Servicios</a>
     <a href="#contacto">Contacto</a>
   </nav>
 
-<section class="banner">
-  <div class="slide active" style="background-image: url('img/banner1.webp');"></div>
-  <div class="slide" style="background-image: url('img/banner2.webp');"></div>
-  <div class="banner-text">
-    <h1>Soluciones tecnológicas al alcance de un clic</h1>
-    <p>Descubre nuestros productos, servicios y soporte técnico especializado.</p>
-    <button class="cta-button" onclick="location.href='#contacto'">Contáctanos</button>
-  </div>
-</section>
+  <!-- BANNER TIPO SLIDER -->
+  <section class="banner">
+    <div class="slide active" style="background-image: url('img/banner1.webp');"></div>
+    <div class="slide" style="background-image: url('img/banner2.webp');"></div>
+    <div class="banner-text">
+      <h1>Soluciones tecnológicas al alcance de un clic</h1>
+      <p>Descubre nuestros productos, servicios y soporte técnico especializado.</p>
+      <button class="cta-button" onclick="location.href='#contacto'">Contáctanos</button>
+    </div>
+  </section>
 
-
+  <!-- SECCIÓN NOSOTROS -->
   <section class="section" id="nosotros">
     <h2>¿Quiénes somos?</h2>
     <div class="section-content">
       <div>
-        <p>En TecnoExpress nos a apasiona la tecnología. Somos un equipo dedicado a ofrecer soluciones rápidas y confiables para empresas y particulares.</p>
+        <p>En TecnoExpress nos apasiona la tecnología. Somos un equipo dedicado a ofrecer soluciones rápidas y confiables para empresas y particulares.</p>
       </div>
     </div>
   </section>
 
+  <!-- SECCIÓN SERVICIOS -->
   <section class="section" id="servicios">
     <h2>Servicios</h2>
     <div class="section-content">
@@ -164,26 +62,29 @@
     </div>
   </section>
 
+  <!-- SECCIÓN CONTACTO -->
   <section class="section" id="contacto">
     <h2>Contacto</h2>
     <p>¿Tienes preguntas o necesitas una cotización? Escríbenos y te responderemos a la brevedad.</p>
     <button class="cta-button">Enviar mensaje</button>
   </section>
 
+  <!-- PIE DE PÁGINA -->
   <footer class="footer">
     <p>&copy; 2025 TecnoExpress. Todos los derechos reservados.</p>
   </footer>
 
-</body>
+  <!-- SCRIPT PARA SLIDER -->
   <script>
-  let currentSlide = 0;
-  const slides = document.querySelectorAll('.slide');
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
 
-  setInterval(() => {
-    slides[currentSlide].classList.remove('active');
-    currentSlide = (currentSlide + 1) % slides.length;
-    slides[currentSlide].classList.add('active');
-  }, 5000); // cambia cada 5 segundos
-</script>
+    setInterval(() => {
+      slides[currentSlide].classList.remove('active');
+      currentSlide = (currentSlide + 1) % slides.length;
+      slides[currentSlide].classList.add('active');
+    }, 5000);
+  </script>
 
+</body>
 </html>
