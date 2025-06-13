@@ -15,14 +15,17 @@ body {
 header {
   background-color: #0d47a1;
   color: white;
-  padding: 20px 10px;
+  padding: 10px;
+  min-height: 80px; /* Fuerza la altura */
   text-align: center;
 }
 
+
 header img {
-  max-width: 120px;
-  margin-bottom: 15px;
+  max-width: 80px;
+  margin-bottom: 5px;
 }
+
 
 nav {
   background-color: #1976d2;
