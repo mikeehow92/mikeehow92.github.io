@@ -2,70 +2,67 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TecnoExpress</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-  <!-- ENCABEZADO CON LOGO Y TÍTULO -->
+  <!-- Encabezado con logo -->
   <header>
-  <img src="img/logo.png" alt="Logo TecnoExpress" style="max-width: 80px; margin-bottom: 5px;" />
-    <h1>TecnoExpress</h1>
-    <p>Tu tienda de tecnología rápida y confiable</p>
+    <div class="container">
+      <div class="logo">
+        <a href="#">
+          <img src="img/logo.png" alt="Logo TecnoExpress" />
+        </a>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="#nosotros">Nosotros</a></li>
+          <li><a href="#servicios">Servicios</a></li>
+          <li><a href="#contacto">Contacto</a></li>
+        </ul>
+      </nav>
+    </div>
   </header>
 
-  <!-- MENÚ DE NAVEGACIÓN -->
-  <nav>
-    <a href="#nosotros">Nosotros</a>
-    <a href="#servicios">Servicios</a>
-    <a href="#contacto">Contacto</a>
-  </nav>
-
-  <!-- BANNER TIPO SLIDER -->
-  <section class="banner">
-    <div class="slide active" style="background-image: url('img/banner1.webp');"></div>
-    <div class="slide" style="background-image: url('img/banner2.webp');"></div>
-    <div class="banner-text">
+  <!-- Hero section -->
+  <section class="hero">
+    <div class="hero-content">
       <h1>Soluciones tecnológicas al alcance de un clic</h1>
       <p>Descubre nuestros productos, servicios y soporte técnico especializado.</p>
-      <button class="cta-button" onclick="location.href='#contacto'">Contáctanos</button>
+      <a href="#contacto" class="btn">Contáctanos</a>
     </div>
   </section>
 
-  <!-- SECCIÓN NOSOTROS -->
-  <section class="section" id="nosotros">
-    <h2>¿Quiénes somos?</h2>
-    <div class="section-content">
-      <div>
-        <p>En TecnoExpress nos apasiona la tecnología. Somos un equipo dedicado a ofrecer soluciones rápidas y confiables para empresas y particulares.</p>
-      </div>
+  <!-- Sección Nosotros -->
+  <section id="nosotros" class="section">
+    <div class="container">
+      <h2>Sobre Nosotros</h2>
+      <p>En TecnoExpress ofrecemos soluciones tecnológicas rápidas, eficientes y confiables para tu hogar o negocio.</p>
     </div>
   </section>
 
-  <!-- SECCIÓN CONTACTO -->
-  <section class="section" id="contacto">
-    <h2>Contacto</h2>
-    <p>¿Tienes preguntas o necesitas una cotización? Escríbenos y te responderemos a la brevedad.</p>
-    <button class="cta-button">Enviar mensaje</button>
+  <!-- Sección Contacto -->
+  <section id="contacto" class="section">
+    <div class="container">
+      <h2>Contacto</h2>
+      <p>¿Tienes dudas o quieres un presupuesto? ¡Escríbenos!</p>
+      <form>
+        <input type="text" placeholder="Tu nombre" required />
+        <input type="email" placeholder="Tu correo" required />
+        <textarea placeholder="Tu mensaje" required></textarea>
+        <button type="submit">Enviar</button>
+      </form>
+    </div>
   </section>
 
-  <!-- PIE DE PÁGINA -->
-  <footer class="footer">
-    <p>&copy; 2025 TecnoExpress. Todos los derechos reservados.</p>
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 TecnoExpress. Todos los derechos reservados.</p>
+    </div>
   </footer>
-
-  <!-- SCRIPT PARA SLIDER -->
-  <script>
-    let currentSlide = 0;
-    const slides = document.querySelectorAll('.slide');
-
-    setInterval(() => {
-      slides[currentSlide].classList.remove('active');
-      currentSlide = (currentSlide + 1) % slides.length;
-      slides[currentSlide].classList.add('active');
-    }, 5000);
-  </script>
 
 </body>
 </html>
