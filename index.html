@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-  <header>
+  <header class="header">
     <div class="container header-container">
       <div class="logo">
         <a href="#">
@@ -38,32 +38,25 @@
     </div>
   </section>
 
-  <section class="banner">
-    <div class="slider-container">
-      <div class="slide active">
-        <img src="img/banner1.webp" alt="Ofertas especiales" class="slide-img">
-      </div>
-      <div class="slide">
-        <img src="img/banner2.webp" alt="Últimos dispositivos" class="slide-img">
-      </div>
-    </div>
-    <div class="banner-text">
-      <h2>Soluciones tecnológicas al alcance de un clic</h2>
-      <p>Descubre nuestros productos, servicios y soporte técnico especializado</p>
-      <a href="#contacto" class="btn">Contáctanos</a>
-    </div>
-  </section>
-
-  <section id="nosotros" class="section">
-    <div class="container">
-      <h2><i class="fas fa-building"></i> Nosotros</h2>
-      <div class="about-content">
-        <div class="about-text">
-          <p>Somos TecnoExpress, una empresa líder en soluciones tecnológicas con más de 10 años de experiencia en el mercado. Nuestro equipo de expertos está comprometido con brindar la mejor atención y soluciones a medida.</p>
-          <p>Nos especializamos en integrar tecnología de vanguardia con soluciones accesibles para todos los presupuestos.</p>
+  <section class="dual-section">
+    <div class="banner-container">
+      <div class="slider">
+        <div class="slide active">
+          <img src="img/banner1.webp" alt="Ofertas especiales" class="slide-img">
         </div>
-        <div class="about-image">
-          <img src="img/equipo.jpg" alt="Nuestro equipo">
+        <div class="slide">
+          <img src="img/banner2.webp" alt="Últimos dispositivos" class="slide-img">
+        </div>
+      </div>
+    </div>
+
+    <div id="nosotros" class="about-container">
+      <div class="about-content">
+        <h2><i class="fas fa-building"></i> Nosotros</h2>
+        <div class="about-text">
+          <p>Somos TecnoExpress, una empresa líder en soluciones tecnológicas con más de 10 años de experiencia en el mercado.</p>
+          <p>Nos especializamos en integrar tecnología de vanguardia con soluciones accesibles para todos los presupuestos.</p>
+          <a href="#servicios" class="btn-outline">Ver servicios</a>
         </div>
       </div>
     </div>
@@ -177,8 +170,11 @@
       }
       
       // Pausar al interactuar
-      document.querySelector('.banner').addEventListener('mouseenter', stopSlider);
-      document.querySelector('.banner').addEventListener('mouseleave', startSlider);
+      const banner = document.querySelector('.banner-container');
+      if(banner) {
+        banner.addEventListener('mouseenter', stopSlider);
+        banner.addEventListener('mouseleave', startSlider);
+      }
       
       // Iniciar
       showSlide(0);
