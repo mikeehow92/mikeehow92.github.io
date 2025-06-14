@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TecnoExpress - Soluciones Tecnológicas</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
   <header>
@@ -16,9 +17,9 @@
       </div>
       <nav>
         <ul>
-          <li><a href="#nosotros">Nosotros</a></li>
-          <li><a href="#servicios">Servicios</a></li>
-          <li><a href="#contacto">Contacto</a></li>
+          <li><a href="#nosotros"><i class="fas fa-users"></i> Nosotros</a></li>
+          <li><a href="#servicios"><i class="fas fa-cogs"></i> Servicios</a></li>
+          <li><a href="#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
         </ul>
       </nav>
     </div>
@@ -32,7 +33,6 @@
     </div>
   </section>
 
-  <!-- Carrusel de 2 imágenes -->
   <section class="banner">
     <div class="slider">
       <img src="img/banner1.webp" alt="Ofertas especiales en tecnología">
@@ -40,6 +40,110 @@
     </div>
   </section>
 
-  <!-- Resto de las secciones... -->
+  <section id="nosotros" class="content-section">
+    <div class="container">
+      <h2><i class="fas fa-building"></i> Nosotros</h2>
+      <div class="section-content">
+        <div class="text-content">
+          <p>Somos TecnoExpress, una empresa líder en soluciones tecnológicas con más de 10 años de experiencia en el mercado. Nuestro equipo de expertos está comprometido con brindar la mejor atención y soluciones a medida.</p>
+          <p>Nos especializamos en integrar tecnología de vanguardia con soluciones accesibles para todos los presupuestos, ayudando a nuestros clientes a alcanzar sus objetivos empresariales y personales.</p>
+        </div>
+        <div class="image-content">
+          <img src="img/equipo.jpg" alt="Nuestro equipo de trabajo">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="servicios" class="content-section alt-bg">
+    <div class="container">
+      <h2><i class="fas fa-laptop-code"></i> Nuestros Servicios</h2>
+      <div class="services-grid">
+        <div class="service-card">
+          <div class="service-icon">
+            <i class="fas fa-shopping-cart"></i>
+          </div>
+          <h3>Venta de Tecnología</h3>
+          <p>Las mejores marcas y equipos al mejor precio del mercado con garantía extendida.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">
+            <i class="fas fa-tools"></i>
+          </div>
+          <h3>Soporte Técnico</h3>
+          <p>Asistencia especializada 24/7 para resolver cualquier problema con tus dispositivos.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">
+            <i class="fas fa-user-tie"></i>
+          </div>
+          <h3>Asesoría Personalizada</h3>
+          <p>Soluciones a medida adaptadas a tus necesidades específicas y presupuesto.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto" class="content-section">
+    <div class="container">
+      <h2><i class="fas fa-phone-alt"></i> Contacto</h2>
+      <div class="contact-container">
+        <div class="contact-info">
+          <h3>Información de contacto</h3>
+          <p><i class="fas fa-map-marker-alt"></i> Av. Tecnológica 123, Ciudad</p>
+          <p><i class="fas fa-phone"></i> (123) 456-7890</p>
+          <p><i class="fas fa-envelope"></i> info@tecnoexpress.com</p>
+          <div class="social-media">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+          </div>
+        </div>
+        <form class="contact-form">
+          <div class="form-group">
+            <input type="text" placeholder="Nombre completo" required>
+          </div>
+          <div class="form-group">
+            <input type="email" placeholder="Correo electrónico" required>
+          </div>
+          <div class="form-group">
+            <textarea placeholder="Tu mensaje" required></textarea>
+          </div>
+          <button type="submit" class="btn">Enviar Mensaje</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <img src="img/logo-footer.png" alt="TecnoExpress">
+          <p>Soluciones tecnológicas innovadoras para el mundo moderno.</p>
+        </div>
+        <div class="footer-links">
+          <h3>Enlaces rápidos</h3>
+          <ul>
+            <li><a href="#nosotros">Nosotros</a></li>
+            <li><a href="#servicios">Servicios</a></li>
+            <li><a href="#contacto">Contacto</a></li>
+          </ul>
+        </div>
+        <div class="footer-newsletter">
+          <h3>Suscríbete</h3>
+          <p>Recibe nuestras últimas ofertas y noticias.</p>
+          <form>
+            <input type="email" placeholder="Tu correo electrónico">
+            <button type="submit" class="btn">Suscribir</button>
+          </form>
+        </div>
+      </div>
+      <div class="copyright">
+        <p>&copy; 2023 TecnoExpress. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>
