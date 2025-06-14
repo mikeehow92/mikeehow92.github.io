@@ -4,15 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Productos - TecnoExpress</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="productos.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/productos.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
 </head>
 <body>
+  <!-- Header consistente -->
   <header class="header">
     <div class="container header-container">
       <div class="logo">
@@ -43,7 +40,7 @@
       <button class="close-cart" id="closeCart">&times;</button>
     </div>
     <div class="cart-items" id="cartItems">
-      <!-- Los productos del carrito se añadirán aquí dinámicamente -->
+      <!-- Productos del carrito aparecerán aquí -->
     </div>
     <div class="cart-total">
       <p>Total: <span id="cartTotal">$0.00</span></p>
@@ -51,33 +48,35 @@
     </div>
   </div>
 
-  <main class="productos-container">
+  <!-- Contenido principal -->
+  <main class="productos-main">
     <div class="container">
-      <h1>Productos Tecnológicos</h1>
-      
-      <div class="breadcrumbs">
-        <a href="index.html">Inicio</a> &gt; <span>Productos</span>
+      <div class="productos-header">
+        <h1>Catálogo de Productos</h1>
+        <div class="breadcrumbs">
+          <a href="index.html">Inicio</a> / <span>Productos</span>
+        </div>
       </div>
-      
+
       <div class="productos-grid">
         <!-- Filtros -->
         <aside class="filtros">
           <div class="filtro-grupo">
             <h3>Categorías</h3>
             <div class="filtro-opcion">
-              <input type="checkbox" id="laptops" checked>
-              <label for="laptops">Laptops</label>
+              <input type="checkbox" id="cat-laptops" checked>
+              <label for="cat-laptops">Laptops</label>
             </div>
             <div class="filtro-opcion">
-              <input type="checkbox" id="smartphones" checked>
-              <label for="smartphones">Smartphones</label>
+              <input type="checkbox" id="cat-smartphones" checked>
+              <label for="cat-smartphones">Smartphones</label>
             </div>
             <div class="filtro-opcion">
-              <input type="checkbox" id="accesorios" checked>
-              <label for="accesorios">Accesorios</label>
+              <input type="checkbox" id="cat-accesorios" checked>
+              <label for="cat-accesorios">Accesorios</label>
             </div>
           </div>
-          
+
           <div class="filtro-grupo">
             <h3>Precio</h3>
             <div class="price-range">
@@ -89,24 +88,40 @@
             </div>
           </div>
         </aside>
-        
+
         <!-- Lista de productos -->
         <section class="lista-productos" id="productList">
-          <!-- Los productos se cargarán aquí dinámicamente desde Firebase -->
+          <!-- Ejemplo de producto (se cargarán dinámicamente) -->
+          <article class="producto-card">
+            <div class="producto-imagen">
+              <img src="img/producto-ejemplo.jpg" alt="Laptop HP">
+            </div>
+            <div class="producto-info">
+              <h2>Laptop HP Pavilion 15</h2>
+              <div class="producto-precio">$899.99</div>
+              <div class="producto-detalles">
+                <p><i class="fas fa-microchip"></i> Intel Core i5</p>
+                <p><i class="fas fa-memory"></i> 8GB RAM</p>
+                <p><i class="fas fa-hdd"></i> 512GB SSD</p>
+              </div>
+              <button class="btn add-to-cart">Añadir al Carrito</button>
+            </div>
+          </article>
         </section>
       </div>
     </div>
   </main>
 
-  <footer>
+  <!-- Footer consistente -->
+  <footer class="footer">
     <div class="container">
       <div class="footer-content">
         <div class="footer-logo">
-          <img src="img/logo.png" alt="TecnoExpress">
-          <p>Soluciones tecnológicas innovadoras para el mundo moderno.</p>
+          <img src="img/logo-white.png" alt="TecnoExpress">
+          <p>Innovación tecnológica a tu alcance</p>
         </div>
         <div class="footer-links">
-          <h3>Enlaces rápidos</h3>
+          <h3>Enlaces</h3>
           <ul>
             <li><a href="index.html#nosotros">Nosotros</a></li>
             <li><a href="productos.html">Productos</a></li>
@@ -120,220 +135,7 @@
     </div>
   </footer>
 
-  <script>
-    // Configuración de Firebase (reemplaza con tus credenciales)
-    const firebaseConfig = {
-      apiKey: "TU_API_KEY",
-      authDomain: "TU_PROYECTO.firebaseapp.com",
-      projectId: "TU_PROYECTO",
-      storageBucket: "TU_PROYECTO.appspot.com",
-      messagingSenderId: "TU_SENDER_ID",
-      appId: "TU_APP_ID"
-    };
-
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-
-    // Variables globales
-    let cart = [];
-    let products = [];
-
-    // DOM Elements
-    const cartButton = document.getElementById('cartButton');
-    const cartSidebar = document.getElementById('cartSidebar');
-    const closeCart = document.getElementById('closeCart');
-    const cartItems = document.getElementById('cartItems');
-    const cartTotal = document.getElementById('cartTotal');
-    const cartCount = document.querySelector('.cart-count');
-    const checkoutButton = document.getElementById('checkoutButton');
-    const productList = document.getElementById('productList');
-    const priceRange = document.getElementById('priceRange');
-    const maxPrice = document.getElementById('maxPrice');
-
-    // Event Listeners
-    cartButton.addEventListener('click', toggleCart);
-    closeCart.addEventListener('click', toggleCart);
-    checkoutButton.addEventListener('click', checkout);
-    priceRange.addEventListener('input', updatePriceFilter);
-
-    // Cargar productos desde Firebase
-    function loadProducts() {
-      db.collection("products").get().then((querySnapshot) => {
-        products = [];
-        querySnapshot.forEach((doc) => {
-          products.push({ id: doc.id, ...doc.data() });
-        });
-        renderProducts(products);
-      }).catch((error) => {
-        console.log("Error getting products: ", error);
-      });
-    }
-
-    // Renderizar productos
-    function renderProducts(productsToRender) {
-      productList.innerHTML = '';
-      productsToRender.forEach(product => {
-        const productCard = document.createElement('article');
-        productCard.className = 'producto-card';
-        productCard.innerHTML = `
-          <div class="producto-imagen">
-            <img src="${product.image || 'img/default-product.jpg'}" alt="${product.name}">
-          </div>
-          <h2>${product.name}</h2>
-          <div class="producto-precio">$${product.price.toFixed(2)}</div>
-          <div class="producto-info">
-            <p><strong>Categoría:</strong> ${product.category}</p>
-            <p><strong>Disponibles:</strong> ${product.stock}</p>
-          </div>
-          <button class="btn add-to-cart" data-id="${product.id}">Añadir al carrito</button>
-        `;
-        productList.appendChild(productCard);
-      });
-
-      // Añadir event listeners a los botones
-      document.querySelectorAll('.add-to-cart').forEach(button => {
-        button.addEventListener('click', addToCart);
-      });
-    }
-
-    // Funciones del carrito
-    function addToCart(e) {
-      const productId = e.target.getAttribute('data-id');
-      const product = products.find(p => p.id === productId);
-      
-      if (product) {
-        const existingItem = cart.find(item => item.id === productId);
-        
-        if (existingItem) {
-          existingItem.quantity += 1;
-        } else {
-          cart.push({ ...product, quantity: 1 });
-        }
-        
-        updateCart();
-        showCartNotification(product.name);
-      }
-    }
-
-    function updateCart() {
-      // Actualizar items del carrito
-      cartItems.innerHTML = '';
-      let total = 0;
-      
-      cart.forEach(item => {
-        const cartItem = document.createElement('div');
-        cartItem.className = 'cart-item';
-        cartItem.innerHTML = `
-          <div class="cart-item-info">
-            <h4>${item.name}</h4>
-            <p>$${item.price.toFixed(2)} x ${item.quantity}</p>
-          </div>
-          <div class="cart-item-actions">
-            <button class="quantity-btn minus" data-id="${item.id}">-</button>
-            <span>${item.quantity}</span>
-            <button class="quantity-btn plus" data-id="${item.id}">+</button>
-            <button class="remove-btn" data-id="${item.id}"><i class="fas fa-trash"></i></button>
-          </div>
-        `;
-        cartItems.appendChild(cartItem);
-        total += item.price * item.quantity;
-      });
-      
-      // Actualizar total y contador
-      cartTotal.textContent = `$${total.toFixed(2)}`;
-      cartCount.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
-      
-      // Añadir event listeners a los botones
-      document.querySelectorAll('.quantity-btn.minus').forEach(btn => {
-        btn.addEventListener('click', decreaseQuantity);
-      });
-      
-      document.querySelectorAll('.quantity-btn.plus').forEach(btn => {
-        btn.addEventListener('click', increaseQuantity);
-      });
-      
-      document.querySelectorAll('.remove-btn').forEach(btn => {
-        btn.addEventListener('click', removeFromCart);
-      });
-    }
-
-    function toggleCart() {
-      cartSidebar.classList.toggle('active');
-    }
-
-    function decreaseQuantity(e) {
-      const productId = e.target.getAttribute('data-id');
-      const item = cart.find(item => item.id === productId);
-      
-      if (item.quantity > 1) {
-        item.quantity -= 1;
-      } else {
-        cart = cart.filter(item => item.id !== productId);
-      }
-      
-      updateCart();
-    }
-
-    function increaseQuantity(e) {
-      const productId = e.target.getAttribute('data-id');
-      const item = cart.find(item => item.id === productId);
-      item.quantity += 1;
-      updateCart();
-    }
-
-    function removeFromCart(e) {
-      const productId = e.target.closest('button').getAttribute('data-id');
-      cart = cart.filter(item => item.id !== productId);
-      updateCart();
-    }
-
-    function showCartNotification(productName) {
-      const notification = document.createElement('div');
-      notification.className = 'cart-notification';
-      notification.innerHTML = `
-        <p>${productName} añadido al carrito</p>
-      `;
-      document.body.appendChild(notification);
-      
-      setTimeout(() => {
-        notification.classList.add('show');
-      }, 10);
-      
-      setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => {
-          notification.remove();
-        }, 300);
-      }, 3000);
-    }
-
-    function updatePriceFilter() {
-      const maxPriceValue = parseInt(priceRange.value);
-      maxPrice.textContent = `$${maxPriceValue}`;
-      
-      const filteredProducts = products.filter(product => product.price <= maxPriceValue);
-      renderProducts(filteredProducts);
-    }
-
-    function checkout() {
-      if (cart.length === 0) {
-        alert('Tu carrito está vacío');
-        return;
-      }
-      
-      // Aquí iría la lógica para procesar el pago
-      alert('Compra realizada con éxito!');
-      
-      // Limpiar carrito después de la compra
-      cart = [];
-      updateCart();
-      toggleCart();
-    }
-
-    // Inicializar
-    loadProducts();
-  </script>
+  <!-- Scripts -->
+  <script src="js/productos.js"></script>
 </body>
 </html>
