@@ -38,12 +38,13 @@
     </div>
   </section>
 
-  <section class="banner-section">
-    <div class="banner-container">
-      <div class="slider">
-        <img src="img/banner1.webp" alt="Ofertas especiales" class="slider-img">
-        <img src="img/banner2.webp" alt="Últimos dispositivos" class="slider-img">
-      </div>
+  <section class="banner">
+    <div class="slide active" style="background-image: url('img/banner1.webp');"></div>
+    <div class="slide" style="background-image: url('img/banner2.webp');"></div>
+    <div class="banner-text">
+      <h2>Soluciones tecnológicas al alcance de un clic</h2>
+      <p>Descubre nuestros productos, servicios y soporte técnico especializado</p>
+      <a href="#contacto" class="btn">Contáctanos</a>
     </div>
   </section>
 
@@ -143,5 +144,22 @@
       </div>
     </div>
   </footer>
+
+  <script>
+    // Carrusel automático
+    document.addEventListener('DOMContentLoaded', function() {
+      const slides = document.querySelectorAll('.slide');
+      let currentSlide = 0;
+      
+      function nextSlide() {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = (currentSlide + 1) % slides.length;
+        slides[currentSlide].classList.add('active');
+      }
+      
+      // Cambia de slide cada 6 segundos
+      setInterval(nextSlide, 6000);
+    });
+  </script>
 </body>
 </html>
