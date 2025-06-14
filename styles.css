@@ -78,32 +78,55 @@ nav ul li a:hover::after {
   width: 100%;
 }
 
-/* Hero Section */
+/* Hero Section con Video */
 .hero {
   position: relative;
-  height: 500px;
+  height: 100vh;
+  max-height: 800px;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   color: white;
-  background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('img/hero.mp4') center/cover no-repeat;
-  margin-bottom: 40px;
+}
+
+.hero-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5));
+  z-index: 1;
 }
 
 .hero-content {
+  position: relative;
+  z-index: 2;
   max-width: 800px;
   padding: 0 20px;
 }
 
 .hero h1 {
-  font-size: 2.5rem;
+  font-size: 2.8rem;
   margin-bottom: 20px;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
 }
 
 .hero p {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   margin-bottom: 30px;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
@@ -112,8 +135,8 @@ nav ul li a:hover::after {
 .banner {
   width: 90%;
   max-width: 1200px;
-  height: 350px;
-  margin: 0 auto 60px;
+  height: 400px;
+  margin: 40px auto;
   overflow: hidden;
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
@@ -155,13 +178,13 @@ nav ul li a:hover::after {
 
 /* Secciones */
 .section {
-  padding: 70px 0;
+  padding: 80px 0;
 }
 
 .section h2 {
   text-align: center;
   margin-bottom: 50px;
-  font-size: 2.2rem;
+  font-size: 2.3rem;
   color: #2c3e50;
   position: relative;
 }
@@ -433,7 +456,7 @@ footer {
   }
   
   .hero {
-    height: 400px;
+    height: 70vh;
   }
   
   .hero h1 {
@@ -445,12 +468,12 @@ footer {
   }
   
   .banner {
-    height: 250px;
-    margin-bottom: 40px;
+    height: 300px;
+    margin: 30px auto;
   }
   
   .section {
-    padding: 50px 0;
+    padding: 60px 0;
   }
   
   .section h2 {
@@ -465,7 +488,7 @@ footer {
 
 @media (max-width: 576px) {
   .hero {
-    height: 350px;
+    height: 60vh;
   }
   
   .hero h1 {
