@@ -39,8 +39,14 @@
   </section>
 
   <section class="banner">
-    <div class="slide active" style="background-image: url('img/banner1.webp');"></div>
-    <div class="slide" style="background-image: url('img/banner2.webp');"></div>
+    <div class="slider-container">
+      <div class="slide active">
+        <img src="img/banner1.webp" alt="Ofertas especiales" class="slide-img">
+      </div>
+      <div class="slide">
+        <img src="img/banner2.webp" alt="Últimos dispositivos" class="slide-img">
+      </div>
+    </div>
     <div class="banner-text">
       <h2>Soluciones tecnológicas al alcance de un clic</h2>
       <p>Descubre nuestros productos, servicios y soporte técnico especializado</p>
@@ -146,19 +152,37 @@
   </footer>
 
   <script>
-    // Carrusel automático
+    // Carrusel automático mejorado
     document.addEventListener('DOMContentLoaded', function() {
       const slides = document.querySelectorAll('.slide');
       let currentSlide = 0;
+      let slideInterval;
       
-      function nextSlide() {
-        slides[currentSlide].classList.remove('active');
-        currentSlide = (currentSlide + 1) % slides.length;
-        slides[currentSlide].classList.add('active');
+      function showSlide(index) {
+        slides.forEach(slide => slide.classList.remove('active'));
+        slides[index].classList.add('active');
       }
       
-      // Cambia de slide cada 6 segundos
-      setInterval(nextSlide, 6000);
+      function nextSlide() {
+        currentSlide = (currentSlide + 1) % slides.length;
+        showSlide(currentSlide);
+      }
+      
+      function startSlider() {
+        slideInterval = setInterval(nextSlide, 5000);
+      }
+      
+      function stopSlider() {
+        clearInterval(slideInterval);
+      }
+      
+      // Pausar al interactuar
+      document.querySelector('.banner').addEventListener('mouseenter', stopSlider);
+      document.querySelector('.banner').addEventListener('mouseleave', startSlider);
+      
+      // Iniciar
+      showSlide(0);
+      startSlider();
     });
   </script>
 </body>
