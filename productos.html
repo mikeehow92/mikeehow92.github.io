@@ -3,209 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Productos - Zapatos de Mujer</title>
+    <title>Productos - TecnoExpress</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="productos.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <!-- Header (reutilizable desde index.html) -->
+    <!-- Header (igual que en index.html pero con clase active en Productos) -->
     <header class="header">
         <div class="container header-container">
             <div class="logo">
-                <a href="index.html"><img src="img/logo.png" alt="Logo"></a>
+                <a href="index.html"><img src="img/logo.png" alt="TecnoExpress"></a>
             </div>
             <nav>
                 <ul>
-                    <li><a href="index.html"><i class="fas fa-home"></i> Inicio</a></li>
-                    <li><a href="productos.html" class="active"><i class="fas fa-shopping-bag"></i> Productos</a></li>
-                    <li><a href="#"><i class="fas fa-info-circle"></i> Sobre Nosotros</a></li>
-                    <li><a href="#"><i class="fas fa-envelope"></i> Contacto</a></li>
+                    <li><a href="index.html#nosotros">Nosotros</a></li>
+                    <li><a href="productos.html" class="active">Productos</a></li>
+                    <li><a href="index.html#contacto">Contacto</a></li>
+                    <li>
+                        <a href="#" class="cart-icon" id="cart-toggle">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="cart-count">0</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </div>
     </header>
 
-    <!-- Contenido principal de la página de productos -->
-    <main class="productos-container">
-        <div class="container">
-            <h1>Productos</h1>
-            
-            <div class="breadcrumbs">
-                <span>Productos</span>
+    <!-- Carrito de compras (oculto inicialmente) -->
+    <div class="cart-overlay" id="cart-overlay">
+        <div class="cart-container">
+            <div class="cart-header">
+                <h3>Tu Carrito</h3>
+                <button class="close-cart" id="close-cart">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-                        
-            <div class="productos-grid">
-                <!-- Filtros -->
-                <aside class="filtros">
-                    <div class="filtro-grupo">
-                        <h3>Trade Assurances</h3>
-                        <p>Protege tus pedidos en Alibaba.com</p>
-                    </div>
-                    
-                    <div class="filtro-grupo">
-                        <h3>Características del proveedor</h3>
-                        <div class="filtro-opcion">
-                            <input type="checkbox" id="verified-supplier" checked>
-                            <label for="verified-supplier">Verified Supplier</label>
-                        </div>
-                    </div>
-                    
-                    <div class="filtro-grupo">
-                        <h3>Combinar resultados</h3>
-                        <div class="filtro-opcion">
-                            <input type="radio" id="combinar-proveedor" name="combinar" checked>
-                            <label for="combinar-proveedor">Combinar por proveedor</label>
-                        </div>
-                        <div class="filtro-opcion">
-                            <input type="radio" id="mostrar-relevante" name="combinar">
-                            <label for="mostrar-relevante">Solo se mostrará el artículo más relevante de cada proveedor</label>
-                        </div>
-                    </div>
-                    
-                    <div class="filtro-grupo">
-                        <h3>Reseñas de tiendas</h3>
-                        <div class="filtro-opcion">
-                            <input type="checkbox" id="rating-4">
-                            <label for="rating-4">4.0 y superior</label>
-                        </div>
-                        <div class="filtro-opcion">
-                            <input type="checkbox" id="rating-4.5">
-                            <label for="rating-4.5">4.5 y superior</label>
-                        </div>
-                        <div class="filtro-opcion">
-                            <input type="checkbox" id="rating-5">
-                            <label for="rating-5">5.0</label>
-                        </div>
-                    </div>
-                    
-                    <div class="filtro-grupo">
-                        <h3>Características del producto</h3>
-                        <div class="filtro-opcion">
-                            <input type="checkbox" id="maestras-pagados">
-                            <label for="maestras-pagados">Maestras pagados</label>
-                        </div>
-                    </div>
-                    
-                    <div class="filtro-grupo">
-                        <h3>Categoría</h3>
-                        <div class="filtro-opcion">
-                            <input type="checkbox" id="zapatillas-moda">
-                            <label for="zapatillas-moda">Zapatillas para cambiar a la moda</label>
-                        </div>
-                    </div>
-                </aside>
-                
-                <!-- Lista de productos -->
-                <section class="lista-productos">
-                    <div class="promo-banner">
-                        <p>Envío GRATIS en tu primer pedido</p>
-                    </div>
-                    
-                    <div class="bar-salary">
-                        <p>BAR SALARY</p>
-                        <button class="btn-share">Añadir para compartir</button>
-                    </div>
-                    
-                    <!-- Producto 1 -->
-                    <article class="producto-card">
-                        <div class="producto-certificado">
-                            <span>C€ certificado</span>
-                        </div>
-                        <h2>Zapatillas ENTE SAFETY 2023 estilo personalizado blanco con logotipo...</h2>
-                        <div class="producto-precio">$6.86</div>
-                        <div class="producto-info">
-                            <p><strong>Orden min:</strong> 10 pares</p>
-                            <p><strong>Entrega est.:</strong> jul/25</p>
-                        </div>
-                        <div class="proveedor-info">
-                            <p>Qingdao Eternity Safety Co., Ltd.</p>
-                            <div class="proveedor-detalle">
-                                <span class="verified">Verified</span>
-                                <span class="proveedor-antiguedad">5 años</span>
-                                <span class="proveedor-rating">CN: 4.7 <small>(15.0 Opiniones)</small></span>
-                            </div>
-                        </div>
-                    </article>
-                    
-                    <!-- Producto 2 -->
-                    <article class="producto-card">
-                        <h2>Zapatillas de deporte de alta calidad para mujer, zapatos cómodos...</h2>
-                        <div class="producto-precio">$3.90-5.90</div>
-                        <div class="producto-info">
-                            <p><strong>Orden min:</strong> 2 pares</p>
-                            <p><strong>Vendidos:</strong> 87</p>
-                        </div>
-                        <div class="proveedor-info">
-                            <p>Talizhou Duoya Shoes Co., Ltd.</p>
-                            <div class="proveedor-detalle">
-                                <span class="verified">Verified</span>
-                                <span class="proveedor-antiguedad">2 años</span>
-                                <span class="proveedor-rating">CN: 4.4 <small>(56 Opiniones)</small></span>
-                            </div>
-                        </div>
-                    </article>
-                    
-                    <!-- Producto 3 -->
-                    <article class="producto-card">
-                        <h2>Nueva moda mujeres niñas verano sandalia plana zapatos de playa...</h2>
-                        <div class="producto-precio">$0.65-0.84</div>
-                        <div class="producto-info">
-                            <p><strong>Orden min:</strong> 1 par</p>
-                            <p><strong>Vendidos:</strong> 2,724</p>
-                        </div>
-                        <div class="proveedor-info">
-                            <p>Jieyang City Repository District, Moffea...</p>
-                            <div class="proveedor-detalle">
-                                <span class="proveedor-antiguedad">2 años</span>
-                                <span class="proveedor-rating">CN: 4.3 <small>(45 Opiniones)</small></span>
-                            </div>
-                        </div>
-                    </article>
-                    
-                    <!-- Producto 4 -->
-                    <article class="producto-card">
-                        <h2>Nueva moda de verano al aire libre Sandalias planas para mujeres niñas...</h2>
-                        <div class="producto-precio">$1.45</div>
-                        <div class="producto-info">
-                            <p><strong>Orden min:</strong> 2 pares</p>
-                            <p><strong>Entrega est.:</strong> jul/24</p>
-                            <p><strong>Vendidos:</strong> 1,934</p>
-                        </div>
-                        <div class="proveedor-info">
-                            <p>Shoothen Our Fashion into A. P.p. Co., Ltd.</p>
-                            <div class="proveedor-detalle">
-                                <span class="verified">Verified</span>
-                                <span class="proveedor-antiguedad">6 años</span>
-                                <span class="proveedor-rating">CN: 4.3 <small>(36 Opiniones)</small></span>
-                            </div>
-                        </div>
-                    </article>
-                </section>
+            <div class="cart-items" id="cart-items">
+                <!-- Los productos del carrito se añadirán aquí dinámicamente -->
+                <div class="empty-cart">
+                    <i class="fas fa-shopping-cart"></i>
+                    <p>Tu carrito está vacío</p>
+                </div>
+            </div>
+            <div class="cart-footer">
+                <div class="cart-total">
+                    <span>Total:</span>
+                    <span class="total-amount">$0.00</span>
+                </div>
+                <button class="btn checkout-btn" id="checkout-btn">Proceder al Pago</button>
             </div>
         </div>
+    </div>
+
+    <!-- Contenido principal de productos -->
+    <main class="productos-container">
+        <!-- ... (todo el contenido existente de productos.html) ... -->
+        
+        <!-- Modificamos las tarjetas de producto para añadir botones de carrito -->
+        <article class="producto-card">
+            <div class="producto-certificado">
+                <span>C€ certificado</span>
+            </div>
+            <h2>Zapatillas ENTE SAFETY 2023 estilo personalizado blanco con logotipo...</h2>
+            <div class="producto-precio">$6.86</div>
+            <div class="producto-info">
+                <p><strong>Orden min:</strong> 10 pares</p>
+                <p><strong>Entrega est.:</strong> jul/25</p>
+            </div>
+            <div class="proveedor-info">
+                <p>Qingdao Eternity Safety Co., Ltd.</p>
+                <div class="proveedor-detalle">
+                    <span class="verified">Verified</span>
+                    <span class="proveedor-antiguedad">5 años</span>
+                    <span class="proveedor-rating">CN: 4.7 <small>(15.0 Opiniones)</small></span>
+                </div>
+            </div>
+            <button class="btn add-to-cart" data-id="1" data-name="Zapatillas ENTE SAFETY 2023" data-price="6.86" data-min="10">Añadir al carrito</button>
+        </article>
+        
+        <!-- Repetir para los otros productos con datos diferentes -->
     </main>
 
-    <!-- Footer (reutilizable desde index.html) -->
+    <!-- Footer (igual que en index.html) -->
     <footer>
-        <div class="container footer-content">
-            <div class="footer-logo">
-                <img src="logo-white.png" alt="Logo">
-                <p>Tu proveedor confiable de productos de calidad desde 2010.</p>
-            </div>
-            <div class="footer-links">
-                <h3>Enlaces rápidos</h3>
-                <ul>
-                    <li><a href="index.html">Inicio</a></li>
-                    <li><a href="productos.html">Productos</a></li>
-                    <li><a href="#">Sobre Nosotros</a></li>
-                    <li><a href="#">Contacto</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="copyright">
-            <p>&copy; 2023 TuEmpresa. Todos los derechos reservados.</p>
-        </div>
+        <!-- ... (contenido del footer existente) ... -->
     </footer>
+
+    <!-- JavaScript para el carrito -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos del DOM
+            const cartOverlay = document.getElementById('cart-overlay');
+            const cartToggle = document.getElementById('cart-toggle');
+            const closeCart = document.getElementById('close-cart');
+            const cartItems = document.getElementById('cart-items');
+            const cartCount = document.querySelector('.cart-count');
+            const totalAmount = document.querySelector('.total-amount');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            const addToCartBtns = document.querySelectorAll('.add-to-cart');
+            
+            // Variables del carrito
+            let cart = [];
+            
+            // Abrir/Cerrar carrito
+            cartToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                cartOverlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            });
+            
+            closeCart.addEventListener('click', () => {
+                cartOverlay.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+            
+            // Añadir productos al carrito
+            addToCartBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-id');
+                    const name = btn.getAttribute('data-name');
+                    const price = parseFloat(btn.getAttribute('data-price'));
+                    const minOrder = parseInt(btn.getAttribute('data-min'));
+                    
+                    // Verificar si el producto ya está en el carrito
+                    const existingItem = cart.find(item => item.id === id);
+                    
+                    if (existingItem) {
+                        existingItem.quantity += minOrder;
+                    } else {
+                        cart.push({
+                            id,
+                            name,
+                            price,
+                            quantity: minOrder
+                        });
+                    }
+                    
+                    updateCart();
+                    showNotification(`${name} añadido al carrito`);
+                });
+            });
+            
+            // Actualizar el carrito
+            function updateCart() {
+                // Actualizar contador
+                const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+                cartCount.textContent = totalItems;
+                
+                // Actualizar lista de productos
+                if (cart.length === 0) {
+                    cartItems.innerHTML = `
+                        <div class="empty-cart">
+                            <i class="fas fa-shopping-cart"></i>
+                            <p>Tu carrito está vacío</p>
+                        </div>
+                    `;
+                } else {
+                    cartItems.innerHTML = cart.map(item => `
+                        <div class="cart-item">
+                            <div class="cart-item-info">
+                                <h4>${item.name}</h4>
+                                <p>${item.quantity} x $${item.price.toFixed(2)}</p>
+                            </div>
+                            <div class="cart-item-actions">
+                                <span class="cart-item-total">$${(item.quantity * item.price).toFixed(2)}</span>
+                                <button class="remove-item" data-id="${item.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    // Añadir event listeners a los botones de eliminar
+                    document.querySelectorAll('.remove-item').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const id = btn.getAttribute('data-id');
+                            cart = cart.filter(item => item.id !== id);
+                            updateCart();
+                        });
+                    });
+                }
+                
+                // Actualizar total
+                const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                totalAmount.textContent = `$${total.toFixed(2)}`;
+            }
+            
+            // Mostrar notificación
+            function showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 10);
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+            
+            // Procesar compra
+            checkoutBtn.addEventListener('click', () => {
+                if (cart.length === 0) {
+                    alert('Tu carrito está vacío');
+                    return;
+                }
+                
+                // Aquí iría la lógica para procesar el pago
+                alert('Redirigiendo al proceso de pago...');
+                console.log('Productos en el carrito:', cart);
+                
+                // Limpiar carrito después de la compra
+                cart = [];
+                updateCart();
+                cartOverlay.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+        });
+    </script>
 </body>
 </html>
