@@ -19,9 +19,9 @@ body {
   padding: 0 20px;
 }
 
-/* Header */
-header {
-  background-color: #2c3e50;
+/* Header mejorado */
+.header {
+  background-color: #1a2b4a; /* Azul más oscuro para mejor contraste */
   padding: 15px 0;
   position: sticky;
   top: 0;
@@ -36,8 +36,9 @@ header {
 }
 
 .logo img {
-  height: 50px;
+  height: 60px; /* Tamaño aumentado */
   transition: transform 0.3s ease;
+  filter: brightness(0) invert(1); /* Logo blanco para mejor contraste */
 }
 
 .logo img:hover {
@@ -59,20 +60,19 @@ nav ul li a {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
 }
 
 nav ul li a:hover {
   color: #3498db;
+  background-color: rgba(255,255,255,0.1);
 }
 
-nav ul li a i {
-  font-size: 0.9rem;
-}
-
-/* Hero Section con Video */
+/* Hero Section */
 .hero {
   position: relative;
-  height: 100vh;
+  height: 80vh;
   max-height: 800px;
   display: flex;
   align-items: center;
@@ -123,21 +123,22 @@ nav ul li a i {
   text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
-/* Banner/Carrusel mejorado */
-.banner {
-  position: relative;
-  width: 90%;
-  max-width: 1200px;
+/* Sección dual (Carrusel + Nosotros) */
+.dual-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
   margin: 40px auto;
+  max-width: 1200px;
+  padding: 0 20px;
+}
+
+.banner-container {
+  position: relative;
   overflow: hidden;
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.slider-container {
-  position: relative;
-  width: 100%;
-  padding-top: 40%; /* Proporción 5:2 (ajustable) */
+  height: 500px;
 }
 
 .slide {
@@ -159,41 +160,60 @@ nav ul li a i {
 }
 
 .slide-img {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.banner-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  color: white;
-  width: 90%;
-  max-width: 800px;
-  padding: 30px;
-  background-color: rgba(0,0,0,0.5);
+.about-container {
+  display: flex;
+  align-items: center;
+  background-color: white;
   border-radius: 10px;
-  z-index: 2;
+  padding: 40px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-.banner-text h2 {
-  font-size: 2.5rem;
+.about-content h2 {
+  color: #2c3e50;
   margin-bottom: 20px;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+  font-size: 2rem;
+  position: relative;
 }
 
-.banner-text p {
-  font-size: 1.2rem;
-  margin-bottom: 25px;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+.about-content h2::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 4px;
+  background-color: #3498db;
+  margin-top: 10px;
 }
 
-/* Secciones */
+.about-text p {
+  margin-bottom: 20px;
+  color: #555;
+  line-height: 1.8;
+}
+
+.btn-outline {
+  display: inline-block;
+  padding: 10px 25px;
+  border: 2px solid #3498db;
+  border-radius: 50px;
+  color: #3498db;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.btn-outline:hover {
+  background-color: #3498db;
+  color: white;
+}
+
+/* Servicios */
 .section {
   padding: 80px 0;
 }
@@ -224,33 +244,6 @@ nav ul li a i {
   background-color: #f0f0f0;
 }
 
-/* Nosotros */
-.about-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  align-items: center;
-}
-
-.about-text p {
-  margin-bottom: 20px;
-  font-size: 1.1rem;
-  line-height: 1.8;
-  color: #555;
-}
-
-.about-image img {
-  width: 100%;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  transition: transform 0.3s ease;
-}
-
-.about-image img:hover {
-  transform: scale(1.02);
-}
-
-/* Servicios */
 .services-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -414,6 +407,7 @@ footer {
 .footer-logo img {
   height: 50px;
   margin-bottom: 20px;
+  filter: brightness(0) invert(1);
 }
 
 .footer-logo p {
@@ -495,17 +489,16 @@ footer {
     font-size: 2.5rem;
   }
   
-  .about-content,
-  .contact-content {
+  .dual-section {
     grid-template-columns: 1fr;
   }
   
-  .banner {
-    padding-top: 50%; /* Ajuste de proporción */
+  .banner-container {
+    height: 400px;
   }
   
-  .banner-text h2 {
-    font-size: 2rem;
+  .about-container {
+    padding: 30px;
   }
 }
 
@@ -531,9 +524,8 @@ footer {
     font-size: 1.1rem;
   }
   
-  .banner {
-    padding-top: 60%;
-    width: 95%;
+  .banner-container {
+    height: 350px;
   }
   
   .section {
@@ -544,7 +536,7 @@ footer {
     font-size: 2rem;
   }
   
-  .footer-content {
+  .contact-content {
     grid-template-columns: 1fr;
   }
 }
@@ -558,20 +550,12 @@ footer {
     font-size: 1.8rem;
   }
   
-  .banner {
-    padding-top: 70%;
+  .banner-container {
+    height: 250px;
   }
   
-  .banner-text {
-    padding: 15px;
-  }
-  
-  .banner-text h2 {
-    font-size: 1.5rem;
-  }
-  
-  .banner-text p {
-    font-size: 1rem;
+  .about-content h2 {
+    font-size: 1.8rem;
   }
   
   .services-grid {
