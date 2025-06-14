@@ -5,13 +5,135 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Productos - Zapatos de Mujer</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ESTILOS ESPECÍFICOS PARA LA PÁGINA DE PRODUCTOS */
+        /* (No afectarán al index.html) */
+        
+        /* Estilos para el carrusel de imágenes */
+        .producto-imagen {
+            position: relative;
+            height: 200px;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
+        
+        .producto-imagen-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .producto-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .producto-img.active {
+            opacity: 1;
+        }
+        
+        .carrusel-control {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .carrusel-control.prev {
+            left: 10px;
+        }
+        
+        .carrusel-control.next {
+            right: 10px;
+        }
+        
+        .carrusel-control:hover {
+            background-color: rgba(0,0,0,0.7);
+        }
+        
+        .carrusel-indicadores {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            z-index: 10;
+        }
+        
+        .indicador {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.5);
+            cursor: pointer;
+        }
+        
+        .indicador.active {
+            background-color: white;
+        }
+        
+        /* Estilos específicos para la página de productos */
+        .productos-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 30px;
+        }
+        
+        .filtro-group {
+            margin-bottom: 25px;
+        }
+        
+        .productos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+        }
+        
+        .producto-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .producto-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .promo-banner {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     <!-- Header (igual que en index.html) -->
     <header class="header">
         <div class="container header-container">
             <div class="logo">
-                <a href="index.html"><img src="img/logo.png" alt="Logo"></a>
+                <a href="index.html"><img src="logo.png" alt="Logo"></a>
             </div>
             <nav>
                 <ul>
@@ -36,17 +158,17 @@
         
         <hr style="margin-bottom: 30px;">
         
-        <div class="productos-container" style="display: grid; grid-template-columns: 250px 1fr; gap: 30px;">
+        <div class="productos-container">
             <!-- Filtros -->
             <aside class="filtros">
                 <h3 style="margin-bottom: 20px; font-size: 1.2rem;">Filtros</h3>
                 
-                <div class="filtro-group" style="margin-bottom: 25px;">
+                <div class="filtro-group">
                     <h4 style="margin-bottom: 10px; font-weight: bold;">Trade Asurances</h4>
                     <p style="font-size: 0.9rem; color: #555;">Protege tus pedidos en Alibaba.com</p>
                 </div>
                 
-                <div class="filtro-group" style="margin-bottom: 25px;">
+                <div class="filtro-group">
                     <h4 style="margin-bottom: 10px; font-weight: bold;">Características del proveedor</h4>
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                         <input type="checkbox" id="verified-supplier">
@@ -54,7 +176,7 @@
                     </div>
                 </div>
                 
-                <div class="filtro-group" style="margin-bottom: 25px;">
+                <div class="filtro-group">
                     <h4 style="margin-bottom: 10px; font-weight: bold;">Combinar resultados</h4>
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                         <input type="radio" id="combinar-proveedor" name="combinar" checked>
@@ -65,7 +187,7 @@
                     </div>
                 </div>
                 
-                <div class="filtro-group" style="margin-bottom: 25px;">
+                <div class="filtro-group">
                     <h4 style="margin-bottom: 10px; font-weight: bold;">Reseñas de tiendas</h4>
                     <p style="font-size: 0.9rem; color: #555; margin-bottom: 10px;">Basado en un sistema de calificación de 5 estrellas</p>
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
@@ -82,7 +204,7 @@
                     </div>
                 </div>
                 
-                <div class="filtro-group" style="margin-bottom: 25px;">
+                <div class="filtro-group">
                     <h4 style="margin-bottom: 10px; font-weight: bold;">Características del producto</h4>
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                         <input type="checkbox" id="maestras-pagados">
@@ -90,7 +212,7 @@
                     </div>
                 </div>
                 
-                <div class="filtro-group" style="margin-bottom: 25px;">
+                <div class="filtro-group">
                     <h4 style="margin-bottom: 10px; font-weight: bold;">Categoría</h4>
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                         <input type="checkbox" id="categoria-zapatillas">
@@ -102,7 +224,7 @@
             <!-- Lista de productos -->
             <div class="productos-lista">
                 <!-- Banner promocional -->
-                <div class="promo-banner" style="background-color: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                <div class="promo-banner">
                     <p style="font-weight: bold; color: #1a73e8;">Envío GRATIS en tu primer pedido</p>
                 </div>
                 
@@ -114,11 +236,30 @@
                 </div>
                 
                 <!-- Productos -->
-                <div class="productos-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px;">
+                <div class="productos-grid">
                     <!-- Producto 1 -->
-                    <div class="producto-card" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-                        <div class="producto-imagen" style="height: 200px; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
-                            <span style="color: #999;">Imagen del producto</span>
+                    <div class="producto-card">
+                        <!-- NOTA: Reemplazar las siguientes imágenes con las rutas reales de tus imágenes -->
+                        <div class="producto-imagen">
+                            <div class="producto-imagen-container" id="carrusel1">
+                                <!-- Imagen 1 del producto 1 -->
+                                <img src="img/impresora1.webp" alt="Zapatilla ENTE SAFETY vista frontal" class="producto-img active">
+                                <!-- Imagen 2 del producto 1 -->
+                                <img src="img/impresora2.webp" alt="Zapatilla ENTE SAFETY vista lateral" class="producto-img">
+                                <!-- Imagen 3 del producto 1 -->
+                                <img src="img/impresora3.webp" alt="Zapatilla ENTE SAFETY vista trasera" class="producto-img">
+                                
+                                <!-- Controles del carrusel -->
+                                <button class="carrusel-control prev" onclick="moveSlide('carrusel1', -1)">&#10094;</button>
+                                <button class="carrusel-control next" onclick="moveSlide('carrusel1', 1)">&#10095;</button>
+                                
+                                <!-- Indicadores -->
+                                <div class="carrusel-indicadores">
+                                    <span class="indicador active" onclick="goToSlide('carrusel1', 0)"></span>
+                                    <span class="indicador" onclick="goToSlide('carrusel1', 1)"></span>
+                                    <span class="indicador" onclick="goToSlide('carrusel1', 2)"></span>
+                                </div>
+                            </div>
                         </div>
                         <div class="producto-info" style="padding: 15px;">
                             <div class="certificado" style="font-size: 0.8rem; color: #1a73e8; margin-bottom: 5px;">C€ certificado</div>
@@ -143,9 +284,28 @@
                     </div>
                     
                     <!-- Producto 2 -->
-                    <div class="producto-card" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-                        <div class="producto-imagen" style="height: 200px; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
-                            <span style="color: #999;">Imagen del producto</span>
+                    <div class="producto-card">
+                        <!-- NOTA: Reemplazar las siguientes imágenes con las rutas reales de tus imágenes -->
+                        <div class="producto-imagen">
+                            <div class="producto-imagen-container" id="carrusel2">
+                                <!-- Imagen 1 del producto 2 -->
+                                <img src="IMAGENES/PRODUCTO2-1.jpg" alt="Zapatillas deportivas vista frontal" class="producto-img active">
+                                <!-- Imagen 2 del producto 2 -->
+                                <img src="IMAGENES/PRODUCTO2-2.jpg" alt="Zapatillas deportivas vista lateral" class="producto-img">
+                                <!-- Imagen 3 del producto 2 -->
+                                <img src="IMAGENES/PRODUCTO2-3.jpg" alt="Zapatillas deportivas detalle" class="producto-img">
+                                
+                                <!-- Controles del carrusel -->
+                                <button class="carrusel-control prev" onclick="moveSlide('carrusel2', -1)">&#10094;</button>
+                                <button class="carrusel-control next" onclick="moveSlide('carrusel2', 1)">&#10095;</button>
+                                
+                                <!-- Indicadores -->
+                                <div class="carrusel-indicadores">
+                                    <span class="indicador active" onclick="goToSlide('carrusel2', 0)"></span>
+                                    <span class="indicador" onclick="goToSlide('carrusel2', 1)"></span>
+                                    <span class="indicador" onclick="goToSlide('carrusel2', 2)"></span>
+                                </div>
+                            </div>
                         </div>
                         <div class="producto-info" style="padding: 15px;">
                             <h3 style="font-size: 1rem; margin-bottom: 10px; color: #333;">Zapatillas de deporte de alta calidad para mujer, zapatos cómodos...</h3>
@@ -169,9 +329,28 @@
                     </div>
                     
                     <!-- Producto 3 -->
-                    <div class="producto-card" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-                        <div class="producto-imagen" style="height: 200px; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
-                            <span style="color: #999;">Imagen del producto</span>
+                    <div class="producto-card">
+                        <!-- NOTA: Reemplazar las siguientes imágenes con las rutas reales de tus imágenes -->
+                        <div class="producto-imagen">
+                            <div class="producto-imagen-container" id="carrusel3">
+                                <!-- Imagen 1 del producto 3 -->
+                                <img src="IMAGENES/PRODUCTO3-1.jpg" alt="Sandalias planas vista frontal" class="producto-img active">
+                                <!-- Imagen 2 del producto 3 -->
+                                <img src="IMAGENES/PRODUCTO3-2.jpg" alt="Sandalias planas vista lateral" class="producto-img">
+                                <!-- Imagen 3 del producto 3 -->
+                                <img src="IMAGENES/PRODUCTO3-3.jpg" alt="Sandalias planas detalle" class="producto-img">
+                                
+                                <!-- Controles del carrusel -->
+                                <button class="carrusel-control prev" onclick="moveSlide('carrusel3', -1)">&#10094;</button>
+                                <button class="carrusel-control next" onclick="moveSlide('carrusel3', 1)">&#10095;</button>
+                                
+                                <!-- Indicadores -->
+                                <div class="carrusel-indicadores">
+                                    <span class="indicador active" onclick="goToSlide('carrusel3', 0)"></span>
+                                    <span class="indicador" onclick="goToSlide('carrusel3', 1)"></span>
+                                    <span class="indicador" onclick="goToSlide('carrusel3', 2)"></span>
+                                </div>
+                            </div>
                         </div>
                         <div class="producto-info" style="padding: 15px;">
                             <h3 style="font-size: 1rem; margin-bottom: 10px; color: #333;">Nueva moda mujeres niñas verano sandalia plana zapatos de playa...</h3>
@@ -190,9 +369,28 @@
                     </div>
                     
                     <!-- Producto 4 -->
-                    <div class="producto-card" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-                        <div class="producto-imagen" style="height: 200px; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
-                            <span style="color: #999;">Imagen del producto</span>
+                    <div class="producto-card">
+                        <!-- NOTA: Reemplazar las siguientes imágenes con las rutas reales de tus imágenes -->
+                        <div class="producto-imagen">
+                            <div class="producto-imagen-container" id="carrusel4">
+                                <!-- Imagen 1 del producto 4 -->
+                                <img src="IMAGENES/PRODUCTO4-1.jpg" alt="Sandalias verano vista frontal" class="producto-img active">
+                                <!-- Imagen 2 del producto 4 -->
+                                <img src="IMAGENES/PRODUCTO4-2.jpg" alt="Sandalias verano vista lateral" class="producto-img">
+                                <!-- Imagen 3 del producto 4 -->
+                                <img src="IMAGENES/PRODUCTO4-3.jpg" alt="Sandalias verano detalle" class="producto-img">
+                                
+                                <!-- Controles del carrusel -->
+                                <button class="carrusel-control prev" onclick="moveSlide('carrusel4', -1)">&#10094;</button>
+                                <button class="carrusel-control next" onclick="moveSlide('carrusel4', 1)">&#10095;</button>
+                                
+                                <!-- Indicadores -->
+                                <div class="carrusel-indicadores">
+                                    <span class="indicador active" onclick="goToSlide('carrusel4', 0)"></span>
+                                    <span class="indicador" onclick="goToSlide('carrusel4', 1)"></span>
+                                    <span class="indicador" onclick="goToSlide('carrusel4', 2)"></span>
+                                </div>
+                            </div>
                         </div>
                         <div class="producto-info" style="padding: 15px;">
                             <h3 style="font-size: 1rem; margin-bottom: 10px; color: #333;">Nueva moda de verano al aire libre Sandalias planas para mujeres niñas...</h3>
@@ -224,7 +422,7 @@
     <footer>
         <div class="container footer-content">
             <div class="footer-logo">
-                <img src="img/logo.png" alt="Logo">
+                <img src="logo.png" alt="Logo">
                 <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
             </div>
             <div class="footer-links">
@@ -241,5 +439,67 @@
             <p>&copy; 2025 Todos los derechos reservados</p>
         </div>
     </footer>
+
+    <!-- JavaScript para el carrusel -->
+    <script>
+        // Función para mover el carrusel
+        function moveSlide(carruselId, direction) {
+            const carrusel = document.getElementById(carruselId);
+            const slides = carrusel.querySelectorAll('.producto-img');
+            const indicators = carrusel.querySelectorAll('.indicador');
+            let currentIndex = 0;
+            
+            // Encontrar el slide activo actual
+            slides.forEach((slide, index) => {
+                if (slide.classList.contains('active')) {
+                    currentIndex = index;
+                    slide.classList.remove('active');
+                    indicators[index].classList.remove('active');
+                }
+            });
+            
+            // Calcular nuevo índice
+            let newIndex = currentIndex + direction;
+            
+            // Manejar los límites
+            if (newIndex >= slides.length) {
+                newIndex = 0;
+            } else if (newIndex < 0) {
+                newIndex = slides.length - 1;
+            }
+            
+            // Mostrar el nuevo slide
+            slides[newIndex].classList.add('active');
+            indicators[newIndex].classList.add('active');
+        }
+        
+        // Función para ir a un slide específico
+        function goToSlide(carruselId, index) {
+            const carrusel = document.getElementById(carruselId);
+            const slides = carrusel.querySelectorAll('.producto-img');
+            const indicators = carrusel.querySelectorAll('.indicador');
+            
+            // Ocultar todos los slides y desactivar indicadores
+            slides.forEach(slide => slide.classList.remove('active'));
+            indicators.forEach(indicator => indicator.classList.remove('active'));
+            
+            // Mostrar el slide seleccionado y activar su indicador
+            slides[index].classList.add('active');
+            indicators[index].classList.add('active');
+        }
+        
+        // Opcional: Carrusel automático
+        function startAutoCarousel() {
+            const carruseles = document.querySelectorAll('.producto-imagen-container');
+            carruseles.forEach((carrusel, i) => {
+                setInterval(() => {
+                    moveSlide(carrusel.id, 1);
+                }, 5000 + (i * 1000)); // Evitar que todos cambien al mismo tiempo
+            });
+        }
+        
+        // Iniciar carruseles automáticos cuando la página cargue
+        window.addEventListener('DOMContentLoaded', startAutoCarousel);
+    </script>
 </body>
 </html>
