@@ -1,151 +1,339 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Productos - TecnoExpress</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="productos.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Productos - TecnoExpress</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="productos.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="container header-container">
-            <div class="logo">
-                <a href="index.html"><img src="img/logo.png" alt="TecnoExpress"></a>
-            </div>
-            <nav>
-                <ul>
-                    <li><a href="index.html#nosotros">Nosotros</a></li>
-                    <li><a href="productos.html" class="active">Productos</a></li>
-                    <li><a href="index.html#contacto">Contacto</a></li>
-                    <li>
-                        <a href="#" class="cart-icon" id="cartButton">
-                            <i class="fas fa-shopping-cart"></i>
-                            <span class="cart-count">0</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
-    <!-- Carrito de compras (oculto inicialmente) -->
-    <div class="cart-overlay" id="cartOverlay">
-        <div class="cart-container">
-            <div class="cart-header">
-                <h3>Tu Carrito</h3>
-                <button class="close-cart" id="closeCart">&times;</button>
-            </div>
-            <div class="cart-items" id="cartItems">
-                <!-- Los productos del carrito se agregarán aquí dinámicamente -->
-            </div>
-            <div class="cart-total">
-                <h4>Total: <span id="cartTotal">$0.00</span></h4>
-            </div>
-            <div class="cart-actions">
-                <button class="btn btn-clear" id="clearCart">Vaciar Carrito</button>
-                <button class="btn btn-checkout" id="checkout">Finalizar Compra</button>
-            </div>
-        </div>
+  <header class="header">
+    <div class="container header-container">
+      <div class="logo">
+        <a href="index.html">
+          <img src="img/logo.png" alt="TecnoExpress">
+        </a>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="index.html#nosotros">Nosotros</a></li>
+          <li><a href="productos.html" class="active">Productos</a></li>
+          <li><a href="index.html#contacto">Contacto</a></li>
+          <li>
+            <a href="#" class="cart-icon" id="cartButton">
+              <i class="fas fa-shopping-cart"></i>
+              <span class="cart-count">0</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
     </div>
+  </header>
 
-    <!-- Contenido principal de la página de productos -->
-    <main class="productos-container">
-        <div class="container">
-            <h1>Productos Tecnológicos</h1>
-            
-            <div class="breadcrumbs">
-                <span>Inicio</span> &gt; <span>Productos</span> &gt; <span>Tecnología</span>
+  <!-- Carrito lateral -->
+  <div class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+      <h3>Tu Carrito</h3>
+      <button class="close-cart" id="closeCart">&times;</button>
+    </div>
+    <div class="cart-items" id="cartItems">
+      <!-- Los productos del carrito se añadirán aquí dinámicamente -->
+    </div>
+    <div class="cart-total">
+      <p>Total: <span id="cartTotal">$0.00</span></p>
+      <button class="btn" id="checkoutButton">Finalizar Compra</button>
+    </div>
+  </div>
+
+  <main class="productos-container">
+    <div class="container">
+      <h1>Productos Tecnológicos</h1>
+      
+      <div class="breadcrumbs">
+        <a href="index.html">Inicio</a> &gt; <span>Productos</span>
+      </div>
+      
+      <div class="productos-grid">
+        <!-- Filtros -->
+        <aside class="filtros">
+          <div class="filtro-grupo">
+            <h3>Categorías</h3>
+            <div class="filtro-opcion">
+              <input type="checkbox" id="laptops" checked>
+              <label for="laptops">Laptops</label>
             </div>
-            
-            <p class="result-count">Mostrando 20+ productos de las mejores marcas</p>
-            
-            <div class="productos-grid">
-                <!-- Filtros -->
-                <aside class="filtros">
-                    <div class="filtro-grupo">
-                        <h3>Categorías</h3>
-                        <div class="filtro-opcion">
-                            <input type="checkbox" id="laptops" checked>
-                            <label for="laptops">Laptops</label>
-                        </div>
-                        <div class="filtro-opcion">
-                            <input type="checkbox" id="smartphones" checked>
-                            <label for="smartphones">Smartphones</label>
-                        </div>
-                        <div class="filtro-opcion">
-                            <input type="checkbox" id="accesorios" checked>
-                            <label for="accesorios">Accesorios</label>
-                        </div>
-                    </div>
-                    
-                    <div class="filtro-grupo">
-                        <h3>Precio</h3>
-                        <div class="price-range">
-                            <input type="range" id="priceRange" min="0" max="2000" value="2000" step="50">
-                            <div class="price-values">
-                                <span>$0</span>
-                                <span id="maxPrice">$2000</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="filtro-grupo">
-                        <h3>Marcas</h3>
-                        <div class="filtro-opcion">
-                            <input type="checkbox" id="apple" checked>
-                            <label for="apple">Apple</label>
-                        </div>
-                        <div class="filtro-opcion">
-                            <input type="checkbox" id="samsung" checked>
-                            <label for="samsung">Samsung</label>
-                        </div>
-                        <div class="filtro-opcion">
-                            <input type="checkbox" id="huawei" checked>
-                            <label for="huawei">Huawei</label>
-                        </div>
-                    </div>
-                </aside>
-                
-                <!-- Lista de productos -->
-                <section class="lista-productos" id="productList">
-                    <!-- Los productos se cargarán aquí dinámicamente desde Firebase -->
-                </section>
+            <div class="filtro-opcion">
+              <input type="checkbox" id="smartphones" checked>
+              <label for="smartphones">Smartphones</label>
             </div>
+            <div class="filtro-opcion">
+              <input type="checkbox" id="accesorios" checked>
+              <label for="accesorios">Accesorios</label>
+            </div>
+          </div>
+          
+          <div class="filtro-grupo">
+            <h3>Precio</h3>
+            <div class="price-range">
+              <input type="range" id="priceRange" min="0" max="2000" value="2000">
+              <div class="range-values">
+                <span>$0</span>
+                <span id="maxPrice">$2000</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+        
+        <!-- Lista de productos -->
+        <section class="lista-productos" id="productList">
+          <!-- Los productos se cargarán aquí dinámicamente desde Firebase -->
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <img src="img/logo.png" alt="TecnoExpress">
+          <p>Soluciones tecnológicas innovadoras para el mundo moderno.</p>
         </div>
-    </main>
-
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <img src="img/logo.png" alt="TecnoExpress">
-                    <p>Soluciones tecnológicas innovadoras para el mundo moderno.</p>
-                </div>
-                <div class="footer-links">
-                    <h3>Enlaces rápidos</h3>
-                    <ul>
-                        <li><a href="index.html#nosotros">Nosotros</a></li>
-                        <li><a href="productos.html">Productos</a></li>
-                        <li><a href="index.html#contacto">Contacto</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="copyright">
-                <p>&copy; 2023 TecnoExpress. Todos los derechos reservados.</p>
-            </div>
+        <div class="footer-links">
+          <h3>Enlaces rápidos</h3>
+          <ul>
+            <li><a href="index.html#nosotros">Nosotros</a></li>
+            <li><a href="productos.html">Productos</a></li>
+            <li><a href="index.html#contacto">Contacto</a></li>
+          </ul>
         </div>
-    </footer>
+      </div>
+      <div class="copyright">
+        <p>&copy; 2023 TecnoExpress. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
 
-    <!-- Scripts -->
-    <script src="firebase-config.js"></script>
-    <script src="productos.js"></script>
+  <script>
+    // Configuración de Firebase (reemplaza con tus credenciales)
+    const firebaseConfig = {
+      apiKey: "TU_API_KEY",
+      authDomain: "TU_PROYECTO.firebaseapp.com",
+      projectId: "TU_PROYECTO",
+      storageBucket: "TU_PROYECTO.appspot.com",
+      messagingSenderId: "TU_SENDER_ID",
+      appId: "TU_APP_ID"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // Variables globales
+    let cart = [];
+    let products = [];
+
+    // DOM Elements
+    const cartButton = document.getElementById('cartButton');
+    const cartSidebar = document.getElementById('cartSidebar');
+    const closeCart = document.getElementById('closeCart');
+    const cartItems = document.getElementById('cartItems');
+    const cartTotal = document.getElementById('cartTotal');
+    const cartCount = document.querySelector('.cart-count');
+    const checkoutButton = document.getElementById('checkoutButton');
+    const productList = document.getElementById('productList');
+    const priceRange = document.getElementById('priceRange');
+    const maxPrice = document.getElementById('maxPrice');
+
+    // Event Listeners
+    cartButton.addEventListener('click', toggleCart);
+    closeCart.addEventListener('click', toggleCart);
+    checkoutButton.addEventListener('click', checkout);
+    priceRange.addEventListener('input', updatePriceFilter);
+
+    // Cargar productos desde Firebase
+    function loadProducts() {
+      db.collection("products").get().then((querySnapshot) => {
+        products = [];
+        querySnapshot.forEach((doc) => {
+          products.push({ id: doc.id, ...doc.data() });
+        });
+        renderProducts(products);
+      }).catch((error) => {
+        console.log("Error getting products: ", error);
+      });
+    }
+
+    // Renderizar productos
+    function renderProducts(productsToRender) {
+      productList.innerHTML = '';
+      productsToRender.forEach(product => {
+        const productCard = document.createElement('article');
+        productCard.className = 'producto-card';
+        productCard.innerHTML = `
+          <div class="producto-imagen">
+            <img src="${product.image || 'img/default-product.jpg'}" alt="${product.name}">
+          </div>
+          <h2>${product.name}</h2>
+          <div class="producto-precio">$${product.price.toFixed(2)}</div>
+          <div class="producto-info">
+            <p><strong>Categoría:</strong> ${product.category}</p>
+            <p><strong>Disponibles:</strong> ${product.stock}</p>
+          </div>
+          <button class="btn add-to-cart" data-id="${product.id}">Añadir al carrito</button>
+        `;
+        productList.appendChild(productCard);
+      });
+
+      // Añadir event listeners a los botones
+      document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', addToCart);
+      });
+    }
+
+    // Funciones del carrito
+    function addToCart(e) {
+      const productId = e.target.getAttribute('data-id');
+      const product = products.find(p => p.id === productId);
+      
+      if (product) {
+        const existingItem = cart.find(item => item.id === productId);
+        
+        if (existingItem) {
+          existingItem.quantity += 1;
+        } else {
+          cart.push({ ...product, quantity: 1 });
+        }
+        
+        updateCart();
+        showCartNotification(product.name);
+      }
+    }
+
+    function updateCart() {
+      // Actualizar items del carrito
+      cartItems.innerHTML = '';
+      let total = 0;
+      
+      cart.forEach(item => {
+        const cartItem = document.createElement('div');
+        cartItem.className = 'cart-item';
+        cartItem.innerHTML = `
+          <div class="cart-item-info">
+            <h4>${item.name}</h4>
+            <p>$${item.price.toFixed(2)} x ${item.quantity}</p>
+          </div>
+          <div class="cart-item-actions">
+            <button class="quantity-btn minus" data-id="${item.id}">-</button>
+            <span>${item.quantity}</span>
+            <button class="quantity-btn plus" data-id="${item.id}">+</button>
+            <button class="remove-btn" data-id="${item.id}"><i class="fas fa-trash"></i></button>
+          </div>
+        `;
+        cartItems.appendChild(cartItem);
+        total += item.price * item.quantity;
+      });
+      
+      // Actualizar total y contador
+      cartTotal.textContent = `$${total.toFixed(2)}`;
+      cartCount.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+      
+      // Añadir event listeners a los botones
+      document.querySelectorAll('.quantity-btn.minus').forEach(btn => {
+        btn.addEventListener('click', decreaseQuantity);
+      });
+      
+      document.querySelectorAll('.quantity-btn.plus').forEach(btn => {
+        btn.addEventListener('click', increaseQuantity);
+      });
+      
+      document.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', removeFromCart);
+      });
+    }
+
+    function toggleCart() {
+      cartSidebar.classList.toggle('active');
+    }
+
+    function decreaseQuantity(e) {
+      const productId = e.target.getAttribute('data-id');
+      const item = cart.find(item => item.id === productId);
+      
+      if (item.quantity > 1) {
+        item.quantity -= 1;
+      } else {
+        cart = cart.filter(item => item.id !== productId);
+      }
+      
+      updateCart();
+    }
+
+    function increaseQuantity(e) {
+      const productId = e.target.getAttribute('data-id');
+      const item = cart.find(item => item.id === productId);
+      item.quantity += 1;
+      updateCart();
+    }
+
+    function removeFromCart(e) {
+      const productId = e.target.closest('button').getAttribute('data-id');
+      cart = cart.filter(item => item.id !== productId);
+      updateCart();
+    }
+
+    function showCartNotification(productName) {
+      const notification = document.createElement('div');
+      notification.className = 'cart-notification';
+      notification.innerHTML = `
+        <p>${productName} añadido al carrito</p>
+      `;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.classList.add('show');
+      }, 10);
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+          notification.remove();
+        }, 300);
+      }, 3000);
+    }
+
+    function updatePriceFilter() {
+      const maxPriceValue = parseInt(priceRange.value);
+      maxPrice.textContent = `$${maxPriceValue}`;
+      
+      const filteredProducts = products.filter(product => product.price <= maxPriceValue);
+      renderProducts(filteredProducts);
+    }
+
+    function checkout() {
+      if (cart.length === 0) {
+        alert('Tu carrito está vacío');
+        return;
+      }
+      
+      // Aquí iría la lógica para procesar el pago
+      alert('Compra realizada con éxito!');
+      
+      // Limpiar carrito después de la compra
+      cart = [];
+      updateCart();
+      toggleCart();
+    }
+
+    // Inicializar
+    loadProducts();
+  </script>
 </body>
 </html>
