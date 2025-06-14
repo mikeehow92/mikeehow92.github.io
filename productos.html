@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos - Zapatos de Mujer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header (igual que en index.html) -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <a href="index.html"><img src="logo.png" alt="Logo"></a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="productos.html">Productos</a></li>
+                    <li><a href="#">Proveedores</a></li>
+                    <li><a href="#">Contacto</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Contenido principal de productos -->
+    <main class="container" style="padding-top: 30px; padding-bottom: 50px;">
+        <h1>Productos</h1>
+        
+        <div class="breadcrumbs" style="margin-bottom: 20px;">
+            <span>Proveedores</span> > <span>Fabricantes</span> > <span>Suministros regionales</span>
+        </div>
+        
+        <p style="margin-bottom: 30px; font-weight: bold;">Mostrando 50,000+ productos de proveedores globales para "zapatos de mujer"</p>
+        
+        <hr style="margin-bottom: 30px;">
+        
+        <div class="productos-container" style="display: grid; grid-template-columns: 250px 1fr; gap: 30px;">
+            <!-- Filtros -->
+            <aside class="filtros">
+                <h3 style="margin-bottom: 20px; font-size: 1.2rem;">Filtros</h3>
+                
+                <div class="filtro-group" style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 10px; font-weight: bold;">Trade Asurances</h4>
+                    <p style="font-size: 0.9rem; color: #555;">Protege tus pedidos en Alibaba.com</p>
+                </div>
+                
+                <div class="filtro-group" style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 10px; font-weight: bold;">Características del proveedor</h4>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="checkbox" id="verified-supplier">
+                        <label for="verified-supplier" style="font-size: 0.9rem;">Verified Supplier</label>
+                    </div>
+                </div>
+                
+                <div class="filtro-group" style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 10px; font-weight: bold;">Combinar resultados</h4>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="radio" id="combinar-proveedor" name="combinar" checked>
+                        <label for="combinar-proveedor" style="font-size: 0.9rem;">Combinar por proveedor</label>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
+                        Solo se mostrará el artículo más relevante de cada proveedor
+                    </div>
+                </div>
+                
+                <div class="filtro-group" style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 10px; font-weight: bold;">Reseñas de tiendas</h4>
+                    <p style="font-size: 0.9rem; color: #555; margin-bottom: 10px;">Basado en un sistema de calificación de 5 estrellas</p>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="checkbox" id="rating-4">
+                        <label for="rating-4" style="font-size: 0.9rem;">4.0 y superior</label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="checkbox" id="rating-4.5">
+                        <label for="rating-4.5" style="font-size: 0.9rem;">4.5 y superior</label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="checkbox" id="rating-5">
+                        <label for="rating-5" style="font-size: 0.9rem;">5.0</label>
+                    </div>
+                </div>
+                
+                <div class="filtro-group" style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 10px; font-weight: bold;">Características del producto</h4>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="checkbox" id="maestras-pagados">
+                        <label for="maestras-pagados" style="font-size: 0.9rem;">Maestras pagados</label>
+                    </div>
+                </div>
+                
+                <div class="filtro-group" style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 10px; font-weight: bold;">Categoría</h4>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="checkbox" id="categoria-zapatillas">
+                        <label for="categoria-zapatillas" style="font-size: 0.9rem;">Zapatillas para cambiar a la moda</label>
+                    </div>
+                </div>
+            </aside>
+            
+            <!-- Lista de productos -->
+            <div class="productos-lista">
+                <!-- Banner promocional -->
+                <div class="promo-banner" style="background-color: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                    <p style="font-weight: bold; color: #1a73e8;">Envío GRATIS en tu primer pedido</p>
+                </div>
+                
+                <!-- Barra de compartir -->
+                <div class="share-bar" style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                    <button style="background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; color: #555;">
+                        <span style="font-weight: bold;">Añadir para compartir</span>
+                    </button>
+                </div>
+                
+                <!-- Productos -->
+                <div class="productos-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px;">
+                    <!-- Producto 1 -->
+                    <div class="producto-card" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                        <div class="producto-imagen" style="height: 200px; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                            <span style="color: #999;">Imagen del producto</span>
+                        </div>
+                        <div class="producto-info" style="padding: 15px;">
+                            <div class="certificado" style="font-size: 0.8rem; color: #1a73e8; margin-bottom: 5px;">C€ certificado</div>
+                            <h3 style="font-size: 1rem; margin-bottom: 10px; color: #333;">Zapatillas ENTE SAFETY 2023 estilo personalizado blanco con logotipo...</h3>
+                            <div class="precio" style="font-size: 1.2rem; font-weight: bold; color: #d32f2f; margin-bottom: 10px;">$6.86</div>
+                            <div class="detalles" style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">
+                                <p>Orden min: 10 pares</p>
+                                <p>Entrega est. para jul/25</p>
+                            </div>
+                            <div class="proveedor" style="font-size: 0.9rem; color: #1a73e8; margin-bottom: 10px;">Qingdao Eternity Safety Co., Ltd.</div>
+                            <div class="verified" style="display: flex; align-items: center; gap: 5px; color: #1a73e8; font-size: 0.8rem; margin-bottom: 10px;">
+                                <span>Verified</span>
+                                <span>▼</span>
+                                <span>▼</span>
+                            </div>
+                            <div class="rating" style="font-size: 0.8rem; color: #555;">
+                                <span>5 años</span>
+                                <span>CN: 4.7</span>
+                                <span>15.0 (7 Opiniones) ▼</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Producto 2 -->
+                    <div class="producto-card" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                        <div class="producto-imagen" style="height: 200px; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                            <span style="color: #999;">Imagen del producto</span>
+                        </div>
+                        <div class="producto-info" style="padding: 15px;">
+                            <h3 style="font-size: 1rem; margin-bottom: 10px; color: #333;">Zapatillas de deporte de alta calidad para mujer, zapatos cómodos...</h3>
+                            <div class="precio" style="font-size: 1.2rem; font-weight: bold; color: #d32f2f; margin-bottom: 10px;">$3.90-5.90</div>
+                            <div class="detalles" style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">
+                                <p>Orden min: 2 pares</p>
+                                <p>87 vendidos</p>
+                            </div>
+                            <div class="proveedor" style="font-size: 0.9rem; color: #1a73e8; margin-bottom: 10px;">Talizhou Duoya Shoes Co., Ltd.</div>
+                            <div class="verified" style="display: flex; align-items: center; gap: 5px; color: #1a73e8; font-size: 0.8rem; margin-bottom: 10px;">
+                                <span>Verified</span>
+                                <span>▼</span>
+                                <span>▼</span>
+                            </div>
+                            <div class="rating" style="font-size: 0.8rem; color: #555;">
+                                <span>2 años</span>
+                                <span>CN: 4.4</span>
+                                <span>56 (433)</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Producto 3 -->
+                    <div class="producto-card" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                        <div class="producto-imagen" style="height: 200px; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                            <span style="color: #999;">Imagen del producto</span>
+                        </div>
+                        <div class="producto-info" style="padding: 15px;">
+                            <h3 style="font-size: 1rem; margin-bottom: 10px; color: #333;">Nueva moda mujeres niñas verano sandalia plana zapatos de playa...</h3>
+                            <div class="precio" style="font-size: 1.2rem; font-weight: bold; color: #d32f2f; margin-bottom: 10px;">$0.65-0.84</div>
+                            <div class="detalles" style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">
+                                <p>Orden min: 1 par</p>
+                                <p>2.724 vendidos</p>
+                            </div>
+                            <div class="proveedor" style="font-size: 0.9rem; color: #1a73e8; margin-bottom: 10px;">Jieyang City Repository District, Moffea...</div>
+                            <div class="rating" style="font-size: 0.8rem; color: #555;">
+                                <span>2 años</span>
+                                <span>CN: 4.3</span>
+                                <span>45 (137)</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Producto 4 -->
+                    <div class="producto-card" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                        <div class="producto-imagen" style="height: 200px; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                            <span style="color: #999;">Imagen del producto</span>
+                        </div>
+                        <div class="producto-info" style="padding: 15px;">
+                            <h3 style="font-size: 1rem; margin-bottom: 10px; color: #333;">Nueva moda de verano al aire libre Sandalias planas para mujeres niñas...</h3>
+                            <div class="precio" style="font-size: 1.2rem; font-weight: bold; color: #d32f2f; margin-bottom: 10px;">$1.45</div>
+                            <div class="detalles" style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">
+                                <p>Orden min: 2 pares</p>
+                                <p>Entrega est. para jul/24</p>
+                                <p>1.934 vendidos</p>
+                            </div>
+                            <div class="proveedor" style="font-size: 0.9rem; color: #1a73e8; margin-bottom: 10px;">Shoothen Our Fashion into A. P.p. Co., Ltd.</div>
+                            <div class="verified" style="display: flex; align-items: center; gap: 5px; color: #1a73e8; font-size: 0.8rem; margin-bottom: 10px;">
+                                <span>Verified</span>
+                                <span>▼</span>
+                                <span>▼</span>
+                            </div>
+                            <div class="rating" style="font-size: 0.8rem; color: #555;">
+                                <span>6 años</span>
+                                <span>CN: 4.3</span>
+                                <span>36 (1216)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer (igual que en index.html) -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-logo">
+                <img src="logo.png" alt="Logo">
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            </div>
+            <div class="footer-links">
+                <h3>Enlaces rápidos</h3>
+                <ul>
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="productos.html">Productos</a></li>
+                    <li><a href="#">Proveedores</a></li>
+                    <li><a href="#">Contacto</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="container copyright">
+            <p>&copy; 2025 Todos los derechos reservados</p>
+        </div>
+    </footer>
+</body>
+</html>
