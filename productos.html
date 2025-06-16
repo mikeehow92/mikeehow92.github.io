@@ -3,501 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Productos - Zapatos de Mujer</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        /* ESTILOS ESPECÍFICOS PARA LA PÁGINA DE PRODUCTOS */
-        /* (No afectarán al index.html) */
-        
-        /* Estilos para el carrusel de imágenes */
-        .producto-imagen {
-            position: relative;
-            height: 200px;
-            background-color: #f5f5f5;
-            overflow: hidden;
-        }
-        
-        .producto-imagen-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-        
-        .producto-img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-        
-        .producto-img.active {
-            opacity: 1;
-        }
-        
-        .carrusel-control {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: rgba(0,0,0,0.5);
-            color: white;
-            border: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            cursor: pointer;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .carrusel-control.prev {
-            left: 10px;
-        }
-        
-        .carrusel-control.next {
-            right: 10px;
-        }
-        
-        .carrusel-control:hover {
-            background-color: rgba(0,0,0,0.7);
-        }
-        
-        .carrusel-indicadores {
-            position: absolute;
-            bottom: 10px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            gap: 5px;
-            z-index: 10;
-        }
-        
-        .indicador {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: rgba(255,255,255,0.5);
-            cursor: pointer;
-        }
-        
-        .indicador.active {
-            background-color: white;
-        }
-        
-        /* Estilos específicos para la página de productos */
-        .productos-container {
-            display: grid;
-            grid-template-columns: 250px 1fr;
-            gap: 30px;
-        }
-        
-        .filtro-group {
-            margin-bottom: 25px;
-        }
-        
-        .productos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 25px;
-        }
-        
-        .producto-card {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        
-        .producto-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .promo-banner {
-            background-color: #f0f8ff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-    </style>
+    <title>Impresoras Térmicas - Productos</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js"></script>
 </head>
 <body>
-    <!-- Header (igual que en index.html) -->
     <header class="header">
-        <div class="container header-container">
+        <div class="container">
             <div class="logo">
                 <a href="index.html"><img src="img/logo.png" alt="Logo"></a>
             </div>
             <nav>
                 <ul>
                     <li><a href="index.html">Inicio</a></li>
-                    <li><a href="productos.html">Productos</a></li>
-                    <li><a href="#">Contacto</a></li>
+                    <li><a href="productos.html" class="active">Productos</a></li>
                 </ul>
             </nav>
+            <div class="cart-icon" id="cartIcon">🛒 <span id="cartCounter">0</span></div>
         </div>
     </header>
 
-    <!-- Contenido principal de productos -->
-    <main class="container" style="padding-top: 30px; padding-bottom: 50px;">
-        <h1>Productos</h1>
+    <main class="container">
+        <h1>Catálogo de Impresoras</h1>
         
-        <div class="breadcrumbs" style="margin-bottom: 20px;">
-            <span>Productos</span> > 
-        </div>
-        
-        <p style="margin-bottom: 30px; font-weight: bold;">Mostrando impresoras</p>
-        
-        <hr style="margin-bottom: 30px;">
-        
-        <div class="productos-container">
-            <!-- Filtros -->
-            <aside class="filtros">
-                <h3 style="margin-bottom: 20px; font-size: 1.2rem;">Filtros</h3>
-                
-                <div class="filtro-group">
-                    <h4 style="margin-bottom: 10px; font-weight: bold;"></h4>
-                    <p style="font-size: 0.9rem; color: #555;"></p>
-                </div>            
-                <div class="filtro-group">
-                    <h4 style="margin-bottom: 10px; font-weight: bold;">Características del proveedor</h4>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <input type="checkbox" id="verified-supplier">
-                        <label for="verified-supplier" style="font-size: 0.9rem;">Verified Supplier</label>
-                    </div>
+        <div class="productos-grid">
+            <!-- Producto 1 -->
+            <div class="producto-card">
+                <div class="producto-imagen">
+                    <img src="img/impresora1.webp" alt="Impresora Térmica">
                 </div>
-                
-                <div class="filtro-group">
-                    <h4 style="margin-bottom: 10px; font-weight: bold;">Combinar resultados</h4>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <input type="radio" id="combinar-proveedor" name="combinar" checked>
-                        <label for="combinar-proveedor" style="font-size: 0.9rem;">Combinar por proveedor</label>
-                    </div>
-                    <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
-                        Solo se mostrará el artículo más relevante de cada proveedor
-                    </div>
-                </div>
-                
-                <div class="filtro-group">
-                    <h4 style="margin-bottom: 10px; font-weight: bold;">Reseñas de tiendas</h4>
-                    <p style="font-size: 0.9rem; color: #555; margin-bottom: 10px;">Basado en un sistema de calificación de 5 estrellas</p>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <input type="checkbox" id="rating-4">
-                        <label for="rating-4" style="font-size: 0.9rem;">4.0 y superior</label>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <input type="checkbox" id="rating-4.5">
-                        <label for="rating-4.5" style="font-size: 0.9rem;">4.5 y superior</label>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <input type="checkbox" id="rating-5">
-                        <label for="rating-5" style="font-size: 0.9rem;">5.0</label>
-                    </div>
-                </div>
-                
-                <div class="filtro-group">
-                    <h4 style="margin-bottom: 10px; font-weight: bold;">Características del producto</h4>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <input type="checkbox" id="maestras-pagados">
-                        <label for="maestras-pagados" style="font-size: 0.9rem;">Maestras pagados</label>
-                    </div>
-                </div>
-                
-                <div class="filtro-group">
-                    <h4 style="margin-bottom: 10px; font-weight: bold;">Categoría</h4>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <input type="checkbox" id="categoria-zapatillas">
-                        <label for="categoria-zapatillas" style="font-size: 0.9rem;">Zapatillas para cambiar a la moda</label>
-                    </div>
-                </div>
-            </aside>
-            
-            <!-- Lista de productos -->
-            <div class="productos-lista">
-                <!-- Banner promocional -->
-                <div class="promo-banner">
-                    <p style="font-weight: bold; color: #1a73e8;">Envio hasta tu casa a nivel nacional</p>
-                </div>
-                
-                <!-- Barra de compartir -->
-                <div class="share-bar" style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-                    <button style="background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; color: #555;">
-                        <span style="font-weight: bold;">Añadir para compartir</span>
+                <div class="producto-info">
+                    <h3>Impresora Térmica EPSON TM-T20III</h3>
+                    <div class="precio">$150.00</div>
+                    <button class="add-to-cart" 
+                            data-id="prod001"
+                            data-name="Impresora EPSON TM-T20III"
+                            data-price="150.00">
+                        Añadir al carrito
                     </button>
                 </div>
-                
-                <!-- Productos -->
-                <div class="productos-grid">
-                    <!-- Producto 1 -->
-                    <div class="producto-card">
-                        <!-- NOTA: Reemplazar las siguientes imágenes con las rutas reales de tus imágenes -->
-                        <div class="producto-imagen">
-                            <div class="producto-imagen-container" id="carrusel1">
-                                <!-- Imagen 1 del producto 1 -->
-                                <img src="img/impresora1.webp" alt="Impresora Térmica frontal" class="producto-img active">
-                                <!-- Imagen 2 del producto 1 -->
-                                <img src="img/impresora2.webp" alt="Impresora Térmica vista lateral" class="producto-img">
-                                <!-- Imagen 3 del producto 1 -->
-                                <img src="img/impresora3.webp" alt="Impresora Térmica vista trasera" class="producto-img">
-                                
-                                <!-- Controles del carrusel -->
-                                <button class="carrusel-control prev" onclick="moveSlide('carrusel1', -1)">&#10094;</button>
-                                <button class="carrusel-control next" onclick="moveSlide('carrusel1', 1)">&#10095;</button>
-                                
-                                <!-- Indicadores -->
-                                <div class="carrusel-indicadores">
-                                    <span class="indicador active" onclick="goToSlide('carrusel1', 0)"></span>
-                                    <span class="indicador" onclick="goToSlide('carrusel1', 1)"></span>
-                                    <span class="indicador" onclick="goToSlide('carrusel1', 2)"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="producto-info" style="padding: 15px;">
-                            <div class="certificado" style="font-size: 0.8rem; color: #1a73e8; margin-bottom: 5px;">C€ certificado</div>
-                            <h3 style="font-size: 1rem; margin-bottom: 10px; color: #333;">Impresora Térmica de Recibos E-pson TM-T20III de 80 mm.</h3>
-                            <div class="precio" style="font-size: 1.2rem; font-weight: bold; color: #d32f2f; margin-bottom: 10px;">$150.00</div>
-                            <div class="detalles" style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">
-                                <p>Orden min: 10 pares</p>
-                                <p>Entrega est. para jul/25</p>
-                            </div>
-                            <div class="proveedor" style="font-size: 0.9rem; color: #1a73e8; margin-bottom: 10px;">Qingdao Eternity Safety Co., Ltd.</div>
-                            <div class="verified" style="display: flex; align-items: center; gap: 5px; color: #1a73e8; font-size: 0.8rem; margin-bottom: 10px;">
-                                <span>Verified</span>
-                                <span>▼</span>
-                                <span>▼</span>
-                            </div>
-                            <div class="rating" style="font-size: 0.8rem; color: #555;">
-                                <span>5 años</span>
-                                <span>CN: 4.7</span>
-                                <span>15.0 (7 Opiniones) ▼</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Producto 2 -->
-                    <div class="producto-card">
-                        <!-- NOTA: Reemplazar las siguientes imágenes con las rutas reales de tus imágenes -->
-                        <div class="producto-imagen">
-                            <div class="producto-imagen-container" id="carrusel2">
-                                <!-- Imagen 1 del producto 2 -->
-                                <img src="img/impresoramodelo1.webp" alt="Impresora Térmica vista frontal" class="producto-img active">
-                                <!-- Imagen 2 del producto 2 -->
-                                <img src="img/impresoramodelo2.webp" alt="Impresora Térmica vista lateral" class="producto-img">
-                                <!-- Imagen 3 del producto 2 -->
-                                <img src="img/impresoramodelo3.webp" alt="Impresora Térmica detalle" class="producto-img">
-                                
-                                <!-- Controles del carrusel -->
-                                <button class="carrusel-control prev" onclick="moveSlide('carrusel2', -1)">&#10094;</button>
-                                <button class="carrusel-control next" onclick="moveSlide('carrusel2', 1)">&#10095;</button>
-                                
-                                <!-- Indicadores -->
-                                <div class="carrusel-indicadores">
-                                    <span class="indicador active" onclick="goToSlide('carrusel2', 0)"></span>
-                                    <span class="indicador" onclick="goToSlide('carrusel2', 1)"></span>
-                                    <span class="indicador" onclick="goToSlide('carrusel2', 2)"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="producto-info" style="padding: 15px;">
-                            <h3 style="font-size: 1rem; margin-bottom: 10px; color: #333;">Impresora POS Térmica para Epson TM-T88III.</h3>
-                            <div class="precio" style="font-size: 1.2rem; font-weight: bold; color: #d32f2f; margin-bottom: 10px;">$80.00</div>
-                            <div class="detalles" style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">
-                                <p>Orden min: 2 pares</p>
-                                <p>87 vendidos</p>
-                            </div>
-                            <div class="proveedor" style="font-size: 0.9rem; color: #1a73e8; margin-bottom: 10px;">Talizhou Duoya Shoes Co., Ltd.</div>
-                            <div class="verified" style="display: flex; align-items: center; gap: 5px; color: #1a73e8; font-size: 0.8rem; margin-bottom: 10px;">
-                                <span>Verified</span>
-                                <span>▼</span>
-                                <span>▼</span>
-                            </div>
-                            <div class="rating" style="font-size: 0.8rem; color: #555;">
-                                <span>2 años</span>
-                                <span>CN: 4.4</span>
-                                <span>56 (433)</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Producto 3 -->
-                    <div class="producto-card">
-                        <!-- NOTA: Reemplazar las siguientes imágenes con las rutas reales de tus imágenes -->
-                        <div class="producto-imagen">
-                            <div class="producto-imagen-container" id="carrusel3">
-                                <!-- Imagen 1 del producto 3 -->
-                                <img src="img/impresoraotromodelo1.webp" alt="Impresora Térmica vista frontal" class="producto-img active">
-                                <!-- Imagen 2 del producto 3 -->
-                                <img src="img/impresoraotromodelo2.webp" alt="Impresora Térmica vista lateral" class="producto-img">
-                                <!-- Imagen 3 del producto 3 -->
-                                <img src="img/impresoraotromodelo3.webp" alt="Impresora Térmica detalle" class="producto-img">
-                                
-                                <!-- Controles del carrusel -->
-                                <button class="carrusel-control prev" onclick="moveSlide('carrusel3', -1)">&#10094;</button>
-                                <button class="carrusel-control next" onclick="moveSlide('carrusel3', 1)">&#10095;</button>
-                                
-                                <!-- Indicadores -->
-                                <div class="carrusel-indicadores">
-                                    <span class="indicador active" onclick="goToSlide('carrusel3', 0)"></span>
-                                    <span class="indicador" onclick="goToSlide('carrusel3', 1)"></span>
-                                    <span class="indicador" onclick="goToSlide('carrusel3', 2)"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="producto-info" style="padding: 15px;">
-                            <h3 style="font-size: 1rem; margin-bottom: 10px; color: #333;">Impresora Térmica de Recibos de 58mm.</h3>
-                            <div class="precio" style="font-size: 1.2rem; font-weight: bold; color: #d32f2f; margin-bottom: 10px;">$30.00</div>
-                            <div class="detalles" style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">
-                                <p>Orden min: 1 par</p>
-                                <p>2.724 vendidos</p>
-                            </div>
-                            <div class="proveedor" style="font-size: 0.9rem; color: #1a73e8; margin-bottom: 10px;">Jieyang City Repository District, Moffea...</div>
-                            <div class="rating" style="font-size: 0.8rem; color: #555;">
-                                <span>2 años</span>
-                                <span>CN: 4.3</span>
-                                <span>45 (137)</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Producto 4 -->
-                    <div class="producto-card">
-                        <!-- NOTA: Reemplazar las siguientes imágenes con las rutas reales de tus imágenes -->
-                        <div class="producto-imagen">
-                            <div class="producto-imagen-container" id="carrusel4">
-                                <!-- Imagen 1 del producto 4 -->
-                                <img src="IMAGENES/PRODUCTO4-1.jpg" alt="Sandalias verano vista frontal" class="producto-img active">
-                                <!-- Imagen 2 del producto 4 -->
-                                <img src="IMAGENES/PRODUCTO4-2.jpg" alt="Sandalias verano vista lateral" class="producto-img">
-                                <!-- Imagen 3 del producto 4 -->
-                                <img src="IMAGENES/PRODUCTO4-3.jpg" alt="Sandalias verano detalle" class="producto-img">
-                                
-                                <!-- Controles del carrusel -->
-                                <button class="carrusel-control prev" onclick="moveSlide('carrusel4', -1)">&#10094;</button>
-                                <button class="carrusel-control next" onclick="moveSlide('carrusel4', 1)">&#10095;</button>
-                                
-                                <!-- Indicadores -->
-                                <div class="carrusel-indicadores">
-                                    <span class="indicador active" onclick="goToSlide('carrusel4', 0)"></span>
-                                    <span class="indicador" onclick="goToSlide('carrusel4', 1)"></span>
-                                    <span class="indicador" onclick="goToSlide('carrusel4', 2)"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="producto-info" style="padding: 15px;">
-                            <h3 style="font-size: 1rem; margin-bottom: 10px; color: #333;">Nueva moda de verano al aire libre Sandalias planas para mujeres niñas...</h3>
-                            <div class="precio" style="font-size: 1.2rem; font-weight: bold; color: #d32f2f; margin-bottom: 10px;">$1.45</div>
-                            <div class="detalles" style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">
-                                <p>Orden min: 2 pares</p>
-                                <p>Entrega est. para jul/24</p>
-                                <p>1.934 vendidos</p>
-                            </div>
-                            <div class="proveedor" style="font-size: 0.9rem; color: #1a73e8; margin-bottom: 10px;">Shoothen Our Fashion into A. P.p. Co., Ltd.</div>
-                            <div class="verified" style="display: flex; align-items: center; gap: 5px; color: #1a73e8; font-size: 0.8rem; margin-bottom: 10px;">
-                                <span>Verified</span>
-                                <span>▼</span>
-                                <span>▼</span>
-                            </div>
-                            <div class="rating" style="font-size: 0.8rem; color: #555;">
-                                <span>6 años</span>
-                                <span>CN: 4.3</span>
-                                <span>36 (1216)</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
+            
+            <!-- Más productos... -->
         </div>
     </main>
 
-    <!-- Footer (igual que en index.html) -->
-    <footer>
-        <div class="container footer-content">
-            <div class="footer-logo">
-                <img src="img/logo.png" alt="Logo">
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+    <!-- Carrito Modal (Oculto inicialmente) -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Tu Carrito</h2>
+            <div id="cartItems"></div>
+            <div class="cart-total">
+                Total: $<span id="cartTotal">0.00</span>
             </div>
-            <div class="footer-links">
-                <h3>Enlaces rápidos</h3>
-                <ul>
-                    <li><a href="index.html">Inicio</a></li>
-                    <li><a href="productos.html">Productos</a></li>
-                    <li><a href="#">Proveedores</a></li>
-                    <li><a href="#">Contacto</a></li>
-                </ul>
-            </div>
+            <button class="checkout-btn">Proceder al Pago</button>
         </div>
-        <div class="container copyright">
-            <p>&copy; 2025 Todos los derechos reservados</p>
-        </div>
-    </footer>
+    </div>
 
-    <!-- JavaScript para el carrusel -->
-    <script>
-        // Función para mover el carrusel
-        function moveSlide(carruselId, direction) {
-            const carrusel = document.getElementById(carruselId);
-            const slides = carrusel.querySelectorAll('.producto-img');
-            const indicators = carrusel.querySelectorAll('.indicador');
-            let currentIndex = 0;
-            
-            // Encontrar el slide activo actual
-            slides.forEach((slide, index) => {
-                if (slide.classList.contains('active')) {
-                    currentIndex = index;
-                    slide.classList.remove('active');
-                    indicators[index].classList.remove('active');
-                }
-            });
-            
-            // Calcular nuevo índice
-            let newIndex = currentIndex + direction;
-            
-            // Manejar los límites
-            if (newIndex >= slides.length) {
-                newIndex = 0;
-            } else if (newIndex < 0) {
-                newIndex = slides.length - 1;
-            }
-            
-            // Mostrar el nuevo slide
-            slides[newIndex].classList.add('active');
-            indicators[newIndex].classList.add('active');
-        }
-        
-        // Función para ir a un slide específico
-        function goToSlide(carruselId, index) {
-            const carrusel = document.getElementById(carruselId);
-            const slides = carrusel.querySelectorAll('.producto-img');
-            const indicators = carrusel.querySelectorAll('.indicador');
-            
-            // Ocultar todos los slides y desactivar indicadores
-            slides.forEach(slide => slide.classList.remove('active'));
-            indicators.forEach(indicator => indicator.classList.remove('active'));
-            
-            // Mostrar el slide seleccionado y activar su indicador
-            slides[index].classList.add('active');
-            indicators[index].classList.add('active');
-        }
-        
-        // Opcional: Carrusel automático
-        function startAutoCarousel() {
-            const carruseles = document.querySelectorAll('.producto-imagen-container');
-            carruseles.forEach((carrusel, i) => {
-                setInterval(() => {
-                    moveSlide(carrusel.id, 1);
-                }, 5000 + (i * 1000)); // Evitar que todos cambien al mismo tiempo
-            });
-        }
-        
-        // Iniciar carruseles automáticos cuando la página cargue
-        window.addEventListener('DOMContentLoaded', startAutoCarousel);
-    </script>
+    <!-- JavaScript -->
+    <script src="js/firebase.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
