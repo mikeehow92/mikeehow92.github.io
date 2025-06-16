@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "public",  // ← Debe coincidir con tu carpeta
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -9,7 +9,7 @@
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"  // Página por defecto
+        "destination": "/index.html"
       }
     ]
   }
