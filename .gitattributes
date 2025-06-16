@@ -3,3 +3,4 @@
 *.css text eol=lf
 *.js text eol=lf
 *.json text eol=lf
+README.md text eol=lf
