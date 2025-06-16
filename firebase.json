@@ -8,20 +8,28 @@
     ],
     "rewrites": [
       {
-        "source": "**",
+        "source": "/",
         "destination": "/index.html"
       },
       {
-        "source": "/api/**",
-        "function": "api"
+        "source": "/productos",
+        "destination": "/productos.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
       }
     ],
-    "appAssociation": "AUTO",
-    "predeploy": [
-      "npm --prefix \"$RESOURCE_DIR\" run build"
+    "headers": [
+      {
+        "source": "**/*.@(js|css|jpg|png)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=31536000"
+          }
+        ]
+      }
     ]
-  },
-  "functions": {
-    "source": "functions"
   }
 }
