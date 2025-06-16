@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TecnoExpress - Soluciones Tecnológicas</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* Reset y estilos base */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f9f9f9;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Header con nuevo color */
+    header {
+      background-color: #1a365d; /* Azul más oscuro para mejor contraste */
+      padding: 15px 0;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo img {
+      height: 50px;
+      transition: transform 0.3s ease;
+    }
+
+    .logo img:hover {
+      transform: scale(1.05);
+    }
+
+    nav ul {
+      display: flex;
+      list-style: none;
+      gap: 25px;
+    }
+
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    nav ul li a:hover {
+      color: #ffcc00; /* Amarillo para hover */
+    }
+
+    nav ul li a i {
+      font-size: 0.9rem;
+    }
+
+    /* Hero Section con Video */
+    .hero {
+      position: relative;
+      height: 100vh;
+      max-height: 800px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+      overflow: hidden;
+      margin-bottom: 40px;
+    }
+
+    .hero-video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5));
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 800px;
+      padding: 0 20px;
+    }
+
+    .hero h1 {
+      font-size: 2.8rem;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .hero p {
+      font-size: 1.3rem;
+      margin-bottom: 30px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    /* Sección combinada: Carrusel y Nosotros lado a lado */
+    .combined-section {
+      display: flex;
+      gap: 30px;
+      margin: 40px auto;
+      max-width: 1200px;
+      padding: 0 20px;
+    }
+
+    /* Carrusel lado izquierdo */
+    .banner-column {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      height: 500px;
+    }
+
+    .slider-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out;
+    }
+
+    .slide.active {
+      opacity: 1;
+    }
+
+    .slide-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Nosotros lado derecho */
+    .about-column {
+      flex: 1;
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .about-column h2 {
+      color: #2c3e50;
+      margin-bottom: 25px;
+      font-size: 2.2rem;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .about-column h2 i {
+      color: #3498db;
+    }
+
+    .about-column p {
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #555;
+    }
+
+    .about-column .btn {
+      align-self: flex-start;
+      margin-top: 15px;
+    }
+
+    /* Secciones */
+    .section {
+      padding: 80px 0;
+    }
+
+    .section h2 {
+      text-align: center;
+      margin-bottom: 50px;
+      font-size: 2.3rem;
+      color: #2c3e50;
+      position: relative;
+    }
+
+    .section h2::after {
+      content: '';
+      display: block;
+      width: 80px;
+      height: 4px;
+      background-color: #3498db;
+      margin: 15px auto 0;
+    }
+
+    .section h2 i {
+      margin-right: 15px;
+      color: #3498db;
+    }
+
+    .alt-bg {
+      background-color: #f0f0f0;
+    }
+
+    /* Servicios */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin-top: 40px;
+    }
+
+    .service-card {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .service-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+
+    .service-icon {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 20px;
+      background-color: #3498db;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.8rem;
+    }
+
+    .service-card h3 {
+      color: #2c3e50;
+      margin-bottom: 15px;
+      font-size: 1.4rem;
+    }
+
+    .service-card p {
+      color: #666;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    /* Contacto */
+    .contact-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+
+    .contact-info {
+      background-color: #2c3e50;
+      color: white;
+      padding: 40px;
+      border-radius: 10px;
+    }
+
+    .contact-info h3 {
+      margin-bottom: 25px;
+      font-size: 1.5rem;
+      position: relative;
+      padding-bottom: 10px;
+    }
+
+    .contact-info h3::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background-color: #3498db;
+    }
+
+    .contact-info p {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.1rem;
+    }
+
+    .contact-info i {
+      width: 25px;
+      text-align: center;
+      color: #3498db;
+    }
+
+    .social-links {
+      display: flex;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .social-links a {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      transition: all 0.3s ease;
+    }
+
+    .social-links a:hover {
+      background-color: #3498db;
+      transform: translateY(-3px);
+    }
+
+    .contact-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: #3498db;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
+    }
+
+    .form-group textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    /* Footer */
+    footer {
+      background-color: #2c3e50;
+      color: white;
+      padding: 60px 0 20px;
+    }
+
+    .footer-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .footer-logo img {
+      height: 50px;
+      margin-bottom: 20px;
+    }
+
+    .footer-logo p {
+      color: #ecf0f1;
+      line-height: 1.6;
+      opacity: 0.8;
+    }
+
+    .footer-links h3 {
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+      position: relative;
+      padding-bottom: 10px;
+    }
+
+    .footer-links h3::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 40px;
+      height: 3px;
+      background-color: #3498db;
+    }
+
+    .footer-links ul {
+      list-style: none;
+    }
+
+    .footer-links ul li {
+      margin-bottom: 10px;
+    }
+
+    .footer-links ul li a {
+      color: #ecf0f1;
+      text-decoration: none;
+      transition: color 0.3s ease;
+      opacity: 0.8;
+    }
+
+    .footer-links ul li a:hover {
+      color: #3498db;
+      opacity: 1;
+    }
+
+    .copyright {
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+
+    /* Botones */
+    .btn {
+      display: inline-block;
+      background-color: #3498db;
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .btn:hover {
+      background-color: #2980b9;
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .hero h1 {
+        font-size: 2.5rem;
+      }
+      
+      .combined-section {
+        flex-direction: column;
+      }
+      
+      .banner-column, .about-column {
+        height: 400px;
+      }
+      
+      .banner-text h2 {
+        font-size: 2rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header-container {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      nav ul {
+        gap: 15px;
+      }
+      
+      .hero {
+        height: 70vh;
+      }
+      
+      .hero h1 {
+        font-size: 2rem;
+      }
+      
+      .hero p {
+        font-size: 1.1rem;
+      }
+      
+      .banner-column, .about-column {
+        height: 350px;
+      }
+      
+      .section {
+        padding: 60px 0;
+      }
+      
+      .section h2 {
+        font-size: 2rem;
+      }
+      
+      .footer-content {
+        grid-template-columns: 1fr;
+      }
+      
+      .contact-content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .hero {
+        height: 60vh;
+      }
+      
+      .hero h1 {
+        font-size: 1.8rem;
+      }
+      
+      .banner-column, .about-column {
+        height: 250px;
+      }
+      
+      .about-column {
+        padding: 20px;
+      }
+      
+      .services-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-container">
+      <div class="logo">
+        <a href="#">
+          <img src="img/logo.png" alt="TecnoExpress">
+        </a>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="#nosotros"><i class="fas fa-users"></i> Nosotros</a></li>
+          <li><a href="productos.html"><i class="fas fa-cogs"></i> Productos</a></li>
+          <li><a href="#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <video autoplay muted loop playsinline class="hero-video">
+      <source src="img/hero.mp4" type="video/mp4">
+      <!-- Fallback para navegadores que no soportan video -->
+      <img src="img/hero-fallback.jpg" alt="Fondo tecnológico">
+    </video>
+    
+    <div class="hero-content">
+      <h1>Innovación tecnológica a tu alcance</h1>
+      <p>Soluciones personalizadas para empresas y particulares</p>
+      <a href="#contacto" class="btn">Saber más</a>
+    </div>
+  </section>
+
+  <!-- Sección combinada: Carrusel y Nosotros lado a lado -->
+  <section class="combined-section">
+    <!-- Carrusel lado izquierdo -->
+    <div class="banner-column">
+      <div class="slider-container">
+        <div class="slide active">
+          <img src="img/banner1.webp" alt="Ofertas especiales en tecnología" class="slide-img">
+        </div>
+        <div class="slide">
+          <img src="img/banner2.webp" alt="Últimos dispositivos tecnológicos" class="slide-img">
+        </div>
+      </div>
+    </div>
+    
+    <!-- Nosotros lado derecho -->
+    <div class="about-column" id="nosotros">
+      <h2><i class="fas fa-building"></i> Nosotros</h2>
+      <p>Somos TecnoExpress, una empresa líder en soluciones tecnológicas con más de 10 años de experiencia en el mercado. Nuestro equipo de expertos está comprometido con brindar la mejor atención y soluciones a medida.</p>
+      <p>Nos especializamos en integrar tecnología de vanguardia con soluciones accesibles para todos los presupuestos, ayudando a nuestros clientes a alcanzar sus objetivos empresariales y personales.</p>
+      <a href="#Productos" class="btn">Nuestros Productos</a>
+    </div>
+  </section>
+
+  <section id="Productos" class="section alt-bg">
+    <div class="container">
+      <h2><i class="fas fa-laptop-code"></i> Nuestros Productos</h2>
+      <div class="services-grid">
+        <div class="service-card">
+          <div class="service-icon">
+            <i class="fas fa-laptop"></i>
+          </div>
+          <h3>Venta de Tecnología</h3>
+          <p>Las mejores marcas y equipos al mejor precio del mercado con garantía extendida.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">
+            <i class="fas fa-tools"></i>
+          </div>
+          <h3>Soporte Técnico</h3>
+          <p>Asistencia especializada 24/7 para resolver cualquier problema con tus dispositivos.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">
+            <i class="fas fa-user-tie"></i>
+          </div>
+          <h3>Asesoría Personalizada</h3>
+          <p>Soluciones a medida adaptadas a tus necesidades específicas y presupuesto.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto" class="section">
+    <div class="container">
+      <h2><i class="fas fa-phone-alt"></i> Contacto</h2>
+      <div class="contact-content">
+        <div class="contact-info">
+          <h3>Información de contacto</h3>
+          <p><i class="fas fa-map-marker-alt"></i> Av. Tecnológica 123, Ciudad</p>
+          <p><i class="fas fa-phone"></i> (123) 456-7890</p>
+          <p><i class="fas fa-envelope"></i> info@tecnoexpress.com</p>
+          <div class="social-links">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+          </div>
+        </div>
+        <form class="contact-form">
+          <div class="form-group">
+            <input type="text" placeholder="Nombre completo" required>
+          </div>
+          <div class="form-group">
+            <input type="email" placeholder="Correo electrónico" required>
+          </div>
+          <div class="form-group">
+            <textarea placeholder="Tu mensaje" required></textarea>
+          </div>
+          <button type="submit" class="btn">Enviar Mensaje</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <img src="img/logo.png" alt="TecnoExpress">
+          <p>Soluciones tecnológicas innovadoras para el mundo moderno.</p>
+        </div>
+        <div class="footer-links">
+          <h3>Enlaces rápidos</h3>
+          <ul>
+            <li><a href="#nosotros">Nosotros</a></li>
+            <li><a href="#Productos">Productos</a></li>
+            <li><a href="#contacto">Contacto</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="copyright">
+        <p>&copy; 2023 TecnoExpress. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Carrusel automático mejorado
+    document.addEventListener('DOMContentLoaded', function() {
+      const slides = document.querySelectorAll('.slide');
+      let currentSlide = 0;
+      let slideInterval;
+      
+      function showSlide(index) {
+        slides.forEach(slide => slide.classList.remove('active'));
+        slides[index].classList.add('active');
+      }
+      
+      function nextSlide() {
+        currentSlide = (currentSlide + 1) % slides.length;
+        showSlide(currentSlide);
+      }
+      
+      function startSlider() {
+        slideInterval = setInterval(nextSlide, 5000);
+      }
+      
+      function stopSlider() {
+        clearInterval(slideInterval);
+      }
+      
+      // Pausar al interactuar
+      document.querySelector('.banner-column').addEventListener('mouseenter', stopSlider);
+      document.querySelector('.banner-column').addEventListener('mouseleave', startSlider);
+      
+      // Iniciar
+      showSlide(0);
+      startSlider();
+    });
+  </script>
+</body>
+</html>
