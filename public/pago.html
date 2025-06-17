@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finalizar Compra - Impresoras Térmicas</title>
+    <title>Pago - Impresoras Térmicas</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Header -->
     <header>
         <div class="container header-container">
             <div class="logo">
@@ -28,23 +27,18 @@
         </div>
     </header>
 
-    <!-- Contenido Principal -->
     <main class="container">
         <h1><i class="fas fa-credit-card"></i> Finalizar Compra</h1>
         
         <div class="checkout-grid">
-            <!-- Resumen del Pedido -->
             <div class="order-summary">
                 <h2>Resumen de tu Pedido</h2>
-                <div id="orderItems">
-                    <!-- Los productos aparecerán aquí mediante JavaScript -->
-                </div>
+                <div id="orderItems"></div>
                 <div class="order-total">
                     Total: $<span id="orderTotal">0.00</span>
                 </div>
             </div>
             
-            <!-- Formulario de Pago -->
             <div class="payment-form">
                 <h2>Información de Pago</h2>
                 <form id="paymentForm">
@@ -60,19 +54,14 @@
                     
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="expiryDate">Fecha de Expiración</label>
-                            <input type="text" id="expiryDate" placeholder="MM/AA" required>
+                            <label for="expiryDate">Fecha de Expiración (MM/AA)</label>
+                            <input type="text" id="expiryDate" required>
                         </div>
                         
                         <div class="form-group">
                             <label for="cvv">CVV</label>
-                            <input type="text" id="cvv" placeholder="123" required>
+                            <input type="text" id="cvv" required>
                         </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="email">Correo Electrónico</label>
-                        <input type="email" id="email" required>
                     </div>
                     
                     <button type="submit" class="submit-payment">
@@ -83,18 +72,15 @@
         </div>
     </main>
 
-    <!-- JavaScript -->
-    <script src="js/firebase-config.js"></script>
-    <script src="js/app.js"></script>
     <script>
-        // Cargar los items del pedido desde localStorage
-        document.addEventListener('DOMContentLoaded', function() {
-            const orderData = JSON.parse(localStorage.getItem('currentOrder'));
+        document.addEventListener('DOMContentLoaded', () => {
+            // Cargar datos del checkout
+            const checkoutData = JSON.parse(localStorage.getItem('checkoutData'));
             const orderItems = document.getElementById('orderItems');
             const orderTotal = document.getElementById('orderTotal');
             const paymentTotal = document.getElementById('paymentTotal');
             
-            if (!orderData || !orderData.items || orderData.items.length === 0) {
+            if (!checkoutData || !checkoutData.items || checkoutData.items.length === 0) {
                 orderItems.innerHTML = `
                     <div class="empty-cart">
                         <i class="fas fa-shopping-cart"></i>
@@ -104,25 +90,49 @@
                 return;
             }
             
+            // Mostrar productos
             orderItems.innerHTML = '';
-            orderData.items.forEach(item => {
+            checkoutData.items.forEach(item => {
                 const itemElement = document.createElement('div');
                 itemElement.className = 'order-item';
                 itemElement.innerHTML = `
                     <div class="item-name">${item.name}</div>
-                    <div class="item-price">$${(item.price * item.quantity).toFixed(2)} (${item.quantity} x $${item.price.toFixed(2)})</div>
+                    <div class="item-price">
+                        $${(item.price * item.quantity).toFixed(2)} 
+                        (${item.quantity} × $${item.price.toFixed(2)})
+                    </div>
                 `;
                 orderItems.appendChild(itemElement);
             });
             
-            orderTotal.textContent = orderData.total.toFixed(2);
-            paymentTotal.textContent = orderData.total.toFixed(2);
+            // Mostrar totales
+            const total = checkoutData.total.toFixed(2);
+            orderTotal.textContent = total;
+            paymentTotal.textContent = total;
             
             // Actualizar contador del carrito
             const cartCounter = document.getElementById('cartCounter');
             if (cartCounter) {
-                cartCounter.textContent = orderData.items.reduce((total, item) => total + item.quantity, 0);
+                cartCounter.textContent = checkoutData.items.reduce((sum, item) => sum + item.quantity, 0);
             }
+            
+            // Manejar envío del formulario
+            document.getElementById('paymentForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                // Validación básica
+                const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+                if (cardNumber.length !== 16 || isNaN(cardNumber)) {
+                    alert('Número de tarjeta inválido');
+                    return;
+                }
+                
+                // Simular pago exitoso
+                alert('✅ Pago procesado correctamente');
+                localStorage.removeItem('checkoutData');
+                localStorage.removeItem('cart');
+                window.location.href = 'index.html';
+            });
         });
     </script>
 </body>
