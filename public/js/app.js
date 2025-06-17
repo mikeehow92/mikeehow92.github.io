@@ -1,4 +1,4 @@
-// Inicialización de Firebase
+// Configuración de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
   authDomain: "mitienda-c2609.firebaseapp.com",
@@ -9,19 +9,26 @@ const firebaseConfig = {
 };
 
 // Inicializar Firebase
-const app = firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // Variables globales
-let cart = JSON.parse(localStorage.getItem('cart')) || [];
+let cart = [];
 
-// Función para guardar el carrito
+// Funciones del carrito
 function saveCart() {
   localStorage.setItem('cart', JSON.stringify(cart));
   updateCartCounter();
 }
 
-// Actualizar interfaz del carrito
+function loadCart() {
+  const savedCart = localStorage.getItem('cart');
+  if (savedCart) {
+    cart = JSON.parse(savedCart);
+    updateCartUI();
+  }
+}
+
 function updateCartUI() {
   const cartItems = document.getElementById('cartItems');
   const cartTotal = document.getElementById('cartTotal');
@@ -54,6 +61,13 @@ function updateCartUI() {
   updateCartCounter();
 }
 
+function updateCartCounter() {
+  const counter = document.getElementById('cartCounter');
+  if (counter) {
+    counter.textContent = cart.reduce((total, item) => total + item.quantity, 0);
+  }
+}
+
 // Función para proceder al pago (Mejorada)
 function proceedToCheckout() {
   if (cart.length === 0) {
@@ -61,32 +75,29 @@ function proceedToCheckout() {
     return false;
   }
 
-  // Guardar en localStorage y sessionStorage como respaldo
   const checkoutData = {
     items: cart,
-    total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-    timestamp: new Date().getTime()
+    total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   };
 
+  // Guardar en múltiples almacenamientos
   localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
-  sessionStorage.setItem('tempCheckoutData', JSON.stringify(checkoutData));
+  sessionStorage.setItem('tempCheckout', JSON.stringify(checkoutData));
 
-  // Redirección con verificación
-  setTimeout(() => {
-    window.location.href = 'pago.html';
-  }, 100);
+  // Redirección absoluta garantizada
+  window.location.href = window.location.pathname.includes('productos') 
+    ? 'pago.html' 
+    : '/pago.html';
+  
   return true;
 }
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
-  // Cargar carrito al iniciar
-  const savedCart = localStorage.getItem('cart');
-  if (savedCart) cart = JSON.parse(savedCart);
-  updateCartUI();
+  loadCart();
 
   // Botón de pago
-  document.getElementById('checkoutBtn')?.addEventListener('click', proceedToCheckout);
+  document.getElementById('checkoutBtn').addEventListener('click', proceedToCheckout);
 
   // Añadir productos
   document.querySelectorAll('.add-to-cart').forEach(button => {
@@ -107,18 +118,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       saveCart();
       updateCartUI();
+      alert(`✔ ${product.name} añadido al carrito`);
     });
   });
 
   // Modal del carrito
   const cartModal = document.getElementById('cartModal');
-  if (cartModal) {
-    document.getElementById('cartIcon')?.addEventListener('click', () => {
-      cartModal.style.display = 'block';
-    });
+  document.getElementById('cartIcon').addEventListener('click', () => {
+    cartModal.style.display = 'block';
+  });
 
-    document.querySelector('.close-modal')?.addEventListener('click', () => {
-      cartModal.style.display = 'none';
-    });
-  }
+  document.querySelector('.close-modal').addEventListener('click', () => {
+    cartModal.style.display = 'none';
+  });
 });
