@@ -4,3 +4,8 @@
 *.js text eol=lf
 *.json text eol=lf
 README.md text eol=lf
+*.webp binary
+*.png binary
+*.mp4 binary
+*.jpg binary
+*.jpeg binary
