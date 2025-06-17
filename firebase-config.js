@@ -1,3 +1,8 @@
+// Importa los módulos necesarios de Firebase
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
   authDomain: "mitienda-c2609.firebaseapp.com",
@@ -7,3 +12,9 @@ const firebaseConfig = {
   appId: "1:536746062790:web:6e545efbc8f037e36538c7",
   databaseURL: "https://mitienda-c2609.firebaseio.com" // Añade esto
 };
+// Inicializa Firebase
+const app = initializeApp(firebaseConfig);
+
+// Exporta los servicios que necesitarás
+export const auth = getAuth(app);
+export const db = getFirestore(app);
