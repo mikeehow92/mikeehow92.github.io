@@ -1,0 +1,37 @@
+/* Auth Buttons */
+.auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-buttons .btn {
+  padding: 8px 15px;
+  font-size: 0.9rem;
+}
+
+.auth-buttons .btn-outline {
+  background-color: transparent;
+  border: 2px solid white;
+}
+
+.auth-buttons .btn-outline:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* User Dropdown */
+.user-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: white;
+}
+
+.user-dropdown .user-name {
+  font-weight: 500;
+}
+
+/* Modals */
+.modal {
+  /* Estilos del modal */
+}
