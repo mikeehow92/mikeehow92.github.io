@@ -1,52 +1,33 @@
-// Configuración de Firebase (RELLENA CON TUS DATOS)
+// Inicialización de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
   authDomain: "mitienda-c2609.firebaseapp.com",
   projectId: "mitienda-c2609",
-  storageBucket: "mitienda-c2609.firebasestorage.app",
+  storageBucket: "mitienda-c2609.appspot.com",
   messagingSenderId: "536746062790",
   appId: "1:536746062790:web:6e545efbc8f037e36538c7"
 };
 
 // Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
+const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // Variables globales
-let cart = [];
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-// Función para guardar en localStorage y Firebase
+// Función para guardar el carrito
 function saveCart() {
   localStorage.setItem('cart', JSON.stringify(cart));
-  
-  // Opcional: Guardar en Firebase si hay usuario logueado
-  const user = firebase.auth().currentUser;
-  if (user) {
-    db.collection('carts').doc(user.uid).set({
-      items: cart,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(error => {
-      console.error("Error al guardar en Firebase:", error);
-    });
-  }
-}
-
-// Cargar carrito desde localStorage
-function loadCart() {
-  const savedCart = localStorage.getItem('cart');
-  if (savedCart) {
-    cart = JSON.parse(savedCart);
-    updateCartUI();
-  }
+  updateCartCounter();
 }
 
 // Actualizar interfaz del carrito
 function updateCartUI() {
-  const cartItemsContainer = document.getElementById('cartItems');
-  const cartTotalElement = document.getElementById('cartTotal');
+  const cartItems = document.getElementById('cartItems');
+  const cartTotal = document.getElementById('cartTotal');
   
-  if (cartItemsContainer) {
-    cartItemsContainer.innerHTML = cart.length > 0 ? '' : `
+  if (cartItems) {
+    cartItems.innerHTML = cart.length > 0 ? '' : `
       <div class="empty-cart">
         <i class="fas fa-shopping-cart"></i>
         <p>Tu carrito está vacío</p>
@@ -64,30 +45,23 @@ function updateCartUI() {
         </div>
         <button class="remove-item" data-id="${item.id}">🗑️</button>
       `;
-      cartItemsContainer.appendChild(itemElement);
+      cartItems.appendChild(itemElement);
       total += item.price * item.quantity;
     });
 
-    if (cartTotalElement) {
-      cartTotalElement.textContent = total.toFixed(2);
-    }
+    if (cartTotal) cartTotal.textContent = total.toFixed(2);
   }
-
-  // Actualizar contador
-  const cartCounter = document.getElementById('cartCounter');
-  if (cartCounter) {
-    cartCounter.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
-  }
+  updateCartCounter();
 }
 
-// Función para proceder al pago (Versión Mejorada)
+// Función para proceder al pago (Mejorada)
 function proceedToCheckout() {
   if (cart.length === 0) {
-    alert("⚠️ Tu carrito está vacío");
-    return;
+    alert("🛒 Tu carrito está vacío");
+    return false;
   }
 
-  // Guardar datos para la página de pago
+  // Guardar en localStorage y sessionStorage como respaldo
   const checkoutData = {
     items: cart,
     total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
@@ -95,24 +69,26 @@ function proceedToCheckout() {
   };
 
   localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
-  
+  sessionStorage.setItem('tempCheckoutData', JSON.stringify(checkoutData));
+
   // Redirección con verificación
-  try {
+  setTimeout(() => {
     window.location.href = 'pago.html';
-  } catch (error) {
-    console.error("Error en redirección:", error);
-    alert("Error al redirigir a la página de pago");
-  }
+  }, 100);
+  return true;
 }
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
-  loadCart();
+  // Cargar carrito al iniciar
+  const savedCart = localStorage.getItem('cart');
+  if (savedCart) cart = JSON.parse(savedCart);
+  updateCartUI();
 
-  // Botón "Proceder al pago"
+  // Botón de pago
   document.getElementById('checkoutBtn')?.addEventListener('click', proceedToCheckout);
 
-  // Botones "Añadir al carrito"
+  // Añadir productos
   document.querySelectorAll('.add-to-cart').forEach(button => {
     button.addEventListener('click', function() {
       const product = {
@@ -131,7 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       saveCart();
       updateCartUI();
-      alert(`✔ ${product.name} añadido al carrito`);
     });
   });
 
