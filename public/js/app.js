@@ -1,4 +1,7 @@
-// Configuración de Firebase
+// Inicialización de Firebase (Versión 9 modular)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
   authDomain: "mitienda-c2609.firebaseapp.com",
@@ -9,8 +12,8 @@ const firebaseConfig = {
 };
 
 // Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 // Variables globales
 let cart = [];
@@ -21,20 +24,45 @@ function saveCart() {
   updateCartCounter();
 }
 
-function loadCart() {
-  const savedCart = localStorage.getItem('cart');
-  if (savedCart) {
-    cart = JSON.parse(savedCart);
-    updateCartUI();
+async function saveCartToFirestore() {
+  try {
+    const userId = 'guest'; // Cambiar por tu sistema de autenticación
+    await setDoc(doc(db, 'carts', userId), {
+      items: cart,
+      lastUpdated: new Date()
+    });
+  } catch (error) {
+    console.error("Error al guardar en Firestore:", error);
+    saveCart(); // Fallback a localStorage
+  }
+}
+
+async function loadCart() {
+  try {
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      cart = JSON.parse(savedCart);
+      updateCartUI();
+    }
+    
+    // Opcional: Cargar desde Firestore
+    const userId = 'guest';
+    const docSnap = await getDoc(doc(db, 'carts', userId));
+    if (docSnap.exists()) {
+      cart = docSnap.data().items || [];
+      updateCartUI();
+    }
+  } catch (error) {
+    console.error("Error al cargar el carrito:", error);
   }
 }
 
 function updateCartUI() {
-  const cartItems = document.getElementById('cartItems');
-  const cartTotal = document.getElementById('cartTotal');
+  const cartItemsContainer = document.getElementById('cartItems');
+  const cartTotalElement = document.getElementById('cartTotal');
   
-  if (cartItems) {
-    cartItems.innerHTML = cart.length > 0 ? '' : `
+  if (cartItemsContainer) {
+    cartItemsContainer.innerHTML = cart.length > 0 ? '' : `
       <div class="empty-cart">
         <i class="fas fa-shopping-cart"></i>
         <p>Tu carrito está vacío</p>
@@ -52,11 +80,13 @@ function updateCartUI() {
         </div>
         <button class="remove-item" data-id="${item.id}">🗑️</button>
       `;
-      cartItems.appendChild(itemElement);
+      cartItemsContainer.appendChild(itemElement);
       total += item.price * item.quantity;
     });
 
-    if (cartTotal) cartTotal.textContent = total.toFixed(2);
+    if (cartTotalElement) {
+      cartTotalElement.textContent = total.toFixed(2);
+    }
   }
   updateCartCounter();
 }
@@ -68,7 +98,6 @@ function updateCartCounter() {
   }
 }
 
-// Función para proceder al pago (Mejorada)
 function proceedToCheckout() {
   if (cart.length === 0) {
     alert("🛒 Tu carrito está vacío");
@@ -80,7 +109,6 @@ function proceedToCheckout() {
     total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   };
 
-  // Guardar en múltiples almacenamientos
   localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
   sessionStorage.setItem('tempCheckout', JSON.stringify(checkoutData));
 
@@ -92,12 +120,15 @@ function proceedToCheckout() {
   return true;
 }
 
-// Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
-  loadCart();
+// Inicialización
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadCart();
 
   // Botón de pago
-  document.getElementById('checkoutBtn').addEventListener('click', proceedToCheckout);
+  document.getElementById('checkoutBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    proceedToCheckout();
+  });
 
   // Añadir productos
   document.querySelectorAll('.add-to-cart').forEach(button => {
@@ -117,18 +148,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       saveCart();
+      saveCartToFirestore();
       updateCartUI();
-      alert(`✔ ${product.name} añadido al carrito`);
     });
   });
 
   // Modal del carrito
   const cartModal = document.getElementById('cartModal');
-  document.getElementById('cartIcon').addEventListener('click', () => {
-    cartModal.style.display = 'block';
-  });
+  if (cartModal) {
+    document.getElementById('cartIcon')?.addEventListener('click', () => {
+      cartModal.style.display = 'block';
+    });
 
-  document.querySelector('.close-modal').addEventListener('click', () => {
-    cartModal.style.display = 'none';
-  });
+    document.querySelector('.close-modal')?.addEventListener('click', () => {
+      cartModal.style.display = 'none';
+    });
+  }
 });
