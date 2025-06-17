@@ -87,33 +87,42 @@
     <script src="js/firebase-config.js"></script>
     <script src="js/app.js"></script>
     <script>
-        // Cargar los items del carrito desde localStorage
+        // Cargar los items del pedido desde localStorage
         document.addEventListener('DOMContentLoaded', function() {
-            const cart = JSON.parse(localStorage.getItem('currentCart')) || [];
+            const orderData = JSON.parse(localStorage.getItem('currentOrder'));
             const orderItems = document.getElementById('orderItems');
             const orderTotal = document.getElementById('orderTotal');
             const paymentTotal = document.getElementById('paymentTotal');
             
-            let total = 0;
-            
-            if (cart.length === 0) {
-                orderItems.innerHTML = '<p>No hay productos en tu carrito</p>';
-            } else {
-                orderItems.innerHTML = '';
-                cart.forEach(item => {
-                    const itemElement = document.createElement('div');
-                    itemElement.className = 'order-item';
-                    itemElement.innerHTML = `
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-price">$${(item.price * item.quantity).toFixed(2)} (${item.quantity} x $${item.price.toFixed(2)})</div>
-                    `;
-                    orderItems.appendChild(itemElement);
-                    total += parseFloat(item.price) * item.quantity;
-                });
+            if (!orderData || !orderData.items || orderData.items.length === 0) {
+                orderItems.innerHTML = `
+                    <div class="empty-cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        <p>No hay productos en tu pedido</p>
+                    </div>
+                `;
+                return;
             }
             
-            orderTotal.textContent = total.toFixed(2);
-            paymentTotal.textContent = total.toFixed(2);
+            orderItems.innerHTML = '';
+            orderData.items.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'order-item';
+                itemElement.innerHTML = `
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-price">$${(item.price * item.quantity).toFixed(2)} (${item.quantity} x $${item.price.toFixed(2)})</div>
+                `;
+                orderItems.appendChild(itemElement);
+            });
+            
+            orderTotal.textContent = orderData.total.toFixed(2);
+            paymentTotal.textContent = orderData.total.toFixed(2);
+            
+            // Actualizar contador del carrito
+            const cartCounter = document.getElementById('cartCounter');
+            if (cartCounter) {
+                cartCounter.textContent = orderData.items.reduce((total, item) => total + item.quantity, 0);
+            }
         });
     </script>
 </body>
