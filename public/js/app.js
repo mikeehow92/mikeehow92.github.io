@@ -1,4 +1,4 @@
-ok te dare js para que me ayudes a añadir y consolidar el java // Importaciones Firebase v9 (modular)
+// Importaciones Firebase v9 (modular)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
 import { 
   getFirestore, doc, setDoc, getDoc, serverTimestamp,
