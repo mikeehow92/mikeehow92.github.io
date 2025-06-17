@@ -1,5 +1,6 @@
 // Variables globales
 let cart = [];
+const db = firebase.firestore();
 
 // DOM Elements
 const cartIcon = document.getElementById('cartIcon');
@@ -10,6 +11,12 @@ const closeModal = document.querySelector('.close-modal');
 document.addEventListener('DOMContentLoaded', () => {
     loadCart();
     setupEventListeners();
+    
+    // Redirigir al pago (si existe el botón)
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', proceedToCheckout);
+    }
 });
 
 // Configurar event listeners
@@ -27,8 +34,8 @@ function setupEventListeners() {
     });
 
     // Carrito modal
-    cartIcon.addEventListener('click', toggleCart);
-    closeModal.addEventListener('click', toggleCart);
+    if (cartIcon) cartIcon.addEventListener('click', toggleCart);
+    if (closeModal) closeModal.addEventListener('click', toggleCart);
 }
 
 // Funciones del carrito
@@ -48,7 +55,9 @@ function addToCart(product) {
 }
 
 function toggleCart() {
-    cartModal.style.display = cartModal.style.display === 'block' ? 'none' : 'block';
+    if (cartModal) {
+        cartModal.style.display = cartModal.style.display === 'block' ? 'none' : 'block';
+    }
 }
 
 function updateCartUI() {
@@ -56,42 +65,68 @@ function updateCartUI() {
     const cartItemsContainer = document.getElementById('cartItems');
     const cartTotalElement = document.getElementById('cartTotal');
     
-    // Actualizar contador
-    cartCounter.textContent = cart.reduce((total, item) => total + item.quantity, 0);
+    if (cartCounter) {
+        cartCounter.textContent = cart.reduce((total, item) => total + item.quantity, 0);
+    }
     
-    // Actualizar items del carrito
-    cartItemsContainer.innerHTML = '';
-    let total = 0;
-    
-    cart.forEach(item => {
-        const cartItemElement = document.createElement('div');
-        cartItemElement.className = 'cart-item';
-        cartItemElement.innerHTML = `
-            <div class="cart-item-info">
-                <span>${item.name}</span>
-                <span>${item.quantity} x $${item.price.toFixed(2)}</span>
-            </div>
-            <button class="remove-item" data-id="${item.id}">🗑️</button>
-        `;
-        cartItemsContainer.appendChild(cartItemElement);
-        total += item.price * item.quantity;
-    });
-    
-    // Actualizar total
-    cartTotalElement.textContent = total.toFixed(2);
-    
-    // Event listeners para botones de eliminar
-    document.querySelectorAll('.remove-item').forEach(button => {
-        button.addEventListener('click', (e) => {
-            removeFromCart(e.target.dataset.id);
+    if (cartItemsContainer) {
+        cartItemsContainer.innerHTML = '';
+        let total = 0;
+        
+        if (cart.length === 0) {
+            cartItemsContainer.innerHTML = `
+                <div class="empty-cart">
+                    <i class="fas fa-shopping-cart"></i>
+                    <p>Tu carrito está vacío</p>
+                </div>
+            `;
+        } else {
+            cart.forEach(item => {
+                const cartItemElement = document.createElement('div');
+                cartItemElement.className = 'cart-item';
+                cartItemElement.innerHTML = `
+                    <div class="cart-item-info">
+                        <span>${item.name}</span>
+                        <span>${item.quantity} x $${item.price.toFixed(2)}</span>
+                    </div>
+                    <button class="remove-item" data-id="${item.id}">🗑️</button>
+                `;
+                cartItemsContainer.appendChild(cartItemElement);
+                total += item.price * item.quantity;
+            });
+        }
+        
+        if (cartTotalElement) {
+            cartTotalElement.textContent = total.toFixed(2);
+        }
+        
+        // Event listeners para botones de eliminar
+        document.querySelectorAll('.remove-item').forEach(button => {
+            button.addEventListener('click', (e) => {
+                removeFromCart(e.target.dataset.id);
+            });
         });
-    });
+    }
 }
 
 function removeFromCart(productId) {
     cart = cart.filter(item => item.id !== productId);
     updateCartUI();
     saveCartToFirestore();
+}
+
+// Función para proceder al pago
+function proceedToCheckout() {
+    if (cart.length === 0) {
+        showFeedback('🛒 Tu carrito está vacío');
+        return;
+    }
+    
+    // Guardar en localStorage para la página de pago
+    localStorage.setItem('currentCart', JSON.stringify(cart));
+    
+    // Redirigir a la página de pago
+    window.location.href = 'pago.html';
 }
 
 // Firebase Firestore Integration
@@ -111,6 +146,15 @@ async function saveCartToFirestore() {
 
 async function loadCart() {
     try {
+        // Primero intentar cargar del localStorage (para pago.html)
+        const localCart = localStorage.getItem('currentCart');
+        if (localCart) {
+            cart = JSON.parse(localCart);
+            updateCartUI();
+            return;
+        }
+        
+        // Si no hay en localStorage, cargar de Firestore
         const user = firebase.auth().currentUser;
         const userId = user ? user.uid : 'guest';
         
