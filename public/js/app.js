@@ -1,7 +1,13 @@
-// Inicialización de Firebase (Versión 9 modular)
+// Importaciones Firebase v9 (modular)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
+import { 
+  getFirestore, doc, setDoc, getDoc, serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
+import { 
+  getAuth, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
 
+// Configuración Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
   authDomain: "mitienda-c2609.firebaseapp.com",
@@ -14,55 +20,25 @@ const firebaseConfig = {
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 // Variables globales
 let cart = [];
+let currentUser = null;
+
+// Observador de autenticación
+onAuthStateChanged(auth, (user) => {
+  currentUser = user;
+  loadCart();
+});
 
 // Funciones del carrito
-function saveCart() {
-  localStorage.setItem('cart', JSON.stringify(cart));
-  updateCartCounter();
-}
-
-async function saveCartToFirestore() {
-  try {
-    const userId = 'guest'; // Cambiar por tu sistema de autenticación
-    await setDoc(doc(db, 'carts', userId), {
-      items: cart,
-      lastUpdated: new Date()
-    });
-  } catch (error) {
-    console.error("Error al guardar en Firestore:", error);
-    saveCart(); // Fallback a localStorage
-  }
-}
-
-async function loadCart() {
-  try {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      cart = JSON.parse(savedCart);
-      updateCartUI();
-    }
-    
-    // Opcional: Cargar desde Firestore
-    const userId = 'guest';
-    const docSnap = await getDoc(doc(db, 'carts', userId));
-    if (docSnap.exists()) {
-      cart = docSnap.data().items || [];
-      updateCartUI();
-    }
-  } catch (error) {
-    console.error("Error al cargar el carrito:", error);
-  }
-}
-
 function updateCartUI() {
-  const cartItemsContainer = document.getElementById('cartItems');
-  const cartTotalElement = document.getElementById('cartTotal');
+  const cartItems = document.getElementById('cartItems');
+  const cartTotal = document.getElementById('cartTotal');
   
-  if (cartItemsContainer) {
-    cartItemsContainer.innerHTML = cart.length > 0 ? '' : `
+  if (cartItems) {
+    cartItems.innerHTML = cart.length > 0 ? '' : `
       <div class="empty-cart">
         <i class="fas fa-shopping-cart"></i>
         <p>Tu carrito está vacío</p>
@@ -80,13 +56,11 @@ function updateCartUI() {
         </div>
         <button class="remove-item" data-id="${item.id}">🗑️</button>
       `;
-      cartItemsContainer.appendChild(itemElement);
+      cartItems.appendChild(itemElement);
       total += item.price * item.quantity;
     });
 
-    if (cartTotalElement) {
-      cartTotalElement.textContent = total.toFixed(2);
-    }
+    if (cartTotal) cartTotal.textContent = total.toFixed(2);
   }
   updateCartCounter();
 }
@@ -98,6 +72,39 @@ function updateCartCounter() {
   }
 }
 
+async function saveCartToFirestore() {
+  try {
+    const userId = currentUser ? currentUser.uid : 'guest';
+    await setDoc(doc(db, 'carts', userId), {
+      items: cart,
+      lastUpdated: serverTimestamp()
+    });
+  } catch (error) {
+    console.error("Error al guardar en Firestore:", error);
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }
+}
+
+async function loadCart() {
+  try {
+    const localCart = localStorage.getItem('cart');
+    if (localCart) {
+      cart = JSON.parse(localCart);
+      updateCartUI();
+    }
+    
+    const userId = currentUser ? currentUser.uid : 'guest';
+    const docSnap = await getDoc(doc(db, 'carts', userId));
+    
+    if (docSnap.exists()) {
+      cart = docSnap.data().items || [];
+      updateCartUI();
+    }
+  } catch (error) {
+    console.error("Error al cargar el carrito:", error);
+  }
+}
+
 function proceedToCheckout() {
   if (cart.length === 0) {
     alert("🛒 Tu carrito está vacío");
@@ -105,32 +112,27 @@ function proceedToCheckout() {
   }
 
   const checkoutData = {
-    items: cart,
+    items: [...cart],
     total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   };
 
   localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
   sessionStorage.setItem('tempCheckout', JSON.stringify(checkoutData));
 
-  // Redirección absoluta garantizada
-  window.location.href = window.location.pathname.includes('productos') 
-    ? 'pago.html' 
-    : '/pago.html';
-  
+  // Redirección garantizada
+  window.location.href = 'pago.html';
   return true;
 }
 
-// Inicialización
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadCart();
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+  loadCart();
 
-  // Botón de pago
   document.getElementById('checkoutBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
     proceedToCheckout();
   });
 
-  // Añadir productos
   document.querySelectorAll('.add-to-cart').forEach(button => {
     button.addEventListener('click', function() {
       const product = {
@@ -147,13 +149,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         cart.push(product);
       }
 
-      saveCart();
       saveCartToFirestore();
       updateCartUI();
     });
   });
 
-  // Modal del carrito
   const cartModal = document.getElementById('cartModal');
   if (cartModal) {
     document.getElementById('cartIcon')?.addEventListener('click', () => {
