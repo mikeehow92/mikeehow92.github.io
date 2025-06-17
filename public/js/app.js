@@ -1,7 +1,8 @@
 // Importaciones Firebase v9 (modular)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
 import { 
-  getFirestore, doc, setDoc, getDoc, serverTimestamp 
+  getFirestore, doc, setDoc, getDoc, serverTimestamp,
+  collection, addDoc
 } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
 import { 
   getAuth, onAuthStateChanged 
@@ -51,16 +52,27 @@ function updateCartUI() {
       itemElement.className = 'cart-item';
       itemElement.innerHTML = `
         <div class="cart-item-info">
-          <span>${item.name}</span>
-          <span>${item.quantity} x $${item.price.toFixed(2)}</span>
+          <span class="cart-item-name">${item.name}</span>
+          <div class="cart-item-controls">
+            <button class="quantity-btn minus" data-id="${item.id}">-</button>
+            <span class="item-quantity">${item.quantity}</span>
+            <button class="quantity-btn plus" data-id="${item.id}">+</button>
+          </div>
+          <span class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</span>
         </div>
-        <button class="remove-item" data-id="${item.id}">🗑️</button>
+        <button class="remove-item" data-id="${item.id}">
+          <i class="fas fa-trash"></i>
+        </button>
       `;
       cartItems.appendChild(itemElement);
       total += item.price * item.quantity;
     });
 
-    if (cartTotal) cartTotal.textContent = total.toFixed(2);
+    if (cartTotal) cartTotal.innerHTML = `$${total.toFixed(2)}`;
+    
+    // Actualizar total en botón de pago si existe
+    const paymentTotal = document.getElementById('paymentTotal');
+    if (paymentTotal) paymentTotal.textContent = total.toFixed(2);
   }
   updateCartCounter();
 }
@@ -68,7 +80,9 @@ function updateCartUI() {
 function updateCartCounter() {
   const counter = document.getElementById('cartCounter');
   if (counter) {
-    counter.textContent = cart.reduce((total, item) => total + item.quantity, 0);
+    const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+    counter.textContent = totalItems;
+    counter.style.display = totalItems > 0 ? 'inline-block' : 'none';
   }
 }
 
@@ -87,81 +101,185 @@ async function saveCartToFirestore() {
 
 async function loadCart() {
   try {
+    // Cargar del localStorage primero para mejor experiencia de usuario
     const localCart = localStorage.getItem('cart');
     if (localCart) {
       cart = JSON.parse(localCart);
       updateCartUI();
     }
     
-    const userId = currentUser ? currentUser.uid : 'guest';
-    const docSnap = await getDoc(doc(db, 'carts', userId));
-    
-    if (docSnap.exists()) {
-      cart = docSnap.data().items || [];
-      updateCartUI();
+    // Si hay usuario, cargar desde Firestore
+    if (currentUser) {
+      const userId = currentUser.uid;
+      const docSnap = await getDoc(doc(db, 'carts', userId));
+      
+      if (docSnap.exists()) {
+        cart = docSnap.data().items || [];
+        updateCartUI();
+        // Sincronizar con localStorage
+        localStorage.setItem('cart', JSON.stringify(cart));
+      }
     }
   } catch (error) {
     console.error("Error al cargar el carrito:", error);
   }
 }
 
-function proceedToCheckout() {
+function addToCart(product) {
+  const existingItem = cart.find(item => item.id === product.id);
+  if (existingItem) {
+    existingItem.quantity++;
+  } else {
+    cart.push({...product, quantity: 1});
+  }
+  saveCartToFirestore();
+  updateCartUI();
+  
+  // Feedback visual
+  const feedback = document.createElement('div');
+  feedback.className = 'cart-feedback';
+  feedback.innerHTML = `<i class="fas fa-check"></i> ${product.name} añadido`;
+  document.body.appendChild(feedback);
+  setTimeout(() => feedback.remove(), 2000);
+}
+
+function removeFromCart(productId) {
+  cart = cart.filter(item => item.id !== productId);
+  saveCartToFirestore();
+  updateCartUI();
+}
+
+function updateQuantity(productId, newQuantity) {
+  const item = cart.find(item => item.id === productId);
+  if (item) {
+    item.quantity = Math.max(1, newQuantity);
+    saveCartToFirestore();
+    updateCartUI();
+  }
+}
+
+async function proceedToCheckout() {
   if (cart.length === 0) {
-    alert("🛒 Tu carrito está vacío");
+    showFeedback('🛒 Tu carrito está vacío', 'error');
     return false;
   }
 
-  const checkoutData = {
-    items: [...cart],
-    total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  };
+  try {
+    const checkoutData = {
+      items: cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      })),
+      subtotal: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+      tax: calculateTax(),
+      total: calculateTotal(),
+      createdAt: new Date().toISOString(),
+      userId: currentUser?.uid || 'guest'
+    };
 
-  localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
-  sessionStorage.setItem('tempCheckout', JSON.stringify(checkoutData));
+    // Guardar en múltiples lugares para redundancia
+    localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
+    sessionStorage.setItem('tempCheckout', JSON.stringify(checkoutData));
+    
+    // Guardar en Firestore si hay usuario
+    if (currentUser) {
+      await addDoc(collection(db, 'checkouts'), {
+        ...checkoutData,
+        status: 'pending',
+        user: {
+          uid: currentUser.uid,
+          email: currentUser.email || 'guest'
+        }
+      });
+    }
 
-  // Redirección garantizada
-  window.location.href = 'pago.html';
-  return true;
+    // Redireccionar
+    window.location.href = 'pago.html';
+    return true;
+  } catch (error) {
+    console.error('Error en checkout:', error);
+    showFeedback('Error al procesar tu pedido', 'error');
+    return false;
+  }
+}
+
+function calculateTax() {
+  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  return parseFloat((subtotal * 0.16).toFixed(2)); // 16% de IVA
+}
+
+function calculateTotal() {
+  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const tax = calculateTax();
+  return parseFloat((subtotal + tax).toFixed(2));
+}
+
+function showFeedback(message, type = 'success') {
+  const feedback = document.createElement('div');
+  feedback.className = `feedback ${type}`;
+  feedback.textContent = message;
+  document.body.appendChild(feedback);
+  setTimeout(() => feedback.remove(), 3000);
 }
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
   loadCart();
 
-  document.getElementById('checkoutBtn')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    proceedToCheckout();
-  });
-
-  document.querySelectorAll('.add-to-cart').forEach(button => {
-    button.addEventListener('click', function() {
+  // Delegación de eventos para el carrito
+  document.addEventListener('click', function(e) {
+    // Añadir al carrito
+    if (e.target.closest('.add-to-cart')) {
+      const button = e.target.closest('.add-to-cart');
       const product = {
-        id: this.dataset.id,
-        name: this.dataset.name,
-        price: parseFloat(this.dataset.price),
-        quantity: 1
+        id: button.dataset.id,
+        name: button.dataset.name,
+        price: parseFloat(button.dataset.price),
+        image: button.dataset.image || ''
       };
-
-      const existingItem = cart.find(item => item.id === product.id);
-      if (existingItem) {
-        existingItem.quantity++;
-      } else {
-        cart.push(product);
-      }
-
-      saveCartToFirestore();
-      updateCartUI();
-    });
+      addToCart(product);
+    }
+    
+    // Eliminar item
+    if (e.target.closest('.remove-item')) {
+      const productId = e.target.closest('.remove-item').dataset.id;
+      removeFromCart(productId);
+    }
+    
+    // Aumentar cantidad
+    if (e.target.closest('.quantity-btn.plus')) {
+      const productId = e.target.closest('.quantity-btn').dataset.id;
+      const item = cart.find(item => item.id === productId);
+      if (item) updateQuantity(productId, item.quantity + 1);
+    }
+    
+    // Disminuir cantidad
+    if (e.target.closest('.quantity-btn.minus')) {
+      const productId = e.target.closest('.quantity-btn').dataset.id;
+      const item = cart.find(item => item.id === productId);
+      if (item) updateQuantity(productId, item.quantity - 1);
+    }
+    
+    // Checkout
+    if (e.target.closest('#checkoutBtn')) {
+      e.preventDefault();
+      proceedToCheckout();
+    }
   });
 
+  // Abrir/cerrar modal del carrito
   const cartModal = document.getElementById('cartModal');
   if (cartModal) {
     document.getElementById('cartIcon')?.addEventListener('click', () => {
-      cartModal.style.display = 'block';
+      cartModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
     });
 
     document.querySelector('.close-modal')?.addEventListener('click', () => {
-      cartModal.style.display = 'none';
+      cartModal.classList.remove('active');
+      document.body.style.overflow = '';
     });
   }
 });

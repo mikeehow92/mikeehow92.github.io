@@ -93,11 +93,13 @@ nav ul li a i {
   padding: 2px 8px;
   min-width: 20px;
   text-align: center;
+  display: none;
 }
 
 /* Contenido Principal */
 main {
   padding: 40px 0;
+  min-height: calc(100vh - 150px);
 }
 
 /* Grid de Productos */
@@ -114,6 +116,8 @@ main {
   overflow: hidden;
   box-shadow: 0 3px 15px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .producto-card:hover {
@@ -143,6 +147,9 @@ main {
 
 .producto-info {
   padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .producto-info h3 {
@@ -174,6 +181,7 @@ main {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  margin-top: auto;
 }
 
 .add-to-cart:hover {
@@ -187,19 +195,20 @@ main {
 
 /* Modal del Carrito */
 .modal {
-  display: none;
   position: fixed;
   top: 0;
   right: 0;
   width: 100%;
   max-width: 400px;
-  height: 100%;
+  height: 100vh;
   background: white;
   box-shadow: -5px 0 15px rgba(0,0,0,0.1);
   z-index: 1000;
-  overflow-y: auto;
   transform: translateX(100%);
   transition: transform 0.3s ease;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal.active {
@@ -209,6 +218,7 @@ main {
 .modal-content {
   padding: 25px;
   position: relative;
+  flex-grow: 1;
 }
 
 .close-modal {
@@ -219,6 +229,8 @@ main {
   cursor: pointer;
   color: #7f8c8d;
   transition: all 0.3s ease;
+  background: none;
+  border: none;
 }
 
 .close-modal:hover {
@@ -232,6 +244,9 @@ main {
   font-size: 1.8rem;
   padding-bottom: 15px;
   border-bottom: 2px solid #ecf0f1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .cart-item {
@@ -240,22 +255,47 @@ main {
   align-items: center;
   padding: 15px 0;
   border-bottom: 1px solid #ecf0f1;
+  gap: 15px;
 }
 
 .cart-item-info {
   flex: 1;
-  padding-right: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .cart-item-name {
   font-weight: 500;
-  margin-bottom: 5px;
   color: #2c3e50;
 }
 
+.cart-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quantity-btn {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.quantity-btn:hover {
+  background: #f5f5f5;
+}
+
 .cart-item-price {
-  color: #7f8c8d;
-  font-size: 0.9rem;
+  font-weight: bold;
+  color: #2c3e50;
 }
 
 .remove-item {
@@ -263,13 +303,20 @@ main {
   border: none;
   cursor: pointer;
   color: #e74c3c;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   padding: 5px;
   transition: all 0.3s ease;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
 }
 
 .remove-item:hover {
-  transform: scale(1.2);
+  background: #fdeaea;
+  transform: scale(1.1);
 }
 
 .cart-total {
@@ -300,12 +347,23 @@ main {
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 .checkout-btn:hover {
   background-color: #27ae60;
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+}
+
+.checkout-btn:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Página de Pago */
@@ -344,8 +402,22 @@ main {
   color: #e74c3c;
 }
 
+.delivery-info {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.delivery-info h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
 .form-group {
   margin-bottom: 1.5rem;
+  position: relative;
 }
 
 .form-group label {
@@ -367,6 +439,7 @@ main {
 .form-group input:focus {
   outline: none;
   border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
 .form-row {
@@ -392,12 +465,32 @@ main {
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 .submit-payment:hover {
   background-color: #27ae60;
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+}
+
+.card-icons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+
+.card-icons img {
+  height: 30px;
+  filter: grayscale(100%);
+  transition: filter 0.3s;
+}
+
+.card-icons img.active {
+  filter: grayscale(0%);
 }
 
 /* Mensajes */
@@ -417,11 +510,93 @@ main {
   color: #e74c3c;
   text-align: center;
   padding: 20px;
+  background: #fdeaea;
+  border-radius: 5px;
+  margin: 20px 0;
 }
 
 .error i {
   font-size: 2rem;
   margin-bottom: 10px;
+}
+
+.feedback {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 15px 25px;
+  border-radius: 5px;
+  color: white;
+  z-index: 2000;
+  animation: slideIn 0.3s ease-out;
+}
+
+.feedback.success {
+  background-color: #2ecc71;
+}
+
+.feedback.error {
+  background-color: #e74c3c;
+}
+
+.cart-feedback {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  padding: 10px 20px;
+  background: #2ecc71;
+  color: white;
+  border-radius: 5px;
+  z-index: 2000;
+  animation: slideIn 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.payment-processing {
+  display: none;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.payment-processing i {
+  font-size: 3rem;
+  color: #3498db;
+  margin-bottom: 20px;
+}
+
+.payment-success {
+  display: none;
+  text-align: center;
+  padding: 40px 20px;
+  background: #2ecc71;
+  color: white;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+.payment-success i {
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+/* Animaciones */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
 }
 
 /* Responsive */
@@ -440,6 +615,8 @@ main {
   
   nav ul {
     gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   
   .modal {
@@ -469,5 +646,12 @@ main {
   .form-row {
     flex-direction: column;
     gap: 0;
+  }
+  
+  .feedback, .cart-feedback {
+    left: 20px;
+    right: 20px;
+    bottom: auto;
+    top: 20px;
   }
 }
