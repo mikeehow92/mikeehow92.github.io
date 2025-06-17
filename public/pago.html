@@ -44,23 +44,23 @@
         <form id="paymentForm">
           <div class="form-group">
             <label for="cardName">Nombre en la Tarjeta</label>
-            <input type="text" id="cardName" required>
+            <input type="text" id="cardName" autocomplete="cc-name" required>
           </div>
           
           <div class="form-group">
             <label for="cardNumber">Número de Tarjeta</label>
-            <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" required>
+            <input type="text" id="cardNumber" autocomplete="cc-number" placeholder="1234 5678 9012 3456" required>
           </div>
           
           <div class="form-row">
             <div class="form-group">
               <label for="expiryDate">Fecha de Expiración (MM/AA)</label>
-              <input type="text" id="expiryDate" required>
+              <input type="text" id="expiryDate" autocomplete="cc-exp" placeholder="MM/AA" required>
             </div>
             
             <div class="form-group">
               <label for="cvv">CVV</label>
-              <input type="text" id="cvv" required>
+              <input type="text" id="cvv" autocomplete="cc-csc" placeholder="123" required>
             </div>
           </div>
           
@@ -72,61 +72,7 @@
     </div>
   </main>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Cargar datos desde múltiples fuentes
-      const checkoutData = 
-        JSON.parse(localStorage.getItem('checkoutData')) || 
-        JSON.parse(sessionStorage.getItem('tempCheckout')) || 
-        { items: [], total: 0 };
-
-      const orderItems = document.getElementById('orderItems');
-      const orderTotal = document.getElementById('orderTotal');
-      const paymentTotal = document.getElementById('paymentTotal');
-
-      if (!checkoutData.items || checkoutData.items.length === 0) {
-        orderItems.innerHTML = `
-          <div class="error">
-            <i class="fas fa-exclamation-triangle"></i>
-            <p>No se encontraron productos. Redirigiendo...</p>
-          </div>
-        `;
-        setTimeout(() => window.location.href = 'productos.html', 2000);
-        return;
-      }
-
-      // Mostrar productos
-      let html = '';
-      checkoutData.items.forEach(item => {
-        html += `
-          <div class="order-item">
-            <span>${item.name}</span>
-            <span class="item-quantity">${item.quantity} ×</span>
-            <span class="item-price">$${item.price.toFixed(2)}</span>
-          </div>
-        `;
-      });
-      orderItems.innerHTML = html;
-
-      // Mostrar totales
-      const total = checkoutData.total.toFixed(2);
-      orderTotal.textContent = total;
-      paymentTotal.textContent = total;
-
-      // Actualizar contador
-      document.getElementById('cartCounter').textContent = 
-        checkoutData.items.reduce((sum, item) => sum + item.quantity, 0);
-
-      // Manejar pago
-      document.getElementById('paymentForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        alert('✅ Pago procesado correctamente');
-        localStorage.removeItem('cart');
-        localStorage.removeItem('checkoutData');
-        sessionStorage.removeItem('tempCheckout');
-        window.location.href = 'index.html';
-      });
-    });
-  </script>
+  <!-- Carga del JavaScript modular desde archivo externo -->
+  <script type="module" src="js/checkout.js"></script>
 </body>
 </html>
