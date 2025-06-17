@@ -369,6 +369,117 @@ main {
   color: #bdc3c7;
 }
 
+/* Estilos para la página de pago */
+.checkout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 30px;
+}
+
+.order-summary, .payment-form {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.order-summary h2, .payment-form h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #ecf0f1;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.order-item-name {
+  font-weight: 500;
+}
+
+.order-item-price {
+  color: #7f8c8d;
+}
+
+.order-total {
+  font-weight: bold;
+  font-size: 1.4rem;
+  text-align: right;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid #ecf0f1;
+  color: #2c3e50;
+}
+
+.order-total span {
+  color: #e74c3c;
+}
+
+.payment-form {
+  background: #fff;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.submit-payment {
+  width: 100%;
+  padding: 15px;
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 10px;
+}
+
+.submit-payment:hover {
+  background-color: #27ae60;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+}
+
 /* Responsive */
 @media (max-width: 992px) {
   .productos-grid {
@@ -389,6 +500,10 @@ main {
   
   .modal {
     max-width: 350px;
+  }
+  
+  .checkout-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -411,5 +526,10 @@ main {
     width: 100%;
     display: flex;
     justify-content: space-between;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 0;
   }
 }
