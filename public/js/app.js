@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCart();
     setupEventListeners();
     
-    // Redirigir al pago (si existe el botón)
+    // Configurar botón de pago
     const checkoutBtn = document.getElementById('checkoutBtn');
     if (checkoutBtn) {
         checkoutBtn.addEventListener('click', proceedToCheckout);
@@ -115,15 +115,18 @@ function removeFromCart(productId) {
     saveCartToFirestore();
 }
 
-// Función para proceder al pago
+// Función para proceder al pago (ACTUALIZADA)
 function proceedToCheckout() {
     if (cart.length === 0) {
         showFeedback('🛒 Tu carrito está vacío');
         return;
     }
     
-    // Guardar en localStorage para la página de pago
-    localStorage.setItem('currentCart', JSON.stringify(cart));
+    // Guardar en localStorage
+    localStorage.setItem('currentOrder', JSON.stringify({
+        items: cart,
+        total: cart.reduce((total, item) => total + (item.price * item.quantity), 0)
+    }));
     
     // Redirigir a la página de pago
     window.location.href = 'pago.html';
@@ -146,10 +149,10 @@ async function saveCartToFirestore() {
 
 async function loadCart() {
     try {
-        // Primero intentar cargar del localStorage (para pago.html)
-        const localCart = localStorage.getItem('currentCart');
+        // Primero intentar cargar del localStorage (para persistencia)
+        const localCart = localStorage.getItem('currentOrder');
         if (localCart) {
-            cart = JSON.parse(localCart);
+            cart = JSON.parse(localCart).items || [];
             updateCartUI();
             return;
         }
