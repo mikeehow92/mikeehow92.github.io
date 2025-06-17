@@ -74,16 +74,17 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Cargar datos desde localStorage o sessionStorage
-      const checkoutData = JSON.parse(localStorage.getItem('checkoutData')) || 
-                         JSON.parse(sessionStorage.getItem('tempCheckout')) || 
-                         { items: [], total: 0 };
+      // Cargar datos desde múltiples fuentes
+      const checkoutData = 
+        JSON.parse(localStorage.getItem('checkoutData')) || 
+        JSON.parse(sessionStorage.getItem('tempCheckout')) || 
+        { items: [], total: 0 };
 
       const orderItems = document.getElementById('orderItems');
       const orderTotal = document.getElementById('orderTotal');
       const paymentTotal = document.getElementById('paymentTotal');
 
-      if (checkoutData.items.length === 0) {
+      if (!checkoutData.items || checkoutData.items.length === 0) {
         orderItems.innerHTML = `
           <div class="error">
             <i class="fas fa-exclamation-triangle"></i>

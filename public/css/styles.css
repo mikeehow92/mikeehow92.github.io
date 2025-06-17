@@ -198,6 +198,12 @@ main {
   box-shadow: -5px 0 15px rgba(0,0,0,0.1);
   z-index: 1000;
   overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+.modal.active {
+  transform: translateX(0);
 }
 
 .modal-content {
