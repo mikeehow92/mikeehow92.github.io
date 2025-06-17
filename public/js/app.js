@@ -101,7 +101,7 @@ async function saveCartToFirestore() {
 
 async function loadCart() {
   try {
-    // Cargar del localStorage primero para mejor experiencia de usuario
+    // Cargar del localStorage primero
     const localCart = localStorage.getItem('cart');
     if (localCart) {
       cart = JSON.parse(localCart);
@@ -116,7 +116,6 @@ async function loadCart() {
       if (docSnap.exists()) {
         cart = docSnap.data().items || [];
         updateCartUI();
-        // Sincronizar con localStorage
         localStorage.setItem('cart', JSON.stringify(cart));
       }
     }
@@ -179,7 +178,7 @@ async function proceedToCheckout() {
       userId: currentUser?.uid || 'guest'
     };
 
-    // Guardar en múltiples lugares para redundancia
+    // Guardar en múltiples lugares
     localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
     sessionStorage.setItem('tempCheckout', JSON.stringify(checkoutData));
     
@@ -228,7 +227,7 @@ function showFeedback(message, type = 'success') {
 document.addEventListener('DOMContentLoaded', () => {
   loadCart();
 
-  // Delegación de eventos para el carrito
+  // Delegación de eventos
   document.addEventListener('click', function(e) {
     // Añadir al carrito
     if (e.target.closest('.add-to-cart')) {
@@ -269,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Abrir/cerrar modal del carrito
+  // Modal del carrito
   const cartModal = document.getElementById('cartModal');
   if (cartModal) {
     document.getElementById('cartIcon')?.addEventListener('click', () => {
