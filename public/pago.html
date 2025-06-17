@@ -74,7 +74,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Cargar datos desde múltiples fuentes
+      // Cargar datos desde localStorage o sessionStorage
       const checkoutData = JSON.parse(localStorage.getItem('checkoutData')) || 
                          JSON.parse(sessionStorage.getItem('tempCheckout')) || 
                          { items: [], total: 0 };
