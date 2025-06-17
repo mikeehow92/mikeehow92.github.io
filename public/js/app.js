@@ -206,7 +206,7 @@ async function proceedToCheckout() {
 
 function calculateTax() {
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  return parseFloat((subtotal * 0.16).toFixed(2)); // 16% de IVA
+  return parseFloat((subtotal * 0.12).toFixed(2)); // 16% de IVA
 }
 
 function calculateTotal() {
