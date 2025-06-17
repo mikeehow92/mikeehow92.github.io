@@ -569,23 +569,32 @@
   </style>
 </head>
 <body>
-  <header>
-    <div class="container header-container">
-      <div class="logo">
-        <a href="#">
-          <img src="img/logo.png" alt="TecnoExpress">
-        </a>
-      </div>
-      <nav>
-        <ul>
-          <li><a href="#nosotros"><i class="fas fa-users"></i> Nosotros</a></li>
-          <li><a href="productos.html"><i class="fas fa-cogs"></i> Productos</a></li>
-          <li><a href="#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
-        </ul>
-      </nav>
+<header>
+  <div class="container header-container">
+    <div class="logo">
+      <a href="#">
+        <img src="img/logo.png" alt="TecnoExpress">
+      </a>
     </div>
-   <link rel="stylesheet" href="/css/auth.css">
-  </header>
+    <nav>
+      <ul>
+        <li><a href="#nosotros"><i class="fas fa-users"></i> Nosotros</a></li>
+        <li><a href="productos.html"><i class="fas fa-cogs"></i> Productos</a></li>
+        <li><a href="#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
+      </ul>
+    </nav>
+    <div class="auth-section">
+      <div id="guest-buttons">
+        <button id="open-login-btn" class="btn btn-small">Iniciar Sesión</button>
+      </div>
+      <div id="user-info" style="display:none;">
+        <span id="user-email"></span>
+        <button id="logout-btn" class="btn btn-small btn-outline">Cerrar Sesión</button>
+      </div>
+    </div>
+  </div>
+ <link rel="stylesheet" href="/css/auth.css">
+</header>
 
   <section class="hero">
     <video autoplay muted loop playsinline class="hero-video">
