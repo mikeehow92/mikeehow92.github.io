@@ -10,7 +10,7 @@ import {
 
 // Configuración Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
+  apiKey: "",
   authDomain: "mitienda-c2609.firebaseapp.com",
   projectId: "mitienda-c2609",
   storageBucket: "mitienda-c2609.appspot.com",
