@@ -6,12 +6,14 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "cleanUrls": true,
-    "trailingSlash": false,
     "rewrites": [
       {
         "source": "/productos",
         "destination": "/productos.html"
+      },
+      {
+        "source": "/pago",
+        "destination": "/pago.html"
       },
       {
         "source": "**",
@@ -20,7 +22,7 @@
     ],
     "headers": [
       {
-        "source": "**/*.@(js|css|jpg|jpeg|png|webp|svg|gif|ico)",
+        "source": "**/*.@(js|css)",
         "headers": [
           {
             "key": "Cache-Control",
@@ -28,9 +30,6 @@
           }
         ]
       }
-    ],
-    "i18n": {
-      "root": "/"
-    }
+    ]
   }
 }
