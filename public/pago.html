@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pago - TecnoExpress</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <header>
-    <div class="container">
+    <div class="container header-container">
       <div class="logo">
-        <a href="index.html"><img src="/img/logo.png" alt="TecnoExpress"></a>
+        <a href="index.html"><img src="img/logo.png" alt="TecnoExpress"></a>
       </div>
       <nav>
         <ul>
@@ -74,19 +74,20 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Cargar datos desde localStorage o sessionStorage
+      // Cargar datos desde múltiples fuentes
       const checkoutData = JSON.parse(localStorage.getItem('checkoutData')) || 
-                         JSON.parse(sessionStorage.getItem('tempCheckoutData'));
-      
+                         JSON.parse(sessionStorage.getItem('tempCheckout')) || 
+                         { items: [], total: 0 };
+
       const orderItems = document.getElementById('orderItems');
       const orderTotal = document.getElementById('orderTotal');
       const paymentTotal = document.getElementById('paymentTotal');
 
-      if (!checkoutData?.items) {
+      if (checkoutData.items.length === 0) {
         orderItems.innerHTML = `
           <div class="error">
             <i class="fas fa-exclamation-triangle"></i>
-            <p>No se encontraron productos. Serás redirigido...</p>
+            <p>No se encontraron productos. Redirigiendo...</p>
           </div>
         `;
         setTimeout(() => window.location.href = 'productos.html', 2000);
@@ -112,10 +113,8 @@
       paymentTotal.textContent = total;
 
       // Actualizar contador
-      const cartCounter = document.getElementById('cartCounter');
-      if (cartCounter) {
-        cartCounter.textContent = checkoutData.items.reduce((sum, item) => sum + item.quantity, 0);
-      }
+      document.getElementById('cartCounter').textContent = 
+        checkoutData.items.reduce((sum, item) => sum + item.quantity, 0);
 
       // Manejar pago
       document.getElementById('paymentForm').addEventListener('submit', (e) => {
@@ -123,7 +122,7 @@
         alert('✅ Pago procesado correctamente');
         localStorage.removeItem('cart');
         localStorage.removeItem('checkoutData');
-        sessionStorage.removeItem('tempCheckoutData');
+        sessionStorage.removeItem('tempCheckout');
         window.location.href = 'index.html';
       });
     });
