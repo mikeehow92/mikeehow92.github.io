@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Usuario</title>
     <style>
-        /* Reset y estilos base consistentes con tu CSS principal */
+        /* Reset y estilos base */
         * {
           margin: 0;
           padding: 0;
@@ -16,7 +16,7 @@
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
           line-height: 1.6;
           color: #333;
-          background-color: #f9f9f9;
+          background-color: #f9f9f9; /* Exactamente igual que tu página principal */
           display: flex;
           justify-content: center;
           align-items: center;
@@ -24,7 +24,7 @@
           padding: 20px;
         }
 
-        /* Contenedor principal - Estilo consistente con tu sitio */
+        /* Contenedor principal */
         .register-container {
           background-color: white;
           width: 100%;
@@ -39,7 +39,7 @@
           box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         }
 
-        /* Título - Estilo consistente con tus otros títulos */
+        /* Título */
         .register-title {
           text-align: center;
           color: #2c3e50;
@@ -57,7 +57,7 @@
           color: #3498db;
         }
 
-        /* Grupos de formulario - Igual que en tu página de pago */
+        /* Grupos de formulario */
         .form-group {
           margin-bottom: 1.5rem;
           position: relative;
@@ -85,7 +85,7 @@
           box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
         }
 
-        /* Botón - Estilo idéntico al de "Add to Cart" */
+        /* Botón */
         .register-btn {
           width: 100%;
           padding: 15px;
@@ -113,7 +113,7 @@
           transform: translateY(0);
         }
 
-        /* Enlace - Igual que en tu modal de login */
+        /* Enlace */
         .login-link {
           text-align: center;
           margin-top: 25px;
@@ -130,7 +130,7 @@
           text-decoration: underline;
         }
 
-        /* Mensajes de error - Estilo consistente */
+        /* Mensajes de error */
         .error-message {
           color: #e74c3c;
           font-size: 0.85rem;
@@ -146,7 +146,7 @@
           display: block;
         }
 
-        /* Responsive - Breakpoints igual que en tu CSS */
+        /* Responsive */
         @media (max-width: 768px) {
           .register-container {
             padding: 30px;
@@ -216,7 +216,6 @@
     </div>
 
     <script>
-        // Validación consistente con tu estilo
         document.querySelector('form').addEventListener('submit', function(e) {
             let valid = true;
             
@@ -252,14 +251,12 @@
             }
         });
         
-        // Eliminar error al escribir
         document.querySelectorAll('input').forEach(input => {
             input.addEventListener('input', function() {
                 this.closest('.form-group').classList.remove('error');
             });
         });
         
-        // Animación de shake
         const style = document.createElement('style');
         style.textContent = `
             @keyframes shake {
