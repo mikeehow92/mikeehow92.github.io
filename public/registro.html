@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Usuario</title>
     <style>
-        /* Reset y estilos base */
+        /* Reset y estilos base consistentes */
         * {
           margin: 0;
           padding: 0;
@@ -16,7 +16,7 @@
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
           line-height: 1.6;
           color: #333;
-          background-color: #f9f9f9; /* Exactamente igual que tu página principal */
+          background-color: #f0f3f5; /* Fondo más suave que el blanco puro */
           display: flex;
           justify-content: center;
           align-items: center;
@@ -24,29 +24,30 @@
           padding: 20px;
         }
 
-        /* Contenedor principal */
+        /* Contenedor principal con fondo coherente */
         .register-container {
-          background-color: white;
+          background-color: #f8fafc; /* Fondo muy ligeramente grisáceo */
           width: 100%;
           max-width: 500px;
           padding: 40px;
           border-radius: 10px;
-          box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+          box-shadow: 0 3px 15px rgba(0,0,0,0.08);
           transition: all 0.3s ease;
+          border: 1px solid #e1e5e9; /* Borde sutil */
         }
 
         .register-container:hover {
-          box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+          box-shadow: 0 5px 20px rgba(0,0,0,0.12);
         }
 
-        /* Título */
+        /* Título - Estilo consistente */
         .register-title {
           text-align: center;
           color: #2c3e50;
           margin-bottom: 30px;
           font-size: 1.8rem;
           padding-bottom: 15px;
-          border-bottom: 2px solid #ecf0f1;
+          border-bottom: 2px solid #e1e5e9; /* Borde más suave */
           display: flex;
           align-items: center;
           justify-content: center;
@@ -73,19 +74,21 @@
         .form-group input {
           width: 100%;
           padding: 12px;
-          border: 1px solid #ddd;
+          border: 1px solid #d6dde4;
           border-radius: 5px;
           font-size: 1rem;
           transition: border-color 0.3s ease;
+          background-color: #fefefe; /* Fondo de inputs ligeramente blanco */
         }
 
         .form-group input:focus {
           outline: none;
           border-color: #3498db;
           box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+          background-color: #fff;
         }
 
-        /* Botón */
+        /* Botón - Estilo idéntico al principal */
         .register-btn {
           width: 100%;
           padding: 15px;
@@ -140,6 +143,7 @@
 
         .form-group.error input {
           border-color: #e74c3c;
+          background-color: #fef6f6;
         }
 
         .form-group.error .error-message {
