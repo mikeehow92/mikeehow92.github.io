@@ -67,7 +67,8 @@
             color: #2c3e50;
         }
 
-        .form-group input {
+        .form-group input,
+        .form-group select {
             width: 100%;
             padding: 12px;
             border: 1px solid #d0d7e0;
@@ -77,7 +78,8 @@
             background-color: #fefefe;
         }
 
-        .form-group input:focus {
+        .form-group input:focus,
+        .form-group select:focus {
             outline: none;
             border-color: #3498db;
             box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
@@ -134,19 +136,14 @@
             display: none;
         }
 
-        .form-group.error input {
+        .form-group.error input,
+        .form-group.error select {
             border-color: #e74c3c;
             background-color: #fef6f6;
         }
 
         .form-group.error .error-message {
             display: block;
-        }
-
-        .address-fields {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
         }
 
         .verification-message {
@@ -156,24 +153,6 @@
             border-radius: 5px;
             margin-top: 20px;
             border-left: 4px solid #3498db;
-        }
-
-        .verification-message p {
-            margin-bottom: 10px;
-        }
-
-        #resend-verification {
-            background: none;
-            border: none;
-            color: #3498db;
-            text-decoration: underline;
-            cursor: pointer;
-            font-size: 0.9rem;
-            padding: 0;
-        }
-
-        #resend-verification:hover {
-            color: #2980b9;
         }
 
         @media (max-width: 768px) {
@@ -193,10 +172,6 @@
             
             .register-btn {
                 padding: 12px;
-            }
-            
-            .address-fields {
-                grid-template-columns: 1fr;
             }
         }
 
@@ -220,6 +195,7 @@
         </h1>
         
         <form id="registerForm">
+            <!-- Campos personales -->
             <div class="form-group">
                 <label for="nombre">Nombre completo</label>
                 <input type="text" id="nombre" name="nombre" required>
@@ -230,6 +206,12 @@
                 <label for="email">Correo electrónico</label>
                 <input type="email" id="email" name="email" required>
                 <div class="error-message">Por favor ingresa un correo válido</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="telefono">Teléfono</label>
+                <input type="tel" id="telefono" name="telefono" required>
+                <div class="error-message">Por favor ingrese un teléfono válido</div>
             </div>
             
             <div class="form-group">
@@ -244,21 +226,27 @@
                 <div class="error-message">Las contraseñas no coinciden</div>
             </div>
             
-            <div class="address-fields">
-                <div class="form-group">
-                    <label for="calle">Calle</label>
-                    <input type="text" id="calle" name="calle">
-                </div>
-                
-                <div class="form-group">
-                    <label for="numero">Número</label>
-                    <input type="text" id="numero" name="numero">
-                </div>
+            <!-- Campos de dirección -->
+            <div class="form-group">
+                <label for="departamento">Departamento</label>
+                <select id="departamento" name="departamento" required>
+                    <option value="">Seleccione un departamento</option>
+                </select>
+                <div class="error-message">Por favor seleccione un departamento</div>
             </div>
             
             <div class="form-group">
-                <label for="ciudad">Ciudad</label>
-                <input type="text" id="ciudad" name="ciudad">
+                <label for="municipio">Municipio</label>
+                <select id="municipio" name="municipio" required disabled>
+                    <option value="">Primero seleccione un departamento</option>
+                </select>
+                <div class="error-message">Por favor seleccione un municipio</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="direccion">Dirección exacta</label>
+                <input type="text" id="direccion" name="direccion" required>
+                <div class="error-message">Por favor ingrese su dirección</div>
             </div>
             
             <button type="submit" class="register-btn">
@@ -275,8 +263,8 @@
         <div class="verification-message" id="verification-message">
             <p>Hemos enviado un correo de verificación a <strong id="user-email-display"></strong>.</p>
             <p>Por favor verifica tu correo electrónico para activar tu cuenta.</p>
-            <button id="resend-verification">Reenviar correo de verificación</button>
-            <p id="verification-status"></p>
+            <button id="resend-verification" style="background: none; border: none; color: #3498db; text-decoration: underline; cursor: pointer;">Reenviar correo de verificación</button>
+            <p id="verification-status" style="margin-top: 10px;"></p>
         </div>
         
         <div class="login-link">
@@ -287,25 +275,67 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <script>
+        // Datos de departamentos y municipios de El Salvador
+        const departamentos = {
+            "Ahuachapán": ["Ahuachapán", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Guaymango", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
+            "Cabañas": ["Sensuntepeque", "Cinquera", "Dolores", "Guacotecti", "Ilobasco", "Jutiapa", "San Isidro", "Tejutepeque", "Victoria"],
+            "Chalatenango": ["Chalatenango", "Agua Caliente", "Arcatao", "Azacualpa", "Cancasque", "Citalá", "Comalapa", "Concepción Quezaltepeque", "Dulce Nombre de María", "El Carrizal", "El Paraíso", "La Laguna", "La Palma", "La Reina", "Las Vueltas", "Nombre de Jesús", "Nueva Concepción", "Nueva Trinidad", "Ojos de Agua", "Potonico", "San Antonio de la Cruz", "San Antonio Los Ranchos", "San Fernando", "San Francisco Lempa", "San Francisco Morazán", "San Ignacio", "San Isidro Labrador", "San José Cancasque", "San José Las Flores", "San Luis del Carmen", "San Miguel de Mercedes", "San Rafael", "Santa Rita", "Tejutla"],
+            "Cuscatlán": ["Cojutepeque", "Candelaria", "El Carmen", "El Rosario", "Monte San Juan", "Oratorio de Concepción", "San Bartolomé Perulapía", "San Cristóbal", "San José Guayabal", "San Pedro Perulapán", "San Rafael Cedros", "San Ramón", "Santa Cruz Analquito", "Santa Cruz Michapa", "Suchitoto", "Tenancingo"],
+            "La Libertad": ["Santa Tecla", "Antiguo Cuscatlán", "Chiltiupán", "Ciudad Arce", "Colón", "Comasagua", "Huizúcar", "Jayaque", "Jicalapa", "La Libertad", "Nuevo Cuscatlán", "Opico", "Quezaltepeque", "Sacacoyo", "San José Villanueva", "San Juan Opico", "San Matías", "San Pablo Tacachico", "Talnique", "Tamanique", "Teotepeque", "Tepecoyo", "Zaragoza"],
+            "La Paz": ["Zacatecoluca", "Cuyultitán", "El Rosario", "Jerusalén", "Mercedes La Ceiba", "Olocuilta", "Paraíso de Osorio", "San Antonio Masahuat", "San Emigdio", "San Francisco Chinameca", "San Juan Nonualco", "San Juan Talpa", "San Juan Tepezontes", "San Luis La Herradura", "San Luis Talpa", "San Miguel Tepezontes", "San Pedro Masahuat", "San Pedro Nonualco", "San Rafael Obrajuelo", "Santa María Ostuma", "Santiago Nonualco", "Tapalhuaca"],
+            "La Unión": ["La Unión", "Anamorós", "Bolívar", "Concepción de Oriente", "Conchagua", "El Carmen", "El Sauce", "Intipucá", "Lislique", "Meanguera del Golfo", "Nueva Esparta", "Pasaquina", "Polorós", "San Alejo", "San José", "Santa Rosa de Lima", "Yayantique", "Yucuaiquín"],
+            "Morazán": ["San Francisco Gotera", "Arambala", "Cacaopera", "Chilanga", "Corinto", "Delicias de Concepción", "El Divisadero", "El Rosario", "Gualococti", "Guatajiagua", "Joateca", "Jocoaitique", "Jocoro", "Lolotiquillo", "Meanguera", "Osicala", "Perquín", "San Carlos", "San Fernando", "San Isidro", "San Simón", "Sensembra", "Sociedad", "Torola", "Yamabal", "Yoloaiquín"],
+            "San Miguel": ["San Miguel", "Carolina", "Chapeltique", "Chinameca", "Chirilagua", "Ciudad Barrios", "Comacarán", "El Tránsito", "Lolotique", "Moncagua", "Nueva Guadalupe", "Nuevo Edén de San Juan", "Quelepa", "San Antonio", "San Gerardo", "San Jorge", "San Luis de la Reina", "San Rafael Oriente", "Sesori", "Uluazapa"],
+            "San Salvador": ["San Salvador", "Aguilares", "Apopa", "Ayutuxtepeque", "Cuscatancingo", "Delgado", "El Paisnal", "Guazapa", "Ilopango", "Mejicanos", "Nejapa", "Panchimalco", "Rosario de Mora", "San Marcos", "San Martín", "Santiago Texacuangos", "Santo Tomás", "Soyapango", "Tonacatepeque"],
+            "San Vicente": ["San Vicente", "Apastepeque", "Guadalupe", "San Cayetano Istepeque", "San Esteban Catarina", "San Ildefonso", "San Lorenzo", "San Sebastián", "Santa Clara", "Santo Domingo", "Tecoluca", "Tepetitán", "Verapaz"],
+            "Santa Ana": ["Santa Ana", "Candelaria de la Frontera", "Chalchuapa", "Coatepeque", "El Congo", "El Porvenir", "Masahuat", "Metapán", "San Antonio Pajonal", "San Sebastián Salitrillo", "Santa Rosa Guachipilín", "Santiago de la Frontera", "Texistepeque"],
+            "Sonsonate": ["Sonsonate", "Acajutla", "Armenia", "Caluco", "Cuisnahuat", "Izalco", "Juayúa", "Nahuizalco", "Nahulingo", "Salcoatitán", "San Antonio del Monte", "San Julián", "Santa Catarina Masahuat", "Santa Isabel Ishuatán", "Santo Domingo de Guzmán", "Sonzacate"],
+            "Usulután": ["Usulután", "Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán"]
+        };
+
+        // Configuración de Firebase (se reemplazarán en CI/CD)
         const firebaseConfig = {
-          apiKey: "{{FIREBASE_API_KEY}}",
-          authDomain: "{{FIREBASE_AUTH_DOMAIN}}",
-          databaseURL: "{{FIREBASE_DATABASE_URL}}",  
-          projectId: "{{FIREBASE_PROJECT_ID}}",
-          storageBucket: "{{FIREBASE_STORAGE_BUCKET}}",
-          messagingSenderId: "{{FIREBASE_MESSAGING_SENDER_ID}}",
-          appId: "{{FIREBASE_APP_ID}}"
+            apiKey: "{{FIREBASE_API_KEY}}",
+            authDomain: "{{FIREBASE_AUTH_DOMAIN}}",
+            projectId: "{{FIREBASE_PROJECT_ID}}",
+            storageBucket: "{{FIREBASE_STORAGE_BUCKET}}",
+            messagingSenderId: "{{FIREBASE_MESSAGING_SENDER_ID}}",
+            appId: "{{FIREBASE_APP_ID}}"
         };
 
         // Inicializa Firebase
         firebase.initializeApp(firebaseConfig);
-
-        // Obtiene referencia a los servicios
         const auth = firebase.auth();
-        const database = firebase.database();
+        const db = firebase.firestore();
+
+        // Llenar select de departamentos
+        const departamentoSelect = document.getElementById('departamento');
+        const municipioSelect = document.getElementById('municipio');
+
+        Object.keys(departamentos).forEach(depto => {
+            const option = document.createElement('option');
+            option.value = depto;
+            option.textContent = depto;
+            departamentoSelect.appendChild(option);
+        });
+
+        // Actualizar municipios cuando cambie el departamento
+        departamentoSelect.addEventListener('change', function() {
+            municipioSelect.innerHTML = '<option value="">Seleccione un municipio</option>';
+            municipioSelect.disabled = !this.value;
+            
+            if (this.value) {
+                departamentos[this.value].forEach(muni => {
+                    const option = document.createElement('option');
+                    option.value = muni;
+                    option.textContent = muni;
+                    municipioSelect.appendChild(option);
+                });
+            }
+        });
 
         // Registro de usuario
         document.getElementById('registerForm').addEventListener('submit', function(e) {
@@ -315,14 +345,15 @@
             let valid = true;
             const nombre = document.getElementById('nombre').value.trim();
             const email = document.getElementById('email').value.trim();
+            const telefono = document.getElementById('telefono').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
-            const calle = document.getElementById('calle').value.trim();
-            const numero = document.getElementById('numero').value.trim();
-            const ciudad = document.getElementById('ciudad').value.trim();
+            const departamento = document.getElementById('departamento').value;
+            const municipio = document.getElementById('municipio').value;
+            const direccion = document.getElementById('direccion').value.trim();
 
             // Validar campos requeridos
-            document.querySelectorAll('input[required]').forEach(input => {
+            document.querySelectorAll('input[required], select[required]').forEach(input => {
                 const formGroup = input.closest('.form-group');
                 
                 if (!input.value.trim()) {
@@ -340,6 +371,12 @@
                     if (input.id === 'password' && input.value.length < 6) {
                         formGroup.classList.add('error');
                         formGroup.querySelector('.error-message').textContent = 'La contraseña debe tener al menos 6 caracteres';
+                        valid = false;
+                    }
+
+                    if (input.id === 'telefono' && !/^[0-9]{8,}$/.test(input.value)) {
+                        formGroup.classList.add('error');
+                        formGroup.querySelector('.error-message').textContent = 'Teléfono inválido (mínimo 8 dígitos)';
                         valid = false;
                     }
                 }
@@ -369,20 +406,19 @@
                     // Enviar correo de verificación
                     return user.sendEmailVerification()
                         .then(() => {
-                            // Guardar datos adicionales en la base de datos
-                            const userData = {
+                            // Guardar datos adicionales en Firestore
+                            return db.collection('users').doc(user.uid).set({
                                 nombre: nombre,
                                 email: email,
-                                emailVerificado: false,
+                                telefono: telefono,
                                 direccion: {
-                                    calle: calle,
-                                    numero: numero,
-                                    ciudad: ciudad
+                                    departamento: departamento,
+                                    municipio: municipio,
+                                    direccionExacta: direccion
                                 },
-                                fechaRegistro: new Date().toISOString()
-                            };
-                            
-                            return database.ref('users/' + user.uid).set(userData);
+                                emailVerificado: false,
+                                fechaRegistro: firebase.firestore.FieldValue.serverTimestamp()
+                            });
                         });
                 })
                 .then(() => {
@@ -419,8 +455,8 @@
                 });
         });
         
-        // Limpiar errores al escribir
-        document.querySelectorAll('input').forEach(input => {
+        // Limpiar errores al escribir/seleccionar
+        document.querySelectorAll('input, select').forEach(input => {
             input.addEventListener('input', function() {
                 this.closest('.form-group').classList.remove('error');
             });
