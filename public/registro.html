@@ -5,181 +5,205 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Usuario</title>
     <style>
-        /* Reset y estilos base */
         * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          line-height: 1.6;
-          color: #333;
-          background-color: #e6ebf0; /* Gris azulado */
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          min-height: 100vh;
-          padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #e6ebf0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
         }
 
-        /* Contenedor principal */
         .register-container {
-          background-color: #f5f7fa;
-          width: 100%;
-          max-width: 500px;
-          padding: 40px;
-          border-radius: 10px;
-          box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-          transition: all 0.3s ease;
-          border: 1px solid #d0d7e0;
+            background-color: #f5f7fa;
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #d0d7e0;
         }
 
         .register-container:hover {
-          box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
 
-        /* Título */
         .register-title {
-          text-align: center;
-          color: #2c3e50;
-          margin-bottom: 30px;
-          font-size: 1.8rem;
-          padding-bottom: 15px;
-          border-bottom: 2px solid #e1e5e9;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 15px;
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e1e5e9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
 
         .register-title svg {
-          color: #3498db;
+            color: #3498db;
         }
 
-        /* Grupos de formulario */
         .form-group {
-          margin-bottom: 1.5rem;
-          position: relative;
+            margin-bottom: 1.5rem;
+            position: relative;
         }
 
         .form-group label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 500;
-          color: #2c3e50;
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #2c3e50;
         }
 
         .form-group input {
-          width: 100%;
-          padding: 12px;
-          border: 1px solid #d0d7e0;
-          border-radius: 5px;
-          font-size: 1rem;
-          transition: all 0.3s ease;
-          background-color: #fefefe;
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d0d7e0;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: #fefefe;
         }
 
         .form-group input:focus {
-          outline: none;
-          border-color: #3498db;
-          box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-          background-color: #fff;
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            background-color: #fff;
         }
 
-        /* Botón */
         .register-btn {
-          width: 100%;
-          padding: 15px;
-          background-color: #3498db;
-          color: white;
-          border: none;
-          border-radius: 5px;
-          cursor: pointer;
-          font-weight: 500;
-          font-size: 1.1rem;
-          transition: all 0.3s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          margin-top: 10px;
+            width: 100%;
+            padding: 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
         }
 
         .register-btn:hover {
-          background-color: #2980b9;
-          transform: translateY(-2px);
+            background-color: #2980b9;
+            transform: translateY(-2px);
         }
 
         .register-btn:active {
-          transform: translateY(0);
+            transform: translateY(0);
         }
 
-        /* Enlace */
         .login-link {
-          text-align: center;
-          margin-top: 25px;
-          color: #7f8c8d;
+            text-align: center;
+            margin-top: 25px;
+            color: #7f8c8d;
         }
 
         .login-link a {
-          color: #3498db;
-          text-decoration: none;
-          font-weight: 500;
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
         }
 
         .login-link a:hover {
-          text-decoration: underline;
+            text-decoration: underline;
         }
 
-        /* Mensajes de error */
         .error-message {
-          color: #e74c3c;
-          font-size: 0.85rem;
-          margin-top: 5px;
-          display: none;
+            color: #e74c3c;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
         }
 
         .form-group.error input {
-          border-color: #e74c3c;
-          background-color: #fef6f6;
+            border-color: #e74c3c;
+            background-color: #fef6f6;
         }
 
         .form-group.error .error-message {
-          display: block;
+            display: block;
         }
 
-        /* Campos de dirección */
         .address-fields {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
         }
 
-        /* Responsive */
+        .verification-message {
+            display: none;
+            background-color: #e8f4fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .verification-message p {
+            margin-bottom: 10px;
+        }
+
+        #resend-verification {
+            background: none;
+            border: none;
+            color: #3498db;
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0;
+        }
+
+        #resend-verification:hover {
+            color: #2980b9;
+        }
+
         @media (max-width: 768px) {
-          .register-container {
-            padding: 30px;
-          }
-          
-          .register-title {
-            font-size: 1.5rem;
-          }
+            .register-container {
+                padding: 30px;
+            }
+            
+            .register-title {
+                font-size: 1.5rem;
+            }
         }
 
         @media (max-width: 576px) {
-          .register-container {
-            padding: 25px 20px;
-          }
-          
-          .register-btn {
-            padding: 12px;
-          }
-          
-          .address-fields {
-            grid-template-columns: 1fr;
-          }
+            .register-container {
+                padding: 25px 20px;
+            }
+            
+            .register-btn {
+                padding: 12px;
+            }
+            
+            .address-fields {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
         }
     </style>
 </head>
@@ -220,7 +244,6 @@
                 <div class="error-message">Las contraseñas no coinciden</div>
             </div>
             
-            <!-- Campos de dirección sin código postal -->
             <div class="address-fields">
                 <div class="form-group">
                     <label for="calle">Calle</label>
@@ -249,6 +272,13 @@
             </button>
         </form>
         
+        <div class="verification-message" id="verification-message">
+            <p>Hemos enviado un correo de verificación a <strong id="user-email-display"></strong>.</p>
+            <p>Por favor verifica tu correo electrónico para activar tu cuenta.</p>
+            <button id="resend-verification">Reenviar correo de verificación</button>
+            <p id="verification-status"></p>
+        </div>
+        
         <div class="login-link">
             ¿Ya tienes una cuenta? <a href="index.html">Inicia sesión</a>
         </div>
@@ -260,21 +290,21 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        
+        // Configuración de Firebase (reemplaza con tus datos)
         const firebaseConfig = {
-          apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
-          authDomain: "mitienda-c2609.firebaseapp.com",
-          projectId: "mitienda-c2609",
-          storageBucket: "mitienda-c2609.appspot.com", // ¡Corregido! (quita .storage)
-          messagingSenderId: "536746062790",
-          appId: "1:536746062790:web:6e545efbc8f037e36538c7",
-          databaseURL: "https://mitienda-c2609.firebaseio.com" // Añade esto
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            databaseURL: "https://TU_PROYECTO.firebaseio.com",
+            projectId: "TU_PROYECTO",
+            storageBucket: "TU_PROYECTO.appspot.com",
+            messagingSenderId: "TU_SENDER_ID",
+            appId: "TU_APP_ID"
         };
 
         // Inicializa Firebase
         firebase.initializeApp(firebaseConfig);
 
-        // Referencias a los servicios
+        // Obtiene referencia a los servicios
         const auth = firebase.auth();
         const database = firebase.database();
 
@@ -337,26 +367,43 @@
                     // Usuario creado con éxito
                     const user = userCredential.user;
                     
-                    // Guardar datos adicionales en Realtime Database
-                    const userData = {
-                        nombre: nombre,
-                        email: email,
-                        direccion: {
-                            calle: calle,
-                            numero: numero,
-                            ciudad: ciudad
-                        },
-                        fechaRegistro: new Date().toISOString()
-                    };
-                    
-                    // Escribir en la base de datos
-                    return database.ref('users/' + user.uid).set(userData);
+                    // Enviar correo de verificación
+                    return user.sendEmailVerification()
+                        .then(() => {
+                            // Guardar datos adicionales en la base de datos
+                            const userData = {
+                                nombre: nombre,
+                                email: email,
+                                emailVerificado: false,
+                                direccion: {
+                                    calle: calle,
+                                    numero: numero,
+                                    ciudad: ciudad
+                                },
+                                fechaRegistro: new Date().toISOString()
+                            };
+                            
+                            return database.ref('users/' + user.uid).set(userData);
+                        });
                 })
                 .then(() => {
-                    // Registro completo
-                    alert('Registro exitoso! Bienvenido ' + nombre);
-                    // Redirigir a página de bienvenida
-                    window.location.href = 'bienvenida.html';
+                    // Mostrar mensaje de verificación
+                    document.getElementById('user-email-display').textContent = email;
+                    document.getElementById('verification-message').style.display = 'block';
+                    document.getElementById('registerForm').style.display = 'none';
+                    
+                    // Configurar botón de reenvío
+                    document.getElementById('resend-verification').addEventListener('click', function() {
+                        auth.currentUser.sendEmailVerification()
+                            .then(() => {
+                                document.getElementById('verification-status').textContent = '¡Correo de verificación reenviado!';
+                                document.getElementById('verification-status').style.color = '#27ae60';
+                            })
+                            .catch((error) => {
+                                document.getElementById('verification-status').textContent = 'Error: ' + error.message;
+                                document.getElementById('verification-status').style.color = '#e74c3c';
+                            });
+                    });
                 })
                 .catch((error) => {
                     // Manejar errores
@@ -380,6 +427,13 @@
             });
         });
         
+        // Verificar si el usuario ya está verificado al cargar la página
+        auth.onAuthStateChanged((user) => {
+            if (user && user.emailVerified) {
+                window.location.href = 'bienvenida.html';
+            }
+        });
+
         // Animación de shake
         const style = document.createElement('style');
         style.textContent = `
