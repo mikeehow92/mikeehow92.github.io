@@ -1,6 +1,0 @@
-node_modules/
-.firebase/
-package-lock.json
-public/server.js
-package*.json
-node_modules/
