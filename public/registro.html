@@ -195,7 +195,7 @@
             Registro de Usuario
         </h1>
         
-        <form action="#" method="post">
+        <form id="registerForm">
             <div class="form-group">
                 <label for="nombre">Nombre completo</label>
                 <input type="text" id="nombre" name="nombre" required>
@@ -212,6 +212,12 @@
                 <label for="password">Contraseña</label>
                 <input type="password" id="password" name="password" required>
                 <div class="error-message">La contraseña debe tener al menos 6 caracteres</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm-password">Confirmar Contraseña</label>
+                <input type="password" id="confirm-password" name="confirm-password" required>
+                <div class="error-message">Las contraseñas no coinciden</div>
             </div>
             
             <!-- Campos de dirección sin código postal -->
@@ -248,10 +254,45 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <script>
-        document.querySelector('form').addEventListener('submit', function(e) {
-            let valid = true;
+        
+        const firebaseConfig = {
+          apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
+          authDomain: "mitienda-c2609.firebaseapp.com",
+          projectId: "mitienda-c2609",
+          storageBucket: "mitienda-c2609.appspot.com", // ¡Corregido! (quita .storage)
+          messagingSenderId: "536746062790",
+          appId: "1:536746062790:web:6e545efbc8f037e36538c7",
+          databaseURL: "https://mitienda-c2609.firebaseio.com" // Añade esto
+        };
+
+        // Inicializa Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Referencias a los servicios
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // Registro de usuario
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
             
+            // Validación del formulario
+            let valid = true;
+            const nombre = document.getElementById('nombre').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const calle = document.getElementById('calle').value.trim();
+            const numero = document.getElementById('numero').value.trim();
+            const ciudad = document.getElementById('ciudad').value.trim();
+
+            // Validar campos requeridos
             document.querySelectorAll('input[required]').forEach(input => {
                 const formGroup = input.closest('.form-group');
                 
@@ -267,29 +308,79 @@
                         valid = false;
                     }
                     
-                    if (input.type === 'password' && input.value.length < 6) {
+                    if (input.id === 'password' && input.value.length < 6) {
                         formGroup.classList.add('error');
                         formGroup.querySelector('.error-message').textContent = 'La contraseña debe tener al menos 6 caracteres';
                         valid = false;
                     }
                 }
             });
-            
+
+            // Validar coincidencia de contraseñas
+            if (password !== confirmPassword) {
+                document.getElementById('confirm-password').closest('.form-group').classList.add('error');
+                document.getElementById('confirm-password').closest('.form-group').querySelector('.error-message').textContent = 'Las contraseñas no coinciden';
+                valid = false;
+            }
+
             if (!valid) {
-                e.preventDefault();
                 document.querySelector('.register-container').style.animation = 'shake 0.5s';
                 setTimeout(() => {
                     document.querySelector('.register-container').style.animation = '';
                 }, 500);
+                return;
             }
+            
+            // Crear usuario con Firebase Auth
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Usuario creado con éxito
+                    const user = userCredential.user;
+                    
+                    // Guardar datos adicionales en Realtime Database
+                    const userData = {
+                        nombre: nombre,
+                        email: email,
+                        direccion: {
+                            calle: calle,
+                            numero: numero,
+                            ciudad: ciudad
+                        },
+                        fechaRegistro: new Date().toISOString()
+                    };
+                    
+                    // Escribir en la base de datos
+                    return database.ref('users/' + user.uid).set(userData);
+                })
+                .then(() => {
+                    // Registro completo
+                    alert('Registro exitoso! Bienvenido ' + nombre);
+                    // Redirigir a página de bienvenida
+                    window.location.href = 'bienvenida.html';
+                })
+                .catch((error) => {
+                    // Manejar errores
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    
+                    if (errorCode === 'auth/email-already-in-use') {
+                        alert('Este correo electrónico ya está registrado.');
+                    } else if (errorCode === 'auth/weak-password') {
+                        alert('La contraseña es demasiado débil.');
+                    } else {
+                        alert('Error: ' + errorMessage);
+                    }
+                });
         });
         
+        // Limpiar errores al escribir
         document.querySelectorAll('input').forEach(input => {
             input.addEventListener('input', function() {
                 this.closest('.form-group').classList.remove('error');
             });
         });
         
+        // Animación de shake
         const style = document.createElement('style');
         style.textContent = `
             @keyframes shake {
