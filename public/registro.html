@@ -429,7 +429,7 @@
         // Verificar si el usuario ya está verificado al cargar la página
         auth.onAuthStateChanged((user) => {
             if (user && user.emailVerified) {
-                window.location.href = 'bienvenida.html';
+                window.location.href = 'configuraciondeusuario.html';
             }
         });
 
