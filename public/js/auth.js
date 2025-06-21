@@ -20,6 +20,49 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+// Servicio de autenticación encapsulado
+export const AuthService = {
+  getCurrentUser: () => auth.currentUser,
+  
+  login: (email, password) => 
+    signInWithEmailAndPassword(auth, email, password),
+  
+  logout: () => signOut(auth),
+  
+  onAuthStateChanged: (callback) => 
+    onAuthStateChanged(auth, callback),
+    
+  changePassword: async (currentPassword, newPassword) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error("No hay usuario autenticado");
+    
+    const credential = EmailAuthProvider.credential(
+      user.email, 
+      currentPassword
+    );
+    
+    await reauthenticateWithCredential(user, credential);
+    return await updatePassword(user, newPassword);
+  },
+  
+  // Función para verificar si el usuario está autenticado y verificado
+  checkAuth: () => {
+    return new Promise((resolve, reject) => {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          if (user.emailVerified) {
+            resolve(user);
+          } else {
+            reject(new Error("El correo electrónico no está verificado"));
+          }
+        } else {
+          reject(new Error("Usuario no autenticado"));
+        }
+      });
+    });
+  }
+};
+
 // Elementos del DOM
 const loginModal = document.getElementById('login-modal');
 const openLoginBtn = document.getElementById('open-login-btn');
