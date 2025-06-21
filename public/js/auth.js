@@ -7,13 +7,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "{{FIREBASE_API_KEY}}",
-  authDomain: "{{FIREBASE_AUTH_DOMAIN}}",
-  databaseURL: "{{FIREBASE_DATABASE_URL}}", 
-  projectId: "{{FIREBASE_PROJECT_ID}}",
-  storageBucket: "{{FIREBASE_STORAGE_BUCKET}}",
-  messagingSenderId: "{{FIREBASE_MESSAGING_SENDER_ID}}",
-  appId: "{{FIREBASE_APP_ID}}"
+  apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
+  authDomain: "tu-proyecto.firebaseapp.com",
+  databaseURL: "https://tu-proyecto.firebaseio.com", 
+  projectId: "tu-proyecto-id",
+  storageBucket: "tu-proyecto.appspot.com",
+  messagingSenderId: "123456789012",
+  appId: "1:123456789012:web:abc123def456"
 };
 
 // Inicializa Firebase
