@@ -331,6 +331,7 @@
           <li><a href="index.html"><i class="fas fa-home"></i> Inicio</a></li>
           <li><a href="productos.html"><i class="fas fa-print"></i> Productos</a></li>
           <li><a href="#"><i class="fas fa-envelope"></i> Contacto</a></li>
+          <li id="profile-nav-item" style="display: none;"><a href="perfil.html"><i class="fas fa-user"></i> Mi Perfil</a></li>
         </ul>
       </nav>
       <div class="user-section">
@@ -439,54 +440,7 @@
         <h2 class="section-title"><i class="fas fa-shopping-bag"></i> Historial de Compras</h2>
         
         <div id="ordersList">
-          <!-- Ejemplo de una orden (será generado dinámicamente) -->
-          <div class="order-card">
-            <div class="order-header">
-              <div>
-                <span class="order-id">Orden #12345</span>
-                <span class="order-date">15/06/2023</span>
-              </div>
-              <span class="order-status status-completed">Completado</span>
-            </div>
-            <div class="order-items">
-              <div class="order-item">
-                <img src="img/impresora1.webp" alt="Impresora EPSON TM-T20III" class="item-img">
-                <div class="item-details">
-                  <div class="item-name">Impresora EPSON TM-T20III</div>
-                  <div class="item-price">$150.00 x 1</div>
-                </div>
-              </div>
-              <div class="order-item">
-                <img src="img/impresora2.webp" alt="Impresora EPSON TM-T88III" class="item-img">
-                <div class="item-details">
-                  <div class="item-name">Impresora EPSON TM-T88III</div>
-                  <div class="item-price">$80.00 x 2</div>
-                </div>
-              </div>
-            </div>
-            <div class="order-total">Total: $310.00</div>
-          </div>
-          
-          <!-- Otra orden de ejemplo -->
-          <div class="order-card">
-            <div class="order-header">
-              <div>
-                <span class="order-id">Orden #12344</span>
-                <span class="order-date">10/05/2023</span>
-              </div>
-              <span class="order-status status-completed">Completado</span>
-            </div>
-            <div class="order-items">
-              <div class="order-item">
-                <img src="img/impresora2.webp" alt="Impresora EPSON TM-T88III" class="item-img">
-                <div class="item-details">
-                  <div class="item-name">Impresora EPSON TM-T88III</div>
-                  <div class="item-price">$80.00 x 1</div>
-                </div>
-              </div>
-            </div>
-            <div class="order-total">Total: $80.00</div>
-          </div>
+          <!-- Las órdenes se cargarán dinámicamente aquí -->
         </div>
         
         <div id="emptyOrders" style="display: none; text-align: center; padding: 40px;">
@@ -556,27 +510,20 @@
   </footer>
 
   <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script type="module">
+    import { AuthService } from '/js/auth.js';
+    import { 
+      getFirestore, 
+      doc, 
+      getDoc, 
+      updateDoc,
+      collection,
+      query,
+      where,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
 
-  <script>
-    // Configuración de Firebase (debe coincidir con la configuración en registro.html)
-    const firebaseConfig = {
-      apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
-      authDomain: "mitienda-c2609.firebaseapp.com",
-      projectId: "mitienda-c2609",
-      storageBucket: "mitienda-c2609.appspot.com",
-      messagingSenderId: "123456789012",
-      appId: "1:123456789012:web:abc123def456"
-    };
-
-    // Inicializa Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // Datos de departamentos y municipios de El Salvador (de registro.html)
+    // Datos de departamentos y municipios de El Salvador
     const departamentos = {
       "Ahuachapán": ["Ahuachapán", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Guaymango", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
       "Cabañas": ["Sensuntepeque", "Cinquera", "Dolores", "Guacotecti", "Ilobasco", "Jutiapa", "San Isidro", "Tejutepeque", "Victoria"],
@@ -593,6 +540,312 @@
       "Sonsonate": ["Sonsonate", "Acajutla", "Armenia", "Caluco", "Cuisnahuat", "Izalco", "Juayúa", "Nahuizalco", "Nahulingo", "Salcoatitán", "San Antonio del Monte", "San Julián", "Santa Catarina Masahuat", "Santa Isabel Ishuatán", "Santo Domingo de Guzmán", "Sonzacate"],
       "Usulután": ["Usulután", "Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán"]
     };
+
+    // Inicializar Firestore
+    const db = getFirestore();
+
+    // Función para cargar los datos del usuario
+    async function loadUserData() {
+      try {
+        const user = await AuthService.checkAuth();
+        
+        // Mostrar nombre y correo
+        document.getElementById('profileUserName').textContent = user.displayName || user.email.split('@')[0];
+        document.getElementById('userFullName').textContent = user.displayName || 'No especificado';
+        document.getElementById('userEmail').textContent = user.email;
+        
+        // Obtener datos adicionales de Firestore
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          
+          // Mostrar datos personales
+          document.getElementById('userPhone').textContent = userData.telefono || 'No especificado';
+          
+          // Mostrar datos de dirección
+          if (userData.direccion) {
+            document.getElementById('userDepartment').textContent = userData.direccion.departamento || 'No especificado';
+            document.getElementById('userMunicipality').textContent = userData.direccion.municipio || 'No especificado';
+            document.getElementById('userAddress').textContent = userData.direccion.direccionExacta || 'No especificado';
+          }
+          
+          // Mostrar último inicio de sesión
+          if (user.metadata && user.metadata.lastSignInTime) {
+            const lastLogin = new Date(user.metadata.lastSignInTime);
+            document.getElementById('lastLogin').textContent = lastLogin.toLocaleString();
+          }
+          
+          // Mostrar enlace de perfil en el nav
+          document.getElementById('profile-nav-item').style.display = 'block';
+          
+          // Cargar historial de compras
+          await loadOrderHistory(user.uid);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert(error.message);
+        window.location.href = 'login.html';
+      }
+    }
+
+    // Función para cargar el historial de compras
+    async function loadOrderHistory(userId) {
+      try {
+        const q = query(collection(db, 'orders'), where('userId', '==', userId));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+          document.getElementById('ordersList').style.display = 'none';
+          document.getElementById('emptyOrders').style.display = 'block';
+          return;
+        }
+        
+        let ordersHTML = '';
+        querySnapshot.forEach(doc => {
+          const order = doc.data();
+          ordersHTML += `
+            <div class="order-card">
+              <div class="order-header">
+                <div>
+                  <span class="order-id">Orden #${doc.id.substring(0, 8)}</span>
+                  <span class="order-date">${new Date(order.date).toLocaleDateString()}</span>
+                </div>
+                <span class="order-status ${getStatusClass(order.status)}">${order.status}</span>
+              </div>
+              <div class="order-items">
+                ${order.items.map(item => `
+                  <div class="order-item">
+                    <img src="${item.image || 'img/default-product.webp'}" alt="${item.name}" class="item-img">
+                    <div class="item-details">
+                      <div class="item-name">${item.name}</div>
+                      <div class="item-price">$${item.price} x ${item.quantity}</div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="order-total">Total: $${order.total}</div>
+            </div>
+          `;
+        });
+        
+        document.getElementById('ordersList').innerHTML = ordersHTML;
+      } catch (error) {
+        console.error("Error cargando historial:", error);
+        document.getElementById('ordersList').style.display = 'none';
+        document.getElementById('emptyOrders').style.display = 'block';
+      }
+    }
+
+    function getStatusClass(status) {
+      switch(status.toLowerCase()) {
+        case 'completado': return 'status-completed';
+        case 'pendiente': return 'status-pending';
+        case 'cancelado': return 'status-cancelled';
+        default: return '';
+      }
+    }
+
+    // Cambiar entre secciones del perfil
+    document.querySelectorAll('.profile-menu a').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Remover clase active de todos los enlaces y secciones
+        document.querySelectorAll('.profile-menu a').forEach(item => {
+          item.classList.remove('active');
+        });
+        document.querySelectorAll('.profile-section').forEach(section => {
+          section.classList.remove('active');
+        });
+        
+        // Agregar clase active al enlace clickeado
+        this.classList.add('active');
+        
+        // Mostrar la sección correspondiente
+        const sectionId = this.getAttribute('data-section');
+        document.getElementById(`${sectionId}-section`).classList.add('active');
+      });
+    });
+
+    // Funciones para editar información personal
+    document.getElementById('editPersonalBtn').addEventListener('click', function() {
+      // Obtener datos actuales
+      const currentName = document.getElementById('userFullName').textContent;
+      const currentPhone = document.getElementById('userPhone').textContent;
+      
+      // Poner valores en el formulario
+      document.getElementById('editName').value = currentName !== 'No especificado' ? currentName : '';
+      document.getElementById('editPhone').value = currentPhone !== 'No especificado' ? currentPhone : '';
+      
+      // Mostrar formulario y ocultar info estática
+      document.getElementById('editPersonalForm').style.display = 'block';
+      document.getElementById('editPersonalBtn').style.display = 'none';
+    });
+
+    document.getElementById('cancelPersonalBtn').addEventListener('click', function() {
+      document.getElementById('editPersonalForm').style.display = 'none';
+      document.getElementById('editPersonalBtn').style.display = 'inline-flex';
+    });
+
+    document.getElementById('savePersonalBtn').addEventListener('click', async function() {
+      const newName = document.getElementById('editName').value.trim();
+      const newPhone = document.getElementById('editPhone').value.trim();
+      
+      // Validaciones básicas
+      if (!newName) {
+        alert('Por favor ingrese su nombre completo');
+        return;
+      }
+      
+      if (!newPhone || !/^[0-9]{8,}$/.test(newPhone)) {
+        alert('Por favor ingrese un número de teléfono válido (mínimo 8 dígitos)');
+        return;
+      }
+      
+      try {
+        const user = await AuthService.checkAuth();
+        await updateDoc(doc(db, 'users', user.uid), {
+          nombre: newName,
+          telefono: newPhone
+        });
+        
+        // Actualizar la vista
+        document.getElementById('userFullName').textContent = newName;
+        document.getElementById('userPhone').textContent = newPhone;
+        document.getElementById('profileUserName').textContent = newName;
+        
+        // Ocultar formulario
+        document.getElementById('editPersonalForm').style.display = 'none';
+        document.getElementById('editPersonalBtn').style.display = 'inline-flex';
+        
+        alert('Información actualizada correctamente');
+      } catch (error) {
+        console.error("Error actualizando datos:", error);
+        alert('Ocurrió un error al actualizar la información: ' + error.message);
+      }
+    });
+
+    // Funciones para editar dirección
+    document.getElementById('editAddressBtn').addEventListener('click', function() {
+      // Obtener datos actuales
+      const currentDepto = document.getElementById('userDepartment').textContent;
+      const currentMuni = document.getElementById('userMunicipality').textContent;
+      const currentAddress = document.getElementById('userAddress').textContent;
+      
+      // Poner valores en el formulario
+      if (currentDepto !== 'No especificado') {
+        document.getElementById('editDepartment').value = currentDepto;
+        document.getElementById('editDepartment').dispatchEvent(new Event('change'));
+        
+        // Esperar un momento para que se carguen los municipios
+        setTimeout(() => {
+          if (currentMuni !== 'No especificado') {
+            document.getElementById('editMunicipality').value = currentMuni;
+          }
+        }, 100);
+      }
+      
+      document.getElementById('editAddress').value = currentAddress !== 'No especificado' ? currentAddress : '';
+      
+      // Mostrar formulario y ocultar info estática
+      document.getElementById('editAddressForm').style.display = 'block';
+      document.getElementById('editAddressBtn').style.display = 'none';
+    });
+
+    document.getElementById('cancelAddressBtn').addEventListener('click', function() {
+      document.getElementById('editAddressForm').style.display = 'none';
+      document.getElementById('editAddressBtn').style.display = 'inline-flex';
+    });
+
+    document.getElementById('saveAddressBtn').addEventListener('click', async function() {
+      const newDepto = document.getElementById('editDepartment').value;
+      const newMuni = document.getElementById('editMunicipality').value;
+      const newAddress = document.getElementById('editAddress').value.trim();
+      
+      // Validaciones
+      if (!newDepto || !newMuni || !newAddress) {
+        alert('Por favor complete todos los campos de dirección');
+        return;
+      }
+      
+      try {
+        const user = await AuthService.checkAuth();
+        await updateDoc(doc(db, 'users', user.uid), {
+          direccion: {
+            departamento: newDepto,
+            municipio: newMuni,
+            direccionExacta: newAddress
+          }
+        });
+        
+        // Actualizar la vista
+        document.getElementById('userDepartment').textContent = newDepto;
+        document.getElementById('userMunicipality').textContent = newMuni;
+        document.getElementById('userAddress').textContent = newAddress;
+        
+        // Ocultar formulario
+        document.getElementById('editAddressForm').style.display = 'none';
+        document.getElementById('editAddressBtn').style.display = 'inline-flex';
+        
+        alert('Dirección actualizada correctamente');
+      } catch (error) {
+        console.error("Error actualizando dirección:", error);
+        alert('Ocurrió un error al actualizar la dirección: ' + error.message);
+      }
+    });
+
+    // Funciones para cambiar contraseña
+    document.getElementById('changePasswordBtn').addEventListener('click', function() {
+      document.getElementById('changePasswordForm').style.display = 'block';
+      document.getElementById('changePasswordBtn').style.display = 'none';
+    });
+
+    document.getElementById('cancelPasswordBtn').addEventListener('click', function() {
+      document.getElementById('changePasswordForm').style.display = 'none';
+      document.getElementById('changePasswordBtn').style.display = 'inline-flex';
+      
+      // Limpiar campos
+      document.getElementById('currentPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmNewPassword').value = '';
+    });
+
+    document.getElementById('savePasswordBtn').addEventListener('click', async function() {
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+      
+      // Validaciones
+      if (!currentPassword || !newPassword || !confirmNewPassword) {
+        alert('Por favor complete todos los campos');
+        return;
+      }
+      
+      if (newPassword.length < 6) {
+        alert('La nueva contraseña debe tener al menos 6 caracteres');
+        return;
+      }
+      
+      if (newPassword !== confirmNewPassword) {
+        alert('Las contraseñas no coinciden');
+        return;
+      }
+      
+      try {
+        await AuthService.changePassword(currentPassword, newPassword);
+        alert('Contraseña cambiada correctamente');
+        
+        // Limpiar y ocultar formulario
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmNewPassword').value = '';
+        document.getElementById('changePasswordForm').style.display = 'none';
+        document.getElementById('changePasswordBtn').style.display = 'inline-flex';
+      } catch (error) {
+        console.error("Error cambiando contraseña:", error);
+        alert('Error: ' + error.message);
+      }
+    });
 
     // Llenar select de departamentos para edición
     const editDepartmentSelect = document.getElementById('editDepartment');
@@ -620,294 +873,8 @@
       }
     });
 
-    // Cambiar entre secciones del perfil
-    document.querySelectorAll('.profile-menu a').forEach(link => {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        // Remover clase active de todos los enlaces y secciones
-        document.querySelectorAll('.profile-menu a').forEach(item => {
-          item.classList.remove('active');
-        });
-        document.querySelectorAll('.profile-section').forEach(section => {
-          section.classList.remove('active');
-        });
-        
-        // Agregar clase active al enlace clickeado
-        this.classList.add('active');
-        
-        // Mostrar la sección correspondiente
-        const sectionId = this.getAttribute('data-section');
-        document.getElementById(`${sectionId}-section`).classList.add('active');
-      });
-    });
-
-    // Función para cargar los datos del usuario
-    function loadUserData() {
-      const user = auth.currentUser;
-      
-      if (user) {
-        // Mostrar nombre y correo
-        document.getElementById('profileUserName').textContent = user.displayName || user.email.split('@')[0];
-        document.getElementById('userFullName').textContent = user.displayName || 'No especificado';
-        document.getElementById('userEmail').textContent = user.email;
-        
-        // Obtener datos adicionales de Firestore
-        db.collection('users').doc(user.uid).get().then(doc => {
-          if (doc.exists) {
-            const userData = doc.data();
-            
-            // Mostrar datos personales
-            document.getElementById('userPhone').textContent = userData.telefono || 'No especificado';
-            
-            // Mostrar datos de dirección
-            if (userData.direccion) {
-              document.getElementById('userDepartment').textContent = userData.direccion.departamento || 'No especificado';
-              document.getElementById('userMunicipality').textContent = userData.direccion.municipio || 'No especificado';
-              document.getElementById('userAddress').textContent = userData.direccion.direccionExacta || 'No especificado';
-            }
-            
-            // Mostrar último inicio de sesión
-            if (user.metadata.lastSignInTime) {
-              const lastLogin = new Date(user.metadata.lastSignInTime);
-              document.getElementById('lastLogin').textContent = lastLogin.toLocaleString();
-            }
-          }
-        }).catch(error => {
-          console.error("Error obteniendo datos del usuario:", error);
-        });
-        
-        // Cargar historial de compras (simulado)
-        loadOrderHistory(user.uid);
-      } else {
-        // Si no hay usuario autenticado, redirigir al login
-        window.location.href = 'login.html';
-      }
-    }
-
-    // Función para cargar el historial de compras (simulado)
-    function loadOrderHistory(userId) {
-      // En una aplicación real, aquí se haría una consulta a Firestore
-      // para obtener las órdenes del usuario
-      
-      // Simulamos una respuesta vacía para mostrar el estado "sin compras"
-      const orders = []; // Esto vendría de la consulta a Firestore
-      
-      if (orders.length === 0) {
-        document.getElementById('ordersList').style.display = 'none';
-        document.getElementById('emptyOrders').style.display = 'block';
-      } else {
-        // Aquí se generaría dinámicamente el HTML para cada orden
-      }
-    }
-
-    // Funciones para editar información personal
-    document.getElementById('editPersonalBtn').addEventListener('click', function() {
-      const user = auth.currentUser;
-      
-      // Obtener datos actuales
-      const currentName = document.getElementById('userFullName').textContent;
-      const currentPhone = document.getElementById('userPhone').textContent;
-      
-      // Poner valores en el formulario
-      document.getElementById('editName').value = currentName !== 'No especificado' ? currentName : '';
-      document.getElementById('editPhone').value = currentPhone !== 'No especificado' ? currentPhone : '';
-      
-      // Mostrar formulario y ocultar info estática
-      document.getElementById('editPersonalForm').style.display = 'block';
-      document.getElementById('editPersonalBtn').style.display = 'none';
-    });
-
-    document.getElementById('cancelPersonalBtn').addEventListener('click', function() {
-      document.getElementById('editPersonalForm').style.display = 'none';
-      document.getElementById('editPersonalBtn').style.display = 'inline-flex';
-    });
-
-    document.getElementById('savePersonalBtn').addEventListener('click', function() {
-      const newName = document.getElementById('editName').value.trim();
-      const newPhone = document.getElementById('editPhone').value.trim();
-      const user = auth.currentUser;
-      
-      // Validaciones básicas
-      if (!newName) {
-        alert('Por favor ingrese su nombre completo');
-        return;
-      }
-      
-      if (!newPhone || !/^[0-9]{8,}$/.test(newPhone)) {
-        alert('Por favor ingrese un número de teléfono válido (mínimo 8 dígitos)');
-        return;
-      }
-      
-      // Actualizar en Firestore
-      db.collection('users').doc(user.uid).update({
-        nombre: newName,
-        telefono: newPhone
-      }).then(() => {
-        // Actualizar la vista
-        document.getElementById('userFullName').textContent = newName;
-        document.getElementById('userPhone').textContent = newPhone;
-        document.getElementById('profileUserName').textContent = newName;
-        
-        // Ocultar formulario
-        document.getElementById('editPersonalForm').style.display = 'none';
-        document.getElementById('editPersonalBtn').style.display = 'inline-flex';
-        
-        alert('Información actualizada correctamente');
-      }).catch(error => {
-        console.error("Error actualizando datos:", error);
-        alert('Ocurrió un error al actualizar la información');
-      });
-    });
-
-    // Funciones para editar dirección
-    document.getElementById('editAddressBtn').addEventListener('click', function() {
-      // Obtener datos actuales
-      const currentDepto = document.getElementById('userDepartment').textContent;
-      const currentMuni = document.getElementById('userMunicipality').textContent;
-      const currentAddress = document.getElementById('userAddress').textContent;
-      
-      // Poner valores en el formulario
-      if (currentDepto !== 'No especificado') {
-        editDepartmentSelect.value = currentDepto;
-        editDepartmentSelect.dispatchEvent(new Event('change'));
-        
-        // Esperar un momento para que se carguen los municipios
-        setTimeout(() => {
-          if (currentMuni !== 'No especificado') {
-            editMunicipalitySelect.value = currentMuni;
-          }
-        }, 100);
-      }
-      
-      document.getElementById('editAddress').value = currentAddress !== 'No especificado' ? currentAddress : '';
-      
-      // Mostrar formulario y ocultar info estática
-      document.getElementById('editAddressForm').style.display = 'block';
-      document.getElementById('editAddressBtn').style.display = 'none';
-    });
-
-    document.getElementById('cancelAddressBtn').addEventListener('click', function() {
-      document.getElementById('editAddressForm').style.display = 'none';
-      document.getElementById('editAddressBtn').style.display = 'inline-flex';
-    });
-
-    document.getElementById('saveAddressBtn').addEventListener('click', function() {
-      const newDepto = editDepartmentSelect.value;
-      const newMuni = editMunicipalitySelect.value;
-      const newAddress = document.getElementById('editAddress').value.trim();
-      const user = auth.currentUser;
-      
-      // Validaciones
-      if (!newDepto || !newMuni || !newAddress) {
-        alert('Por favor complete todos los campos de dirección');
-        return;
-      }
-      
-      // Actualizar en Firestore
-      db.collection('users').doc(user.uid).update({
-        direccion: {
-          departamento: newDepto,
-          municipio: newMuni,
-          direccionExacta: newAddress
-        }
-      }).then(() => {
-        // Actualizar la vista
-        document.getElementById('userDepartment').textContent = newDepto;
-        document.getElementById('userMunicipality').textContent = newMuni;
-        document.getElementById('userAddress').textContent = newAddress;
-        
-        // Ocultar formulario
-        document.getElementById('editAddressForm').style.display = 'none';
-        document.getElementById('editAddressBtn').style.display = 'inline-flex';
-        
-        alert('Dirección actualizada correctamente');
-      }).catch(error => {
-        console.error("Error actualizando dirección:", error);
-        alert('Ocurrió un error al actualizar la dirección');
-      });
-    });
-
-    // Funciones para cambiar contraseña
-    document.getElementById('changePasswordBtn').addEventListener('click', function() {
-      document.getElementById('changePasswordForm').style.display = 'block';
-      document.getElementById('changePasswordBtn').style.display = 'none';
-    });
-
-    document.getElementById('cancelPasswordBtn').addEventListener('click', function() {
-      document.getElementById('changePasswordForm').style.display = 'none';
-      document.getElementById('changePasswordBtn').style.display = 'inline-flex';
-      
-      // Limpiar campos
-      document.getElementById('currentPassword').value = '';
-      document.getElementById('newPassword').value = '';
-      document.getElementById('confirmNewPassword').value = '';
-    });
-
-    document.getElementById('savePasswordBtn').addEventListener('click', function() {
-      const currentPassword = document.getElementById('currentPassword').value;
-      const newPassword = document.getElementById('newPassword').value;
-      const confirmNewPassword = document.getElementById('confirmNewPassword').value;
-      const user = auth.currentUser;
-      
-      // Validaciones
-      if (!currentPassword || !newPassword || !confirmNewPassword) {
-        alert('Por favor complete todos los campos');
-        return;
-      }
-      
-      if (newPassword.length < 6) {
-        alert('La nueva contraseña debe tener al menos 6 caracteres');
-        return;
-      }
-      
-      if (newPassword !== confirmNewPassword) {
-        alert('Las contraseñas no coinciden');
-        return;
-      }
-      
-      // Reautenticar al usuario
-      const credential = firebase.auth.EmailAuthProvider.credential(
-        user.email, 
-        currentPassword
-      );
-      
-      user.reauthenticateWithCredential(credential)
-        .then(() => {
-          // Cambiar contraseña
-          return user.updatePassword(newPassword);
-        })
-        .then(() => {
-          alert('Contraseña cambiada correctamente');
-          
-          // Limpiar y ocultar formulario
-          document.getElementById('currentPassword').value = '';
-          document.getElementById('newPassword').value = '';
-          document.getElementById('confirmNewPassword').value = '';
-          document.getElementById('changePasswordForm').style.display = 'none';
-          document.getElementById('changePasswordBtn').style.display = 'inline-flex';
-        })
-        .catch(error => {
-          console.error("Error cambiando contraseña:", error);
-          
-          if (error.code === 'auth/wrong-password') {
-            alert('La contraseña actual es incorrecta');
-          } else {
-            alert('Ocurrió un error al cambiar la contraseña: ' + error.message);
-          }
-        });
-    });
-
     // Cargar datos del usuario cuando la página esté lista
-    document.addEventListener('DOMContentLoaded', function() {
-      auth.onAuthStateChanged(user => {
-        if (user) {
-          loadUserData();
-        } else {
-          window.location.href = 'login.html';
-        }
-      });
-    });
+    document.addEventListener('DOMContentLoaded', loadUserData);
   </script>
 </body>
 </html>
