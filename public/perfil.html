@@ -1,12 +1,913 @@
-<script type="module">
-  import { AuthService } from '/js/auth.js';
-  
-  AuthService.onAuthStateChanged((user) => {
-    if (!user) {
-      window.location.href = '/index.html';
-    } else {
-      // Cargar datos del perfil
-      loadProfileData(user.uid);
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Perfil - TecnoExpress</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Estilos específicos para la página de perfil */
+    .profile-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 30px;
     }
-  });
-</script>
+
+    .profile-sidebar {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      padding: 30px;
+      height: fit-content;
+    }
+
+    .profile-avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background-color: #3498db;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin: 0 auto 20px;
+    }
+
+    .profile-name {
+      text-align: center;
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+      color: #2c3e50;
+    }
+
+    .profile-menu {
+      list-style: none;
+    }
+
+    .profile-menu li {
+      margin-bottom: 15px;
+    }
+
+    .profile-menu a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #555;
+      text-decoration: none;
+      padding: 10px;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+
+    .profile-menu a:hover, .profile-menu a.active {
+      background-color: #f0f7ff;
+      color: #3498db;
+    }
+
+    .profile-menu a i {
+      width: 20px;
+      text-align: center;
+    }
+
+    .profile-content {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+
+    .profile-section {
+      display: none;
+    }
+
+    .profile-section.active {
+      display: block;
+    }
+
+    .section-title {
+      font-size: 1.8rem;
+      color: #2c3e50;
+      margin-bottom: 25px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .section-title i {
+      color: #3498db;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .info-item {
+      margin-bottom: 15px;
+    }
+
+    .info-label {
+      font-weight: 500;
+      color: #7f8c8d;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+    }
+
+    .info-value {
+      font-size: 1.1rem;
+      color: #2c3e50;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+      min-height: 45px;
+    }
+
+    .edit-btn {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .edit-btn:hover {
+      background-color: #2980b9;
+      transform: translateY(-2px);
+    }
+
+    .save-btn {
+      background-color: #27ae60;
+    }
+
+    .save-btn:hover {
+      background-color: #219955;
+    }
+
+    .cancel-btn {
+      background-color: #e74c3c;
+      margin-left: 10px;
+    }
+
+    .cancel-btn:hover {
+      background-color: #c0392b;
+    }
+
+    /* Estilos para el formulario de edición */
+    .edit-form .form-group {
+      margin-bottom: 15px;
+    }
+
+    .edit-form label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #7f8c8d;
+    }
+
+    .edit-form input, .edit-form select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    .edit-form input:focus, .edit-form select:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
+    }
+
+    /* Estilos para el historial de compras */
+    .order-card {
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .order-card:hover {
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .order-id {
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .order-date {
+      color: #7f8c8d;
+      font-size: 0.9rem;
+    }
+
+    .order-status {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .status-completed {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .status-pending {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+
+    .status-cancelled {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .order-items {
+      margin-bottom: 15px;
+    }
+
+    .order-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    .order-item:last-child {
+      border-bottom: none;
+    }
+
+    .item-img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 5px;
+      margin-right: 15px;
+    }
+
+    .item-details {
+      flex: 1;
+    }
+
+    .item-name {
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+
+    .item-price {
+      color: #3498db;
+      font-weight: bold;
+    }
+
+    .order-total {
+      text-align: right;
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-top: 10px;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .profile-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      
+      .order-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .item-img {
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-container">
+      <div class="logo">
+        <a href="index.html"><img src="img/logo.png" alt="TecnoExpress"></a>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="index.html"><i class="fas fa-home"></i> Inicio</a></li>
+          <li><a href="productos.html"><i class="fas fa-print"></i> Productos</a></li>
+          <li><a href="#"><i class="fas fa-envelope"></i> Contacto</a></li>
+        </ul>
+      </nav>
+      <div class="user-section">
+        <a href="perfil.html" class="user-link"><i class="fas fa-user-circle"></i> Mi Cuenta</a>
+        <div class="cart-icon" id="cartIcon">
+          <i class="fas fa-shopping-cart"></i>
+          <span id="cartCounter">0</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container profile-container">
+    <aside class="profile-sidebar">
+      <div class="profile-avatar">
+        <i class="fas fa-user"></i>
+      </div>
+      <h2 class="profile-name" id="profileUserName">Cargando...</h2>
+      <ul class="profile-menu">
+        <li><a href="#info" class="active" data-section="info"><i class="fas fa-user"></i> Información Personal</a></li>
+        <li><a href="#direccion" data-section="address"><i class="fas fa-map-marker-alt"></i> Dirección</a></li>
+        <li><a href="#compras" data-section="orders"><i class="fas fa-shopping-bag"></i> Mis Compras</a></li>
+        <li><a href="#seguridad" data-section="security"><i class="fas fa-lock"></i> Seguridad</a></li>
+      </ul>
+    </aside>
+
+    <div class="profile-content">
+      <!-- Sección de Información Personal -->
+      <section id="info-section" class="profile-section active">
+        <h2 class="section-title"><i class="fas fa-user"></i> Información Personal</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Nombre completo</div>
+            <div class="info-value" id="userFullName">Cargando...</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Correo electrónico</div>
+            <div class="info-value" id="userEmail">Cargando...</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Teléfono</div>
+            <div class="info-value" id="userPhone">Cargando...</div>
+          </div>
+        </div>
+        <button class="edit-btn" id="editPersonalBtn"><i class="fas fa-edit"></i> Editar Información</button>
+        
+        <!-- Formulario de edición (oculto inicialmente) -->
+        <div id="editPersonalForm" class="edit-form" style="display: none;">
+          <div class="form-group">
+            <label for="editName">Nombre completo</label>
+            <input type="text" id="editName" required>
+          </div>
+          <div class="form-group">
+            <label for="editPhone">Teléfono</label>
+            <input type="tel" id="editPhone" required>
+          </div>
+          <button type="button" class="edit-btn save-btn" id="savePersonalBtn"><i class="fas fa-save"></i> Guardar Cambios</button>
+          <button type="button" class="edit-btn cancel-btn" id="cancelPersonalBtn"><i class="fas fa-times"></i> Cancelar</button>
+        </div>
+      </section>
+
+      <!-- Sección de Dirección -->
+      <section id="address-section" class="profile-section">
+        <h2 class="section-title"><i class="fas fa-map-marker-alt"></i> Dirección</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Departamento</div>
+            <div class="info-value" id="userDepartment">Cargando...</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Municipio</div>
+            <div class="info-value" id="userMunicipality">Cargando...</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Dirección exacta</div>
+            <div class="info-value" id="userAddress">Cargando...</div>
+          </div>
+        </div>
+        <button class="edit-btn" id="editAddressBtn"><i class="fas fa-edit"></i> Editar Dirección</button>
+        
+        <!-- Formulario de edición de dirección (oculto inicialmente) -->
+        <div id="editAddressForm" class="edit-form" style="display: none;">
+          <div class="form-group">
+            <label for="editDepartment">Departamento</label>
+            <select id="editDepartment" required>
+              <option value="">Seleccione un departamento</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="editMunicipality">Municipio</label>
+            <select id="editMunicipality" required disabled>
+              <option value="">Primero seleccione un departamento</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="editAddress">Dirección exacta</label>
+            <input type="text" id="editAddress" required>
+          </div>
+          <button type="button" class="edit-btn save-btn" id="saveAddressBtn"><i class="fas fa-save"></i> Guardar Cambios</button>
+          <button type="button" class="edit-btn cancel-btn" id="cancelAddressBtn"><i class="fas fa-times"></i> Cancelar</button>
+        </div>
+      </section>
+
+      <!-- Sección de Compras -->
+      <section id="orders-section" class="profile-section">
+        <h2 class="section-title"><i class="fas fa-shopping-bag"></i> Historial de Compras</h2>
+        
+        <div id="ordersList">
+          <!-- Ejemplo de una orden (será generado dinámicamente) -->
+          <div class="order-card">
+            <div class="order-header">
+              <div>
+                <span class="order-id">Orden #12345</span>
+                <span class="order-date">15/06/2023</span>
+              </div>
+              <span class="order-status status-completed">Completado</span>
+            </div>
+            <div class="order-items">
+              <div class="order-item">
+                <img src="img/impresora1.webp" alt="Impresora EPSON TM-T20III" class="item-img">
+                <div class="item-details">
+                  <div class="item-name">Impresora EPSON TM-T20III</div>
+                  <div class="item-price">$150.00 x 1</div>
+                </div>
+              </div>
+              <div class="order-item">
+                <img src="img/impresora2.webp" alt="Impresora EPSON TM-T88III" class="item-img">
+                <div class="item-details">
+                  <div class="item-name">Impresora EPSON TM-T88III</div>
+                  <div class="item-price">$80.00 x 2</div>
+                </div>
+              </div>
+            </div>
+            <div class="order-total">Total: $310.00</div>
+          </div>
+          
+          <!-- Otra orden de ejemplo -->
+          <div class="order-card">
+            <div class="order-header">
+              <div>
+                <span class="order-id">Orden #12344</span>
+                <span class="order-date">10/05/2023</span>
+              </div>
+              <span class="order-status status-completed">Completado</span>
+            </div>
+            <div class="order-items">
+              <div class="order-item">
+                <img src="img/impresora2.webp" alt="Impresora EPSON TM-T88III" class="item-img">
+                <div class="item-details">
+                  <div class="item-name">Impresora EPSON TM-T88III</div>
+                  <div class="item-price">$80.00 x 1</div>
+                </div>
+              </div>
+            </div>
+            <div class="order-total">Total: $80.00</div>
+          </div>
+        </div>
+        
+        <div id="emptyOrders" style="display: none; text-align: center; padding: 40px;">
+          <i class="fas fa-shopping-bag" style="font-size: 3rem; color: #ddd; margin-bottom: 20px;"></i>
+          <p style="font-size: 1.2rem; color: #777;">No has realizado ninguna compra aún</p>
+          <a href="productos.html" class="edit-btn" style="margin-top: 20px;"><i class="fas fa-arrow-right"></i> Ver Productos</a>
+        </div>
+      </section>
+
+      <!-- Sección de Seguridad -->
+      <section id="security-section" class="profile-section">
+        <h2 class="section-title"><i class="fas fa-lock"></i> Seguridad</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Contraseña</div>
+            <div class="info-value">••••••••</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Último inicio de sesión</div>
+            <div class="info-value" id="lastLogin">Cargando...</div>
+          </div>
+        </div>
+        <button class="edit-btn" id="changePasswordBtn"><i class="fas fa-key"></i> Cambiar Contraseña</button>
+        
+        <!-- Formulario de cambio de contraseña (oculto inicialmente) -->
+        <div id="changePasswordForm" class="edit-form" style="display: none;">
+          <div class="form-group">
+            <label for="currentPassword">Contraseña actual</label>
+            <input type="password" id="currentPassword" required>
+          </div>
+          <div class="form-group">
+            <label for="newPassword">Nueva contraseña</label>
+            <input type="password" id="newPassword" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label for="confirmNewPassword">Confirmar nueva contraseña</label>
+            <input type="password" id="confirmNewPassword" required minlength="6">
+          </div>
+          <button type="button" class="edit-btn save-btn" id="savePasswordBtn"><i class="fas fa-save"></i> Cambiar Contraseña</button>
+          <button type="button" class="edit-btn cancel-btn" id="cancelPasswordBtn"><i class="fas fa-times"></i> Cancelar</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <img src="img/logo.png" alt="TecnoExpress">
+          <p>Soluciones tecnológicas innovadoras para el mundo moderno.</p>
+        </div>
+        <div class="footer-links">
+          <h3>Enlaces rápidos</h3>
+          <ul>
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="productos.html">Productos</a></li>
+            <li><a href="#">Contacto</a></li>
+            <li><a href="perfil.html">Mi Cuenta</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="copyright">
+        <p>&copy; 2023 TecnoExpress. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <script>
+    // Configuración de Firebase (debe coincidir con la configuración en registro.html)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
+      authDomain: "mitienda-c2609.firebaseapp.com",
+      projectId: "mitienda-c2609",
+      storageBucket: "mitienda-c2609.appspot.com",
+      messagingSenderId: "123456789012",
+      appId: "1:123456789012:web:abc123def456"
+    };
+
+    // Inicializa Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Datos de departamentos y municipios de El Salvador (de registro.html)
+    const departamentos = {
+      "Ahuachapán": ["Ahuachapán", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Guaymango", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
+      "Cabañas": ["Sensuntepeque", "Cinquera", "Dolores", "Guacotecti", "Ilobasco", "Jutiapa", "San Isidro", "Tejutepeque", "Victoria"],
+      "Chalatenango": ["Chalatenango", "Agua Caliente", "Arcatao", "Azacualpa", "Cancasque", "Citalá", "Comalapa", "Concepción Quezaltepeque", "Dulce Nombre de María", "El Carrizal", "El Paraíso", "La Laguna", "La Palma", "La Reina", "Las Vueltas", "Nombre de Jesús", "Nueva Concepción", "Nueva Trinidad", "Ojos de Agua", "Potonico", "San Antonio de la Cruz", "San Antonio Los Ranchos", "San Fernando", "San Francisco Lempa", "San Francisco Morazán", "San Ignacio", "San Isidro Labrador", "San José Cancasque", "San José Las Flores", "San Luis del Carmen", "San Miguel de Mercedes", "San Rafael", "Santa Rita", "Tejutla"],
+      "Cuscatlán": ["Cojutepeque", "Candelaria", "El Carmen", "El Rosario", "Monte San Juan", "Oratorio de Concepción", "San Bartolomé Perulapía", "San Cristóbal", "San José Guayabal", "San Pedro Perulapán", "San Rafael Cedros", "San Ramón", "Santa Cruz Analquito", "Santa Cruz Michapa", "Suchitoto", "Tenancingo"],
+      "La Libertad": ["Santa Tecla", "Antiguo Cuscatlán", "Chiltiupán", "Ciudad Arce", "Colón", "Comasagua", "Huizúcar", "Jayaque", "Jicalapa", "La Libertad", "Nuevo Cuscatlán", "Opico", "Quezaltepeque", "Sacacoyo", "San José Villanueva", "San Juan Opico", "San Matías", "San Pablo Tacachico", "Talnique", "Tamanique", "Teotepeque", "Tepecoyo", "Zaragoza"],
+      "La Paz": ["Zacatecoluca", "Cuyultitán", "El Rosario", "Jerusalén", "Mercedes La Ceiba", "Olocuilta", "Paraíso de Osorio", "San Antonio Masahuat", "San Emigdio", "San Francisco Chinameca", "San Juan Nonualco", "San Juan Talpa", "San Juan Tepezontes", "San Luis La Herradura", "San Luis Talpa", "San Miguel Tepezontes", "San Pedro Masahuat", "San Pedro Nonualco", "San Rafael Obrajuelo", "Santa María Ostuma", "Santiago Nonualco", "Tapalhuaca"],
+      "La Unión": ["La Unión", "Anamorós", "Bolívar", "Concepción de Oriente", "Conchagua", "El Carmen", "El Sauce", "Intipucá", "Lislique", "Meanguera del Golfo", "Nueva Esparta", "Pasaquina", "Polorós", "San Alejo", "San José", "Santa Rosa de Lima", "Yayantique", "Yucuaiquín"],
+      "Morazán": ["San Francisco Gotera", "Arambala", "Cacaopera", "Chilanga", "Corinto", "Delicias de Concepción", "El Divisadero", "El Rosario", "Gualococti", "Guatajiagua", "Joateca", "Jocoaitique", "Jocoro", "Lolotiquillo", "Meanguera", "Osicala", "Perquín", "San Carlos", "San Fernando", "San Isidro", "San Simón", "Sensembra", "Sociedad", "Torola", "Yamabal", "Yoloaiquín"],
+      "San Miguel": ["San Miguel", "Carolina", "Chapeltique", "Chinameca", "Chirilagua", "Ciudad Barrios", "Comacarán", "El Tránsito", "Lolotique", "Moncagua", "Nueva Guadalupe", "Nuevo Edén de San Juan", "Quelepa", "San Antonio", "San Gerardo", "San Jorge", "San Luis de la Reina", "San Rafael Oriente", "Sesori", "Uluazapa"],
+      "San Salvador": ["San Salvador", "Aguilares", "Apopa", "Ayutuxtepeque", "Cuscatancingo", "Delgado", "El Paisnal", "Guazapa", "Ilopango", "Mejicanos", "Nejapa", "Panchimalco", "Rosario de Mora", "San Marcos", "San Martín", "Santiago Texacuangos", "Santo Tomás", "Soyapango", "Tonacatepeque"],
+      "San Vicente": ["San Vicente", "Apastepeque", "Guadalupe", "San Cayetano Istepeque", "San Esteban Catarina", "San Ildefonso", "San Lorenzo", "San Sebastián", "Santa Clara", "Santo Domingo", "Tecoluca", "Tepetitán", "Verapaz"],
+      "Santa Ana": ["Santa Ana", "Candelaria de la Frontera", "Chalchuapa", "Coatepeque", "El Congo", "El Porvenir", "Masahuat", "Metapán", "San Antonio Pajonal", "San Sebastián Salitrillo", "Santa Rosa Guachipilín", "Santiago de la Frontera", "Texistepeque"],
+      "Sonsonate": ["Sonsonate", "Acajutla", "Armenia", "Caluco", "Cuisnahuat", "Izalco", "Juayúa", "Nahuizalco", "Nahulingo", "Salcoatitán", "San Antonio del Monte", "San Julián", "Santa Catarina Masahuat", "Santa Isabel Ishuatán", "Santo Domingo de Guzmán", "Sonzacate"],
+      "Usulután": ["Usulután", "Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán"]
+    };
+
+    // Llenar select de departamentos para edición
+    const editDepartmentSelect = document.getElementById('editDepartment');
+    const editMunicipalitySelect = document.getElementById('editMunicipality');
+
+    Object.keys(departamentos).forEach(depto => {
+      const option = document.createElement('option');
+      option.value = depto;
+      option.textContent = depto;
+      editDepartmentSelect.appendChild(option);
+    });
+
+    // Actualizar municipios cuando cambie el departamento en edición
+    editDepartmentSelect.addEventListener('change', function() {
+      editMunicipalitySelect.innerHTML = '<option value="">Seleccione un municipio</option>';
+      editMunicipalitySelect.disabled = !this.value;
+      
+      if (this.value) {
+        departamentos[this.value].forEach(muni => {
+          const option = document.createElement('option');
+          option.value = muni;
+          option.textContent = muni;
+          editMunicipalitySelect.appendChild(option);
+        });
+      }
+    });
+
+    // Cambiar entre secciones del perfil
+    document.querySelectorAll('.profile-menu a').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Remover clase active de todos los enlaces y secciones
+        document.querySelectorAll('.profile-menu a').forEach(item => {
+          item.classList.remove('active');
+        });
+        document.querySelectorAll('.profile-section').forEach(section => {
+          section.classList.remove('active');
+        });
+        
+        // Agregar clase active al enlace clickeado
+        this.classList.add('active');
+        
+        // Mostrar la sección correspondiente
+        const sectionId = this.getAttribute('data-section');
+        document.getElementById(`${sectionId}-section`).classList.add('active');
+      });
+    });
+
+    // Función para cargar los datos del usuario
+    function loadUserData() {
+      const user = auth.currentUser;
+      
+      if (user) {
+        // Mostrar nombre y correo
+        document.getElementById('profileUserName').textContent = user.displayName || user.email.split('@')[0];
+        document.getElementById('userFullName').textContent = user.displayName || 'No especificado';
+        document.getElementById('userEmail').textContent = user.email;
+        
+        // Obtener datos adicionales de Firestore
+        db.collection('users').doc(user.uid).get().then(doc => {
+          if (doc.exists) {
+            const userData = doc.data();
+            
+            // Mostrar datos personales
+            document.getElementById('userPhone').textContent = userData.telefono || 'No especificado';
+            
+            // Mostrar datos de dirección
+            if (userData.direccion) {
+              document.getElementById('userDepartment').textContent = userData.direccion.departamento || 'No especificado';
+              document.getElementById('userMunicipality').textContent = userData.direccion.municipio || 'No especificado';
+              document.getElementById('userAddress').textContent = userData.direccion.direccionExacta || 'No especificado';
+            }
+            
+            // Mostrar último inicio de sesión
+            if (user.metadata.lastSignInTime) {
+              const lastLogin = new Date(user.metadata.lastSignInTime);
+              document.getElementById('lastLogin').textContent = lastLogin.toLocaleString();
+            }
+          }
+        }).catch(error => {
+          console.error("Error obteniendo datos del usuario:", error);
+        });
+        
+        // Cargar historial de compras (simulado)
+        loadOrderHistory(user.uid);
+      } else {
+        // Si no hay usuario autenticado, redirigir al login
+        window.location.href = 'login.html';
+      }
+    }
+
+    // Función para cargar el historial de compras (simulado)
+    function loadOrderHistory(userId) {
+      // En una aplicación real, aquí se haría una consulta a Firestore
+      // para obtener las órdenes del usuario
+      
+      // Simulamos una respuesta vacía para mostrar el estado "sin compras"
+      const orders = []; // Esto vendría de la consulta a Firestore
+      
+      if (orders.length === 0) {
+        document.getElementById('ordersList').style.display = 'none';
+        document.getElementById('emptyOrders').style.display = 'block';
+      } else {
+        // Aquí se generaría dinámicamente el HTML para cada orden
+      }
+    }
+
+    // Funciones para editar información personal
+    document.getElementById('editPersonalBtn').addEventListener('click', function() {
+      const user = auth.currentUser;
+      
+      // Obtener datos actuales
+      const currentName = document.getElementById('userFullName').textContent;
+      const currentPhone = document.getElementById('userPhone').textContent;
+      
+      // Poner valores en el formulario
+      document.getElementById('editName').value = currentName !== 'No especificado' ? currentName : '';
+      document.getElementById('editPhone').value = currentPhone !== 'No especificado' ? currentPhone : '';
+      
+      // Mostrar formulario y ocultar info estática
+      document.getElementById('editPersonalForm').style.display = 'block';
+      document.getElementById('editPersonalBtn').style.display = 'none';
+    });
+
+    document.getElementById('cancelPersonalBtn').addEventListener('click', function() {
+      document.getElementById('editPersonalForm').style.display = 'none';
+      document.getElementById('editPersonalBtn').style.display = 'inline-flex';
+    });
+
+    document.getElementById('savePersonalBtn').addEventListener('click', function() {
+      const newName = document.getElementById('editName').value.trim();
+      const newPhone = document.getElementById('editPhone').value.trim();
+      const user = auth.currentUser;
+      
+      // Validaciones básicas
+      if (!newName) {
+        alert('Por favor ingrese su nombre completo');
+        return;
+      }
+      
+      if (!newPhone || !/^[0-9]{8,}$/.test(newPhone)) {
+        alert('Por favor ingrese un número de teléfono válido (mínimo 8 dígitos)');
+        return;
+      }
+      
+      // Actualizar en Firestore
+      db.collection('users').doc(user.uid).update({
+        nombre: newName,
+        telefono: newPhone
+      }).then(() => {
+        // Actualizar la vista
+        document.getElementById('userFullName').textContent = newName;
+        document.getElementById('userPhone').textContent = newPhone;
+        document.getElementById('profileUserName').textContent = newName;
+        
+        // Ocultar formulario
+        document.getElementById('editPersonalForm').style.display = 'none';
+        document.getElementById('editPersonalBtn').style.display = 'inline-flex';
+        
+        alert('Información actualizada correctamente');
+      }).catch(error => {
+        console.error("Error actualizando datos:", error);
+        alert('Ocurrió un error al actualizar la información');
+      });
+    });
+
+    // Funciones para editar dirección
+    document.getElementById('editAddressBtn').addEventListener('click', function() {
+      // Obtener datos actuales
+      const currentDepto = document.getElementById('userDepartment').textContent;
+      const currentMuni = document.getElementById('userMunicipality').textContent;
+      const currentAddress = document.getElementById('userAddress').textContent;
+      
+      // Poner valores en el formulario
+      if (currentDepto !== 'No especificado') {
+        editDepartmentSelect.value = currentDepto;
+        editDepartmentSelect.dispatchEvent(new Event('change'));
+        
+        // Esperar un momento para que se carguen los municipios
+        setTimeout(() => {
+          if (currentMuni !== 'No especificado') {
+            editMunicipalitySelect.value = currentMuni;
+          }
+        }, 100);
+      }
+      
+      document.getElementById('editAddress').value = currentAddress !== 'No especificado' ? currentAddress : '';
+      
+      // Mostrar formulario y ocultar info estática
+      document.getElementById('editAddressForm').style.display = 'block';
+      document.getElementById('editAddressBtn').style.display = 'none';
+    });
+
+    document.getElementById('cancelAddressBtn').addEventListener('click', function() {
+      document.getElementById('editAddressForm').style.display = 'none';
+      document.getElementById('editAddressBtn').style.display = 'inline-flex';
+    });
+
+    document.getElementById('saveAddressBtn').addEventListener('click', function() {
+      const newDepto = editDepartmentSelect.value;
+      const newMuni = editMunicipalitySelect.value;
+      const newAddress = document.getElementById('editAddress').value.trim();
+      const user = auth.currentUser;
+      
+      // Validaciones
+      if (!newDepto || !newMuni || !newAddress) {
+        alert('Por favor complete todos los campos de dirección');
+        return;
+      }
+      
+      // Actualizar en Firestore
+      db.collection('users').doc(user.uid).update({
+        direccion: {
+          departamento: newDepto,
+          municipio: newMuni,
+          direccionExacta: newAddress
+        }
+      }).then(() => {
+        // Actualizar la vista
+        document.getElementById('userDepartment').textContent = newDepto;
+        document.getElementById('userMunicipality').textContent = newMuni;
+        document.getElementById('userAddress').textContent = newAddress;
+        
+        // Ocultar formulario
+        document.getElementById('editAddressForm').style.display = 'none';
+        document.getElementById('editAddressBtn').style.display = 'inline-flex';
+        
+        alert('Dirección actualizada correctamente');
+      }).catch(error => {
+        console.error("Error actualizando dirección:", error);
+        alert('Ocurrió un error al actualizar la dirección');
+      });
+    });
+
+    // Funciones para cambiar contraseña
+    document.getElementById('changePasswordBtn').addEventListener('click', function() {
+      document.getElementById('changePasswordForm').style.display = 'block';
+      document.getElementById('changePasswordBtn').style.display = 'none';
+    });
+
+    document.getElementById('cancelPasswordBtn').addEventListener('click', function() {
+      document.getElementById('changePasswordForm').style.display = 'none';
+      document.getElementById('changePasswordBtn').style.display = 'inline-flex';
+      
+      // Limpiar campos
+      document.getElementById('currentPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmNewPassword').value = '';
+    });
+
+    document.getElementById('savePasswordBtn').addEventListener('click', function() {
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+      const user = auth.currentUser;
+      
+      // Validaciones
+      if (!currentPassword || !newPassword || !confirmNewPassword) {
+        alert('Por favor complete todos los campos');
+        return;
+      }
+      
+      if (newPassword.length < 6) {
+        alert('La nueva contraseña debe tener al menos 6 caracteres');
+        return;
+      }
+      
+      if (newPassword !== confirmNewPassword) {
+        alert('Las contraseñas no coinciden');
+        return;
+      }
+      
+      // Reautenticar al usuario
+      const credential = firebase.auth.EmailAuthProvider.credential(
+        user.email, 
+        currentPassword
+      );
+      
+      user.reauthenticateWithCredential(credential)
+        .then(() => {
+          // Cambiar contraseña
+          return user.updatePassword(newPassword);
+        })
+        .then(() => {
+          alert('Contraseña cambiada correctamente');
+          
+          // Limpiar y ocultar formulario
+          document.getElementById('currentPassword').value = '';
+          document.getElementById('newPassword').value = '';
+          document.getElementById('confirmNewPassword').value = '';
+          document.getElementById('changePasswordForm').style.display = 'none';
+          document.getElementById('changePasswordBtn').style.display = 'inline-flex';
+        })
+        .catch(error => {
+          console.error("Error cambiando contraseña:", error);
+          
+          if (error.code === 'auth/wrong-password') {
+            alert('La contraseña actual es incorrecta');
+          } else {
+            alert('Ocurrió un error al cambiar la contraseña: ' + error.message);
+          }
+        });
+    });
+
+    // Cargar datos del usuario cuando la página esté lista
+    document.addEventListener('DOMContentLoaded', function() {
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          loadUserData();
+        } else {
+          window.location.href = 'login.html';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
