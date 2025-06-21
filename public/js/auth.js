@@ -11,12 +11,12 @@ import {
 
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  databaseURL: "https://tu-proyecto.firebaseio.com", 
-  projectId: "tu-proyecto-id",
-  storageBucket: "tu-proyecto.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abc123def456"
+  authDomain: "mitienda-c2609.firebaseapp.com",
+  databaseURL: "https://mitienda-c2609-default-rtdb.firebaseio.com",
+  projectId: "mitienda-c2609",
+  storageBucket: "mitienda-c2609.firebasestorage.app",
+  messagingSenderId: "536746062790",
+  appId: "1:536746062790:web:cd39eb0057aac14c6538c7"
 };
 
 // Inicializa Firebase
