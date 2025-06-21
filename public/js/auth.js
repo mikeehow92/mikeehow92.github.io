@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
+vimport { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
 import { 
   getAuth, 
   signInWithEmailAndPassword, 
@@ -8,6 +8,11 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential
 } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
+import { 
+  getFirestore,
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
@@ -22,6 +27,7 @@ const firebaseConfig = {
 // Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 // Servicio de autenticación encapsulado
 export const AuthService = {
@@ -50,10 +56,26 @@ export const AuthService = {
   
   checkAuth: () => {
     return new Promise((resolve, reject) => {
-      onAuthStateChanged(auth, (user) => {
+      onAuthStateChanged(auth, async (user) => {
         if (user) {
           if (user.emailVerified) {
-            resolve(user);
+            try {
+              // Obtener datos adicionales del usuario desde Firestore
+              const userDoc = await getDoc(doc(db, 'users', user.uid));
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                // Combinar datos de autenticación con datos del perfil
+                resolve({
+                  ...user,
+                  profileData: userData
+                });
+              } else {
+                resolve(user); // Usuario existe pero no tiene datos adicionales
+              }
+            } catch (error) {
+              console.error("Error al obtener datos del usuario:", error);
+              resolve(user); // Devuelve al menos los datos básicos
+            }
           } else {
             reject(new Error("El correo electrónico no está verificado"));
           }
@@ -62,6 +84,19 @@ export const AuthService = {
         }
       });
     });
+  },
+
+  getUserProfile: async (userId) => {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (userDoc.exists()) {
+        return userDoc.data();
+      }
+      return null;
+    } catch (error) {
+      console.error("Error al obtener perfil:", error);
+      throw error;
+    }
   }
 };
 
