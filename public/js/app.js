@@ -12,7 +12,7 @@ let currentUser = null;
 // ==================== FUNCIONES DEL CARRITO ====================
 
 /**
- * Carga el carrito desde Firestore (usuario logueado) o localStorage (invitado)
+ * Carga el carrito desde Firestore (usuario) o localStorage (invitado)
  */
 async function loadCart() {
   try {
@@ -32,11 +32,11 @@ async function loadCart() {
       return;
     }
 
-    // Cargar desde localStorage
+    // 1. Cargar desde localStorage
     const localCart = localStorage.getItem('cart');
     if (localCart) cart = JSON.parse(localCart);
 
-    // Sincronizar con Firestore si hay usuario
+    // 2. Sincronizar con Firestore si hay usuario
     if (currentUser) {
       const docSnap = await getDoc(doc(db, 'carts', currentUser.uid));
       if (docSnap.exists()) {
@@ -53,7 +53,7 @@ async function loadCart() {
 }
 
 /**
- * Actualiza la interfaz del carrito (modal y contador)
+ * Actualiza la interfaz del carrito (modal + contador)
  */
 function updateCartUI() {
   const cartItems = document.getElementById('cartItems');
@@ -95,7 +95,7 @@ function updateCartUI() {
 }
 
 /**
- * Actualiza el contador de items en el ícono del carrito
+ * Actualiza el contador del ícono del carrito
  */
 function updateCartCounter() {
   const counter = document.getElementById('cartCounter');
@@ -107,7 +107,7 @@ function updateCartCounter() {
 }
 
 /**
- * Guarda el carrito en Firestore (usuario) o localStorage (invitado)
+ * Guarda el carrito en Firestore o localStorage
  */
 async function saveCartToFirestore() {
   try {
@@ -128,10 +128,11 @@ async function saveCartToFirestore() {
 // ==================== OPERACIONES DEL CARRITO ====================
 
 /**
- * Añade un producto al carrito (o incrementa su cantidad si ya existe)
+ * Añade un producto al carrito (exportada para uso en productos.html)
  */
 export function addToCart(product) {
   const existingItem = cart.find(item => item.id === product.id);
+  
   if (existingItem) {
     existingItem.quantity++;
   } else {
@@ -159,7 +160,7 @@ function removeFromCart(productId) {
 }
 
 /**
- * Actualiza la cantidad de un producto en el carrito
+ * Modifica la cantidad de un producto
  */
 function updateQuantity(productId, newQuantity) {
   const item = cart.find(item => item.id === productId);
@@ -173,7 +174,7 @@ function updateQuantity(productId, newQuantity) {
 // ==================== CHECKOUT ====================
 
 /**
- * Prepara los datos para el pago y redirige a la página de pago
+ * Procesa el checkout (exportada para uso en productos.html)
  */
 export async function proceedToCheckout() {
   if (cart.length === 0) {
@@ -243,16 +244,18 @@ function showFeedback(message, type = 'success') {
 // ==================== INICIALIZACIÓN ====================
 
 /**
- * Configura todos los event listeners y observadores
+ * Función principal de inicialización (exportada para productos.html)
  */
-export function initCart() {
-  // Observador de autenticación
+export function initializeCart() {
+  console.log("Inicializando sistema de carrito...");
+
+  // 1. Configurar observador de autenticación
   onAuthStateChanged(auth, (user) => {
     currentUser = user;
     loadCart();
   });
 
-  // Delegación de eventos para el carrito
+  // 2. Manejador de eventos delegado (para elementos dinámicos)
   document.addEventListener('click', (e) => {
     // Añadir al carrito
     if (e.target.closest('.add-to-cart')) {
@@ -289,7 +292,7 @@ export function initCart() {
     }
   });
 
-  // Configuración del modal del carrito
+  // 3. Configurar modal del carrito
   const cartModal = document.getElementById('cartModal');
   if (cartModal) {
     document.getElementById('cartIcon')?.addEventListener('click', () => {
