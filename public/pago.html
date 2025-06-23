@@ -119,12 +119,10 @@
       border-bottom: 1px solid #f0f0f0;
     }
 
-    /* Estilos para cuentas guest */
     .guest-field {
       display: none;
     }
     
-    /* Estilos para tarjetas */
     .card-icon-container {
       display: flex;
       align-items: center;
@@ -144,7 +142,6 @@
       background-size: 20px;
     }
 
-    /* Validación visual */
     input:invalid, select:invalid {
       border-color: #e74c3c;
     }
@@ -160,7 +157,6 @@
       display: none;
     }
 
-    /* Loading */
     .loading {
       display: inline-block;
       width: 20px;
@@ -180,7 +176,6 @@
       padding: 20px;
     }
 
-    /* Estilos para feedback */
     .feedback-overlay {
       position: fixed;
       top: 0;
@@ -271,10 +266,8 @@
       <div class="payment-form">
         <h2>Información de Envío y Pago</h2>
         <form id="paymentForm">
-          <!-- Sección de Información de Contacto -->
           <div class="section-title">Información de Contacto</div>
           
-          <!-- Campo para nombre completo en cuentas guest -->
           <div id="guestNameField" class="form-group guest-field">
             <label for="customerName">Nombre Completo</label>
             <input type="text" id="customerName">
@@ -292,7 +285,6 @@
             <div class="error-message">Por favor ingrese un teléfono válido</div>
           </div>
           
-          <!-- Sección de Dirección de Envío -->
           <div class="section-title">Dirección de Envío</div>
           <div class="form-group">
             <label for="shippingAddress">Dirección</label>
@@ -323,7 +315,6 @@
             </div>
           </div>
             
-          <!-- Sección de Método de Pago -->
           <div class="section-title">Método de Pago</div>
           <div class="form-group">
             <label for="cardName">Nombre en la Tarjeta</label>
@@ -359,7 +350,6 @@
     </div>
   </main>
 
-  <!-- Feedback Modal -->
   <div class="feedback-overlay" id="feedbackModal">
     <div class="feedback-content">
       <div class="feedback-icon" id="feedbackIcon">
@@ -372,27 +362,14 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
+    // Importar desde la configuración centralizada de Firebase
+    import { app, db, auth } from '/js/firebase-config.js';
     import { 
-      getFirestore, collection, addDoc, serverTimestamp, 
-      doc, setDoc, updateDoc
+      collection, addDoc, serverTimestamp, 
+      doc, setDoc, updateDoc 
     } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
+    import { getApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
     import { AuthService } from '/js/auth.js';
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
-      authDomain: "mitienda-c2609.firebaseapp.com",
-      databaseURL: "https://mitienda-c2609-default-rtdb.firebaseio.com",
-      projectId: "mitienda-c2609",
-      storageBucket: "mitienda-c2609.appspot.com",
-      messagingSenderId: "536746062790",
-      appId: "1:536746062790:web:cd39eb0057aac14c6538c7"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
 
     // Datos de departamentos y municipios de El Salvador
     const departamentos = {
@@ -465,7 +442,6 @@
       }
     });
 
-    // Función para cargar departamentos y municipios
     function loadDepartamentos() {
       const deptoSelect = document.getElementById('departamento');
       const muniSelect = document.getElementById('municipio');
@@ -495,7 +471,6 @@
       });
     }
 
-    // Función para cargar datos del checkout
     async function loadCheckoutData() {
       // Intentar múltiples fuentes de datos
       const checkoutData = 
@@ -511,7 +486,6 @@
       return checkoutData;
     }
 
-    // Función para mostrar productos en el resumen
     function displayOrderItems(items) {
       const orderItemsContainer = document.getElementById('orderItems');
       
@@ -534,13 +508,11 @@
       orderItemsContainer.innerHTML = html;
     }
 
-    // Función para actualizar totales
     function updateOrderTotals(total) {
       document.getElementById('orderTotal').textContent = total.toFixed(2);
       document.getElementById('paymentTotal').textContent = total.toFixed(2);
     }
 
-    // Función para actualizar contador del carrito
     function updateCartCounter(items) {
       const counter = document.getElementById('cartCounter');
       if (counter) {
@@ -550,7 +522,6 @@
       }
     }
 
-    // Función para configurar el envío del formulario
     function setupFormSubmission(user, checkoutData) {
       document.getElementById('paymentForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -588,7 +559,6 @@
       });
     }
 
-    // Función para validar datos del formulario
     function validateFormData(user) {
       // Obtener datos básicos
       const customerName = !user ? document.getElementById('customerName').value.trim() : null;
@@ -651,7 +621,6 @@
       };
     }
 
-    // Función para procesar la orden
     async function processOrder(user, checkoutData, formData) {
       // Crear dirección completa
       const fullAddress = `${formData.shippingAddress1}${
@@ -709,7 +678,6 @@
       return orderRef.id;
     }
 
-    // Función para detectar tipo de tarjeta (simplificado)
     function detectCardType(cardNumber) {
       const firstDigit = cardNumber.charAt(0);
       if (firstDigit === '4') return 'Visa';
@@ -718,7 +686,6 @@
       return 'Otra';
     }
 
-    // Función para limpiar carrito y redirigir
     async function clearCartAndRedirect(user, email, orderId) {
       sessionStorage.setItem('clearCartOnLoad', 'true');
       localStorage.removeItem('cart');
@@ -729,7 +696,6 @@
       window.location.href = user ? 'perfil.html#compras' : 'index.html';
     }
 
-    // Función para mostrar feedback
     function showFeedback(title, message, type = 'success') {
       const modal = document.getElementById('feedbackModal');
       const icon = document.getElementById('feedbackIcon');
@@ -754,7 +720,6 @@
       };
     }
 
-    // Función para mostrar mensaje de carrito vacío
     function showEmptyCartMessage() {
       document.getElementById('orderItems').innerHTML = `
         <div class="error">
@@ -765,7 +730,6 @@
       setTimeout(() => window.location.href = 'productos.html', 2000);
     }
 
-    // Función para mostrar error y redirigir
     function showErrorAndRedirect(message) {
       showFeedback('Error', message, 'error');
       setTimeout(() => window.location.href = 'productos.html', 3000);
