@@ -6,17 +6,156 @@
   <title>Productos - TecnoExpress</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Estilos para productos */
+    .productos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 30px;
+      margin-top: 30px;
+    }
+    
+    .producto-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+    
+    .producto-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .producto-imagen {
+      height: 200px;
+      overflow: hidden;
+    }
+    
+    .producto-imagen img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    
+    .producto-info {
+      padding: 20px;
+    }
+    
+    .precio {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #27ae60;
+      margin: 10px 0;
+    }
+    
+    .add-to-cart {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 1rem;
+    }
+
+    /* Estilos para el modal del carrito */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    
+    .modal.active {
+      display: block;
+    }
+    
+    .modal-content {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 100%;
+      max-width: 400px;
+      height: 100%;
+      background: white;
+      padding: 20px;
+      box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+      overflow-y: auto;
+    }
+    
+    .close-modal {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .quantity-btn {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      border: 1px solid #ddd;
+      background: white;
+      cursor: pointer;
+    }
+    
+    .checkout-btn {
+      background: #27ae60;
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .modal-content {
+        width: 90%;
+      }
+    }
+  </style>
 </head>
 <body>
   <header>
-    <!-- Encabezado se mantiene igual -->
+    <div class="container header-container">
+      <div class="logo">
+        <a href="index.html"><img src="img/logo.png" alt="TecnoExpress"></a>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="index.html"><i class="fas fa-home"></i> Inicio</a></li>
+          <li><a href="productos.html" class="active"><i class="fas fa-print"></i> Productos</a></li>
+          <li><a href="#"><i class="fas fa-envelope"></i> Contacto</a></li>
+        </ul>
+      </nav>
+      <div class="cart-icon" id="cartIcon">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="cartCounter" style="display: none;">0</span>
+      </div>
+    </div>
   </header>
 
   <main class="container">
     <h1><i class="fas fa-print"></i> Nuestros Productos</h1>
     
     <div class="productos-grid">
-      <!-- Producto 1 -->
       <div class="producto-card">
         <div class="producto-imagen">
           <img src="img/impresora1.webp" alt="Impresora Térmica EPSON">
@@ -34,7 +173,6 @@
         </div>
       </div>
       
-      <!-- Producto 2 -->
       <div class="producto-card">
         <div class="producto-imagen">
           <img src="img/impresora2.webp" alt="Impresora Térmica EPSON">
@@ -74,47 +212,85 @@
     </div>
   </div>
 
-  <!-- Scripts modificados -->
   <script type="module">
-    // Importaciones esenciales
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
-    
-    // Configuración de Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
-      authDomain: "mitienda-c2609.firebaseapp.com",
-      projectId: "mitienda-c2609",
-      storageBucket: "mitienda-c2609.appspot.com",
-      messagingSenderId: "536746062790",
-      appId: "1:536746062790:web:cd39eb0057aac14c6538c7"
-    };
-
-    // Inicialización
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
     // Variables globales
     let cart = [];
-    let currentUser = null;
+    const cartModal = document.getElementById('cartModal');
+    const cartCounter = document.getElementById('cartCounter');
 
-    // Función para mostrar feedback
-    function showFeedback(message, type = 'success') {
-      const feedback = document.createElement('div');
-      feedback.className = `feedback ${type}`;
-      feedback.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-        <span>${message}</span>
-      `;
-      document.body.appendChild(feedback);
-      setTimeout(() => feedback.remove(), 3000);
+    // Cargar carrito desde localStorage
+    function loadCart() {
+      const savedCart = localStorage.getItem('cart');
+      if (savedCart) {
+        cart = JSON.parse(savedCart);
+        updateCartUI();
+      }
     }
 
-    // Función para añadir al carrito (ahora es global)
-    window.addToCart = function(product) {
+    // Guardar carrito en localStorage
+    function saveCart() {
+      localStorage.setItem('cart', JSON.stringify(cart));
+    }
+
+    // Actualizar interfaz del carrito
+    function updateCartUI() {
+      const cartItems = document.getElementById('cartItems');
+      const cartTotal = document.getElementById('cartTotal');
+      
+      // Vaciar contenedor
+      cartItems.innerHTML = '';
+      
+      if (cart.length === 0) {
+        cartItems.innerHTML = `
+          <div class="empty-cart">
+            <i class="fas fa-shopping-cart"></i>
+            <p>Tu carrito está vacío</p>
+          </div>
+        `;
+        cartTotal.textContent = '0.00';
+        cartCounter.style.display = 'none';
+        return;
+      }
+
+      // Mostrar productos
+      let total = 0;
+      cart.forEach(item => {
+        const itemElement = document.createElement('div');
+        itemElement.className = 'cart-item';
+        itemElement.innerHTML = `
+          <div class="cart-item-info">
+            <span class="cart-item-name">${item.name}</span>
+            <div class="cart-item-controls">
+              <button class="quantity-btn minus" data-id="${item.id}">-</button>
+              <span class="item-quantity">${item.quantity}</span>
+              <button class="quantity-btn plus" data-id="${item.id}">+</button>
+            </div>
+            <span class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</span>
+          </div>
+          <button class="remove-item" data-id="${item.id}">
+            <i class="fas fa-trash"></i>
+          </button>
+        `;
+        cartItems.appendChild(itemElement);
+        total += item.price * item.quantity;
+      });
+
+      // Actualizar total y contador
+      cartTotal.textContent = total.toFixed(2);
+      updateCartCounter();
+    }
+
+    // Actualizar contador
+    function updateCartCounter() {
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      cartCounter.textContent = totalItems;
+      cartCounter.style.display = totalItems > 0 ? 'inline-block' : 'none';
+    }
+
+    // Añadir producto al carrito
+    function addToCart(product) {
       const existingItem = cart.find(item => item.id === product.id);
+      
       if (existingItem) {
         existingItem.quantity++;
       } else {
@@ -123,169 +299,107 @@
           name: product.name,
           price: product.price,
           quantity: 1,
-          image: product.image || ''
+          image: product.image
         });
       }
-      updateCart();
-      showFeedback(`${product.name} añadido al carrito`, 'success');
-    };
-
-    // Función para actualizar el carrito
-    async function updateCart() {
-      // Guardar en Firestore o localStorage
-      try {
-        if (currentUser) {
-          await setDoc(doc(db, 'carts', currentUser.uid), {
-            items: cart,
-            lastUpdated: serverTimestamp()
-          });
-        } else {
-          localStorage.setItem('cart', JSON.stringify(cart));
-        }
-      } catch (error) {
-        console.error("Error al guardar el carrito:", error);
-      }
       
-      // Actualizar UI
+      saveCart();
       updateCartUI();
+      showFeedback(`${product.name} añadido al carrito`);
     }
 
-    // Función para actualizar la interfaz
-    function updateCartUI() {
-      const cartItems = document.getElementById('cartItems');
-      const cartTotal = document.getElementById('cartTotal');
-      
-      if (cartItems) {
-        cartItems.innerHTML = cart.length > 0 ? '' : `
-          <div class="empty-cart">
-            <i class="fas fa-shopping-cart"></i>
-            <p>Tu carrito está vacío</p>
-          </div>
-        `;
-
-        let total = 0;
-        cart.forEach(item => {
-          const itemElement = document.createElement('div');
-          itemElement.className = 'cart-item';
-          itemElement.innerHTML = `
-            <div class="cart-item-info">
-              <span class="cart-item-name">${item.name}</span>
-              <div class="cart-item-controls">
-                <button class="quantity-btn minus" data-id="${item.id}">-</button>
-                <span class="item-quantity">${item.quantity}</span>
-                <button class="quantity-btn plus" data-id="${item.id}">+</button>
-              </div>
-              <span class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</span>
-            </div>
-            <button class="remove-item" data-id="${item.id}">
-              <i class="fas fa-trash"></i>
-            </button>
-          `;
-          cartItems.appendChild(itemElement);
-          total += item.price * item.quantity;
-        });
-
-        if (cartTotal) cartTotal.textContent = total.toFixed(2);
-      }
-      updateCartCounter();
+    // Mostrar notificación
+    function showFeedback(message) {
+      const feedback = document.createElement('div');
+      feedback.className = 'feedback';
+      feedback.innerHTML = `
+        <i class="fas fa-check-circle"></i>
+        <span>${message}</span>
+      `;
+      document.body.appendChild(feedback);
+      setTimeout(() => feedback.remove(), 2000);
     }
 
-    // Función para actualizar el contador
-    function updateCartCounter() {
-      const counter = document.getElementById('cartCounter');
-      if (counter) {
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        counter.textContent = totalItems;
-        counter.style.display = totalItems > 0 ? 'inline-block' : 'none';
-      }
-    }
-
-    // Cargar carrito al iniciar
-    async function loadCart() {
-      try {
-        if (currentUser) {
-          const docSnap = await getDoc(doc(db, 'carts', currentUser.uid));
-          if (docSnap.exists()) {
-            cart = docSnap.data().items || [];
-          }
-        } else {
-          const localCart = localStorage.getItem('cart');
-          if (localCart) cart = JSON.parse(localCart);
-        }
-        updateCartUI();
-      } catch (error) {
-        console.error("Error al cargar el carrito:", error);
-      }
-    }
-
-    // Observador de autenticación
-    onAuthStateChanged(auth, (user) => {
-      currentUser = user;
-      loadCart();
-    });
-
-    // Event listeners
+    // Event Listeners
     document.addEventListener('DOMContentLoaded', () => {
-      // Delegación de eventos para botones
+      loadCart();
+
+      // Añadir al carrito
       document.addEventListener('click', (e) => {
-        // Añadir al carrito
         if (e.target.closest('.add-to-cart')) {
           const button = e.target.closest('.add-to-cart');
           const product = {
             id: button.dataset.id,
             name: button.dataset.name,
             price: parseFloat(button.dataset.price),
-            image: button.dataset.image || ''
+            image: button.dataset.image
           };
           addToCart(product);
         }
-        
+
         // Eliminar producto
         if (e.target.closest('.remove-item')) {
           const productId = e.target.closest('.remove-item').dataset.id;
           cart = cart.filter(item => item.id !== productId);
-          updateCart();
+          saveCart();
+          updateCartUI();
         }
-        
+
         // Modificar cantidad
         if (e.target.closest('.quantity-btn')) {
           const btn = e.target.closest('.quantity-btn');
-          const item = cart.find(item => item.id === btn.dataset.id);
+          const productId = btn.dataset.id;
+          const item = cart.find(item => item.id === productId);
+          
           if (item) {
-            const newQuantity = btn.classList.contains('plus') 
-              ? item.quantity + 1 
-              : item.quantity - 1;
-            item.quantity = Math.max(1, newQuantity);
-            updateCart();
+            if (btn.classList.contains('plus')) {
+              item.quantity++;
+            } else {
+              item.quantity = Math.max(1, item.quantity - 1);
+            }
+            saveCart();
+            updateCartUI();
           }
-        }
-        
-        // Checkout
-        if (e.target.closest('#checkoutBtn')) {
-          e.preventDefault();
-          // Lógica de checkout aquí
-          alert('Redirigiendo al pago');
         }
       });
 
-      // Modal del carrito
-      const cartModal = document.getElementById('cartModal');
-      if (cartModal) {
-        document.getElementById('cartIcon')?.addEventListener('click', () => {
-          cartModal.classList.add('active');
-        });
+      // Abrir/cerrar modal
+      document.getElementById('cartIcon').addEventListener('click', () => {
+        cartModal.classList.add('active');
+      });
 
-        document.querySelector('.close-modal')?.addEventListener('click', () => {
+      document.querySelector('.close-modal').addEventListener('click', () => {
+        cartModal.classList.remove('active');
+      });
+
+      cartModal.addEventListener('click', (e) => {
+        if (e.target === cartModal) {
           cartModal.classList.remove('active');
-        });
-
-        cartModal.addEventListener('click', (e) => {
-          if (e.target === cartModal) {
-            cartModal.classList.remove('active');
-          }
-        });
-      }
+        }
+      });
     });
   </script>
+
+  <style>
+    /* Estilos para feedback */
+    .feedback {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #27ae60;
+      color: white;
+      padding: 15px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </body>
 </html>
