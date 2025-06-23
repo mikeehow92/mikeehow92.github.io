@@ -74,6 +74,7 @@ async function loadCart() {
     updateCartUI();
   } catch (error) {
     console.error("Error al cargar el carrito:", error);
+    showFeedback('Error al cargar el carrito', 'error');
   }
 }
 
@@ -127,8 +128,12 @@ function updateCartCounter() {
 
 async function saveCartToFirestore() {
   try {
-    const userId = currentUser ? currentUser.uid : 'guest';
-    await setDoc(doc(db, 'carts', userId), {
+    if (!currentUser) {
+      localStorage.setItem('cart', JSON.stringify(cart));
+      return;
+    }
+
+    await setDoc(doc(db, 'carts', currentUser.uid), {
       items: cart,
       lastUpdated: serverTimestamp()
     }, { merge: true });
@@ -143,17 +148,30 @@ function addToCart(product) {
   if (existingItem) {
     existingItem.quantity++;
   } else {
-    cart.push({...product, quantity: 1});
+    cart.push({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      image: product.image || ''
+    });
   }
+  
   saveCartToFirestore();
   updateCartUI();
   
-  // Feedback visual
+  // Feedback visual mejorado
   const feedback = document.createElement('div');
-  feedback.className = 'cart-feedback';
-  feedback.innerHTML = `<i class="fas fa-check"></i> ${product.name} añadido`;
+  feedback.className = 'cart-feedback show';
+  feedback.innerHTML = `
+    <i class="fas fa-check-circle"></i>
+    <span>${product.name} añadido al carrito</span>
+  `;
   document.body.appendChild(feedback);
-  setTimeout(() => feedback.remove(), 2000);
+  setTimeout(() => {
+    feedback.classList.remove('show');
+    setTimeout(() => feedback.remove(), 300);
+  }, 2000);
 }
 
 function removeFromCart(productId) {
@@ -178,9 +196,12 @@ async function proceedToCheckout() {
   }
 
   try {
-    // Crear ID de guest si no hay usuario
-    const userId = currentUser ? currentUser.uid : `guest_${Date.now()}`;
-    
+    // Calcular totales
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const tax = parseFloat((subtotal * 0.12).toFixed(2));
+    const total = parseFloat((subtotal + tax).toFixed(2));
+
+    // Preparar datos del checkout
     const checkoutData = {
       items: cart.map(item => ({
         id: item.id,
@@ -189,19 +210,23 @@ async function proceedToCheckout() {
         quantity: item.quantity,
         image: item.image || 'img/default-product.webp'
       })),
-      subtotal: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-      tax: calculateTax(),
-      total: calculateTotal(),
-      userId: userId,
+      subtotal: subtotal,
+      tax: tax,
+      total: total,
+      userId: currentUser ? currentUser.uid : `guest_${Date.now()}`,
       userEmail: currentUser ? currentUser.email : null,
-      isGuest: !currentUser, // Marcar como compra de invitado
-      createdAt: new Date().toISOString()
+      isGuest: !currentUser,
+      createdAt: new Date().toISOString(),
+      timestamp: new Date().getTime() // Para identificación única
     };
 
-    // Guardar datos de checkout
-    localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
-    sessionStorage.setItem('tempCheckout', JSON.stringify(checkoutData));
+    // Guardar datos en múltiples lugares para redundancia
+    localStorage.setItem('currentCheckout', JSON.stringify(checkoutData));
+    sessionStorage.setItem('checkoutData', JSON.stringify(checkoutData));
     
+    // Backup adicional
+    localStorage.setItem('lastCheckoutBackup', JSON.stringify(checkoutData));
+
     // Guardar en Firestore solo si hay usuario autenticado
     if (currentUser) {
       await addDoc(collection(db, 'checkouts'), {
@@ -211,7 +236,7 @@ async function proceedToCheckout() {
       });
     }
 
-    // Redireccionar a pago
+    // Redireccionar a pago.html
     window.location.href = 'pago.html';
     return true;
   } catch (error) {
@@ -221,7 +246,6 @@ async function proceedToCheckout() {
   }
 }
 
-// Nueva función para vincular carrito guest con usuario después de registro
 async function migrateGuestCart(user) {
   try {
     const guestCart = localStorage.getItem('cart');
@@ -230,7 +254,11 @@ async function migrateGuestCart(user) {
         items: JSON.parse(guestCart),
         lastUpdated: serverTimestamp()
       });
+      
+      // Limpiar datos locales
       localStorage.removeItem('cart');
+      localStorage.removeItem('currentCheckout');
+      sessionStorage.removeItem('checkoutData');
       
       // Actualizar el carrito local
       cart = JSON.parse(guestCart);
@@ -255,17 +283,24 @@ function calculateTotal() {
 function showFeedback(message, type = 'success') {
   const feedback = document.createElement('div');
   feedback.className = `feedback ${type}`;
-  feedback.textContent = message;
+  feedback.innerHTML = `
+    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+    <span>${message}</span>
+  `;
   document.body.appendChild(feedback);
-  setTimeout(() => feedback.remove(), 3000);
+  setTimeout(() => {
+    feedback.classList.add('hide');
+    setTimeout(() => feedback.remove(), 300);
+  }, 3000);
 }
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
   loadCart();
 
-  // Delegación de eventos
+  // Delegación de eventos mejorada
   document.addEventListener('click', function(e) {
+    // Añadir al carrito
     if (e.target.closest('.add-to-cart')) {
       const button = e.target.closest('.add-to-cart');
       const product = {
@@ -277,41 +312,62 @@ document.addEventListener('DOMContentLoaded', () => {
       addToCart(product);
     }
     
+    // Eliminar item
     if (e.target.closest('.remove-item')) {
       const productId = e.target.closest('.remove-item').dataset.id;
       removeFromCart(productId);
     }
     
+    // Aumentar cantidad
     if (e.target.closest('.quantity-btn.plus')) {
       const productId = e.target.closest('.quantity-btn').dataset.id;
       const item = cart.find(item => item.id === productId);
       if (item) updateQuantity(productId, item.quantity + 1);
     }
     
+    // Disminuir cantidad
     if (e.target.closest('.quantity-btn.minus')) {
       const productId = e.target.closest('.quantity-btn').dataset.id;
       const item = cart.find(item => item.id === productId);
       if (item) updateQuantity(productId, item.quantity - 1);
     }
     
+    // Proceder al pago
     if (e.target.closest('#checkoutBtn')) {
       e.preventDefault();
       proceedToCheckout();
     }
   });
 
-  // Modal del carrito
+  // Modal del carrito mejorado
   const cartModal = document.getElementById('cartModal');
   if (cartModal) {
-    document.getElementById('cartIcon')?.addEventListener('click', () => {
-      cartModal.classList.add('active');
-    });
+    const cartIcon = document.getElementById('cartIcon');
+    const closeModal = document.querySelector('.close-modal');
+    
+    if (cartIcon) {
+      cartIcon.addEventListener('click', () => {
+        cartModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      });
+    }
 
-    document.querySelector('.close-modal')?.addEventListener('click', () => {
-      cartModal.classList.remove('active');
+    if (closeModal) {
+      closeModal.addEventListener('click', () => {
+        cartModal.classList.remove('active');
+        document.body.style.overflow = '';
+      });
+    }
+
+    // Cerrar al hacer clic fuera del modal
+    cartModal.addEventListener('click', (e) => {
+      if (e.target === cartModal) {
+        cartModal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
     });
   }
 });
 
 // Exportar funciones necesarias
-export { migrateGuestCart };
+export { migrateGuestCart, proceedToCheckout, calculateTotal };
