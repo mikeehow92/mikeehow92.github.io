@@ -6,9 +6,13 @@
   <title>Productos - TecnoExpress</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-  <!-- Cabecera -->
   <header>
     <div class="container header-container">
       <div class="logo">
@@ -28,12 +32,10 @@
     </div>
   </header>
 
-  <!-- Contenido Principal -->
   <main class="container">
     <h1><i class="fas fa-print"></i> Nuestros Productos</h1>
     
     <div class="productos-grid">
-      <!-- Producto 1 -->
       <div class="producto-card">
         <div class="producto-imagen">
           <img src="img/impresora1.webp" alt="Impresora Térmica EPSON">
@@ -51,7 +53,6 @@
         </div>
       </div>
       
-      <!-- Producto 2 -->
       <div class="producto-card">
         <div class="producto-imagen">
           <img src="img/impresora2.webp" alt="Impresora Térmica EPSON">
@@ -71,7 +72,6 @@
     </div>
   </main>
 
-  <!-- Modal del Carrito -->
   <div id="cartModal" class="modal">
     <div class="modal-content">
       <span class="close-modal">&times;</span>
@@ -91,34 +91,81 @@
     </div>
   </div>
 
-  <!-- Scripts - Versión definitiva -->
-  <script type="module">
-    // Solución definitiva con manejo de errores
-    try {
-      // 1. Importar configuración de Firebase primero
-      import { app } from './js/firebase-config.js';
-      
-      // 2. Importar funciones del carrito
-      import { initializeCart } from './js/app.js';
-      
-      // 3. Inicialización con retardo seguro
-      document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-          console.log("Inicializando carrito...");
-          initializeCart();
-          
-          // Verificación manual de eventos
-          document.querySelectorAll('.add-to-cart').forEach(button => {
-            button.addEventListener('click', () => {
-              console.log("Botón clickeado - ID:", button.dataset.id);
-            });
-          });
-        }, 100);
-      });
-    } catch (error) {
-      console.error("Error crítico:", error);
-      alert("Error al cargar la aplicación. Por favor recarga la página.");
+  <!-- Configuración Firebase y lógica del carrito -->
+  <script>
+    // Configuración Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
+      authDomain: "mitienda-c2609.firebaseapp.com",
+      projectId: "mitienda-c2609",
+      storageBucket: "mitienda-c2609.appspot.com",
+      messagingSenderId: "536746062790",
+      appId: "1:536746062790:web:cd39eb0057aac14c6538c7"
+    };
+    
+    // Inicializar Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // Variables globales
+    let cart = [];
+    let currentUser = null;
+
+    // Función para añadir al carrito
+    function addToCart(product) {
+      const existingItem = cart.find(item => item.id === product.id);
+      if (existingItem) {
+        existingItem.quantity++;
+      } else {
+        cart.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          quantity: 1,
+          image: product.image || ''
+        });
+      }
+      updateCartUI();
+      showFeedback(`${product.name} añadido al carrito`);
     }
+
+    // Función para mostrar feedback
+    function showFeedback(message) {
+      const feedback = document.createElement('div');
+      feedback.className = 'feedback';
+      feedback.innerHTML = `
+        <i class="fas fa-check-circle"></i>
+        <span>${message}</span>
+      `;
+      document.body.appendChild(feedback);
+      setTimeout(() => feedback.remove(), 3000);
+    }
+
+    // Inicialización cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+      // Asignar eventos a los botones
+      document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', function() {
+          const product = {
+            id: this.dataset.id,
+            name: this.dataset.name,
+            price: parseFloat(this.dataset.price),
+            image: this.dataset.image
+          };
+          addToCart(product);
+        });
+      });
+
+      // Eventos del modal del carrito
+      const cartModal = document.getElementById('cartModal');
+      document.getElementById('cartIcon').addEventListener('click', () => {
+        cartModal.classList.add('active');
+      });
+      document.querySelector('.close-modal').addEventListener('click', () => {
+        cartModal.classList.remove('active');
+      });
+    });
   </script>
 </body>
 </html>
