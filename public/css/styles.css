@@ -33,6 +33,12 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  gap: 20px;
+}
+
+.logo {
+  flex: 0 0 auto;
 }
 
 .logo img {
@@ -44,10 +50,18 @@ header {
   transform: scale(1.05);
 }
 
+nav {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
 nav ul {
   display: flex;
   list-style: none;
   gap: 25px;
+  margin: 0;
+  padding: 0;
 }
 
 nav ul li a {
@@ -68,6 +82,37 @@ nav ul li a:hover {
 nav ul li a i {
   font-size: 0.9rem;
 }
+
+/* Icono del Carrito */
+.cart-icon {
+  flex: 0 0 auto;
+  margin-left: auto;
+  position: relative;
+  cursor: pointer;
+  color: white;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.3s ease;
+}
+
+.cart-icon:hover {
+  color: #3498db;
+}
+
+#cartCounter {
+  font-size: 0.9rem;
+  background-color: #e74c3c;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 8px;
+  min-width: 20px;
+  text-align: center;
+  display: none;
+}
+
+/* Resto del CSS permanece igual */
 /* Estilos para el modal login */
 .btn-login {
   width: 100%;
@@ -127,32 +172,6 @@ nav ul li a i {
 .modal-overlay.active {
   opacity: 1;
   visibility: visible;
-}
-/* Icono del Carrito */
-.cart-icon {
-  position: relative;
-  cursor: pointer;
-  color: white;
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  transition: all 0.3s ease;
-}
-
-.cart-icon:hover {
-  color: #3498db;
-}
-
-#cartCounter {
-  font-size: 0.9rem;
-  background-color: #e74c3c;
-  color: white;
-  border-radius: 50%;
-  padding: 2px 8px;
-  min-width: 20px;
-  text-align: center;
-  display: none;
 }
 
 /* Contenido Principal */
@@ -672,10 +691,20 @@ main {
     padding-bottom: 15px;
   }
   
+  nav {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  
   nav ul {
     gap: 15px;
     flex-wrap: wrap;
     justify-content: center;
+  }
+  
+  .cart-icon {
+    margin-left: 0;
+    order: 3;
   }
   
   .modal {
