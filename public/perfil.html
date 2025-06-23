@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    /* Estilos específicos para la página de perfil */
     .profile-container {
       max-width: 1200px;
       margin: 40px auto;
@@ -67,11 +66,6 @@
     .profile-menu a:hover, .profile-menu a.active {
       background-color: #f0f7ff;
       color: #3498db;
-    }
-
-    .profile-menu a i {
-      width: 20px;
-      text-align: center;
     }
 
     .profile-content {
@@ -167,7 +161,6 @@
       background-color: #c0392b;
     }
 
-    /* Estilos para el formulario de edición */
     .edit-form .form-group {
       margin-bottom: 15px;
     }
@@ -193,7 +186,6 @@
       box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
     }
 
-    /* Estilos para el historial de compras */
     .order-card {
       border: 1px solid #eee;
       border-radius: 8px;
@@ -291,7 +283,6 @@
       margin-top: 10px;
     }
 
-    /* Responsive */
     @media (max-width: 992px) {
       .profile-container {
         grid-template-columns: 1fr;
@@ -359,7 +350,6 @@
     </aside>
 
     <div class="profile-content">
-      <!-- Sección de Información Personal -->
       <section id="info-section" class="profile-section active">
         <h2 class="section-title"><i class="fas fa-user"></i> Información Personal</h2>
         <div class="info-grid">
@@ -378,7 +368,6 @@
         </div>
         <button class="edit-btn" id="editPersonalBtn"><i class="fas fa-edit"></i> Editar Información</button>
         
-        <!-- Formulario de edición (oculto inicialmente) -->
         <div id="editPersonalForm" class="edit-form" style="display: none;">
           <div class="form-group">
             <label for="editName">Nombre completo</label>
@@ -393,7 +382,6 @@
         </div>
       </section>
 
-      <!-- Sección de Dirección -->
       <section id="address-section" class="profile-section">
         <h2 class="section-title"><i class="fas fa-map-marker-alt"></i> Dirección</h2>
         <div class="info-grid">
@@ -412,7 +400,6 @@
         </div>
         <button class="edit-btn" id="editAddressBtn"><i class="fas fa-edit"></i> Editar Dirección</button>
         
-        <!-- Formulario de edición de dirección (oculto inicialmente) -->
         <div id="editAddressForm" class="edit-form" style="display: none;">
           <div class="form-group">
             <label for="editDepartment">Departamento</label>
@@ -435,7 +422,6 @@
         </div>
       </section>
 
-      <!-- Sección de Compras -->
       <section id="orders-section" class="profile-section">
         <h2 class="section-title"><i class="fas fa-shopping-bag"></i> Historial de Compras</h2>
         
@@ -450,7 +436,6 @@
         </div>
       </section>
 
-      <!-- Sección de Seguridad -->
       <section id="security-section" class="profile-section">
         <h2 class="section-title"><i class="fas fa-lock"></i> Seguridad</h2>
         <div class="info-grid">
@@ -465,7 +450,6 @@
         </div>
         <button class="edit-btn" id="changePasswordBtn"><i class="fas fa-key"></i> Cambiar Contraseña</button>
         
-        <!-- Formulario de cambio de contraseña (oculto inicialmente) -->
         <div id="changePasswordForm" class="edit-form" style="display: none;">
           <div class="form-group">
             <label for="currentPassword">Contraseña actual</label>
@@ -509,7 +493,6 @@
     </div>
   </footer>
 
-  <!-- Firebase SDK -->
   <script type="module">
     import { AuthService } from '/js/auth.js';
     import { 
@@ -520,10 +503,10 @@
       collection,
       query,
       where,
-      getDocs
+      getDocs,
+      serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
 
-    // Datos de departamentos y municipios de El Salvador
     const departamentos = {
       "Ahuachapán": ["Ahuachapán", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Guaymango", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
       "Cabañas": ["Sensuntepeque", "Cinquera", "Dolores", "Guacotecti", "Ilobasco", "Jutiapa", "San Isidro", "Tejutepeque", "Victoria"],
@@ -541,45 +524,38 @@
       "Usulután": ["Usulután", "Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán"]
     };
 
-    // Inicializar Firestore
     const db = getFirestore();
 
-    // Función para cargar los datos del usuario
     async function loadUserData() {
       try {
         const user = await AuthService.checkAuth();
-        
-        // Mostrar nombre y correo
-        document.getElementById('profileUserName').textContent = user.displayName || user.email.split('@')[0];
-        document.getElementById('userFullName').textContent = user.displayName || 'No especificado';
-        document.getElementById('userEmail').textContent = user.email;
-        
-        // Obtener datos adicionales de Firestore
         const userDoc = await getDoc(doc(db, 'users', user.uid));
+        
         if (userDoc.exists()) {
           const userData = userDoc.data();
+          const userName = userData.nombre || user.email.split('@')[0];
           
-          // Mostrar datos personales
+          document.getElementById('profileUserName').textContent = userName;
+          document.getElementById('userFullName').textContent = userName;
+          document.getElementById('userEmail').textContent = user.email;
           document.getElementById('userPhone').textContent = userData.telefono || 'No especificado';
           
-          // Mostrar datos de dirección
           if (userData.direccion) {
             document.getElementById('userDepartment').textContent = userData.direccion.departamento || 'No especificado';
             document.getElementById('userMunicipality').textContent = userData.direccion.municipio || 'No especificado';
             document.getElementById('userAddress').textContent = userData.direccion.direccionExacta || 'No especificado';
           }
           
-          // Mostrar último inicio de sesión
-          if (user.metadata && user.metadata.lastSignInTime) {
-            const lastLogin = new Date(user.metadata.lastSignInTime);
-            document.getElementById('lastLogin').textContent = lastLogin.toLocaleString();
+          if (user.metadata.lastSignInTime) {
+            document.getElementById('lastLogin').textContent = new Date(user.metadata.lastSignInTime).toLocaleString();
           }
           
-          // Mostrar enlace de perfil en el nav
           document.getElementById('profile-nav-item').style.display = 'block';
-          
-          // Cargar historial de compras
           await loadOrderHistory(user.uid);
+        } else {
+          document.getElementById('profileUserName').textContent = user.email.split('@')[0];
+          document.getElementById('userEmail').textContent = user.email;
+          document.getElementById('userFullName').textContent = 'No especificado';
         }
       } catch (error) {
         console.error("Error:", error);
@@ -588,7 +564,6 @@
       }
     }
 
-    // Función para cargar el historial de compras
     async function loadOrderHistory(userId) {
       try {
         const q = query(collection(db, 'orders'), where('userId', '==', userId));
@@ -645,12 +620,10 @@
       }
     }
 
-    // Cambiar entre secciones del perfil
     document.querySelectorAll('.profile-menu a').forEach(link => {
       link.addEventListener('click', function(e) {
         e.preventDefault();
         
-        // Remover clase active de todos los enlaces y secciones
         document.querySelectorAll('.profile-menu a').forEach(item => {
           item.classList.remove('active');
         });
@@ -658,26 +631,19 @@
           section.classList.remove('active');
         });
         
-        // Agregar clase active al enlace clickeado
         this.classList.add('active');
-        
-        // Mostrar la sección correspondiente
         const sectionId = this.getAttribute('data-section');
         document.getElementById(`${sectionId}-section`).classList.add('active');
       });
     });
 
-    // Funciones para editar información personal
     document.getElementById('editPersonalBtn').addEventListener('click', function() {
-      // Obtener datos actuales
       const currentName = document.getElementById('userFullName').textContent;
       const currentPhone = document.getElementById('userPhone').textContent;
       
-      // Poner valores en el formulario
       document.getElementById('editName').value = currentName !== 'No especificado' ? currentName : '';
       document.getElementById('editPhone').value = currentPhone !== 'No especificado' ? currentPhone : '';
       
-      // Mostrar formulario y ocultar info estática
       document.getElementById('editPersonalForm').style.display = 'block';
       document.getElementById('editPersonalBtn').style.display = 'none';
     });
@@ -691,7 +657,6 @@
       const newName = document.getElementById('editName').value.trim();
       const newPhone = document.getElementById('editPhone').value.trim();
       
-      // Validaciones básicas
       if (!newName) {
         alert('Por favor ingrese su nombre completo');
         return;
@@ -709,12 +674,10 @@
           telefono: newPhone
         });
         
-        // Actualizar la vista
         document.getElementById('userFullName').textContent = newName;
         document.getElementById('userPhone').textContent = newPhone;
         document.getElementById('profileUserName').textContent = newName;
         
-        // Ocultar formulario
         document.getElementById('editPersonalForm').style.display = 'none';
         document.getElementById('editPersonalBtn').style.display = 'inline-flex';
         
@@ -725,19 +688,15 @@
       }
     });
 
-    // Funciones para editar dirección
     document.getElementById('editAddressBtn').addEventListener('click', function() {
-      // Obtener datos actuales
       const currentDepto = document.getElementById('userDepartment').textContent;
       const currentMuni = document.getElementById('userMunicipality').textContent;
       const currentAddress = document.getElementById('userAddress').textContent;
       
-      // Poner valores en el formulario
       if (currentDepto !== 'No especificado') {
         document.getElementById('editDepartment').value = currentDepto;
         document.getElementById('editDepartment').dispatchEvent(new Event('change'));
         
-        // Esperar un momento para que se carguen los municipios
         setTimeout(() => {
           if (currentMuni !== 'No especificado') {
             document.getElementById('editMunicipality').value = currentMuni;
@@ -747,7 +706,6 @@
       
       document.getElementById('editAddress').value = currentAddress !== 'No especificado' ? currentAddress : '';
       
-      // Mostrar formulario y ocultar info estática
       document.getElementById('editAddressForm').style.display = 'block';
       document.getElementById('editAddressBtn').style.display = 'none';
     });
@@ -762,7 +720,6 @@
       const newMuni = document.getElementById('editMunicipality').value;
       const newAddress = document.getElementById('editAddress').value.trim();
       
-      // Validaciones
       if (!newDepto || !newMuni || !newAddress) {
         alert('Por favor complete todos los campos de dirección');
         return;
@@ -778,12 +735,10 @@
           }
         });
         
-        // Actualizar la vista
         document.getElementById('userDepartment').textContent = newDepto;
         document.getElementById('userMunicipality').textContent = newMuni;
         document.getElementById('userAddress').textContent = newAddress;
         
-        // Ocultar formulario
         document.getElementById('editAddressForm').style.display = 'none';
         document.getElementById('editAddressBtn').style.display = 'inline-flex';
         
@@ -794,7 +749,6 @@
       }
     });
 
-    // Funciones para cambiar contraseña
     document.getElementById('changePasswordBtn').addEventListener('click', function() {
       document.getElementById('changePasswordForm').style.display = 'block';
       document.getElementById('changePasswordBtn').style.display = 'none';
@@ -804,7 +758,6 @@
       document.getElementById('changePasswordForm').style.display = 'none';
       document.getElementById('changePasswordBtn').style.display = 'inline-flex';
       
-      // Limpiar campos
       document.getElementById('currentPassword').value = '';
       document.getElementById('newPassword').value = '';
       document.getElementById('confirmNewPassword').value = '';
@@ -815,7 +768,6 @@
       const newPassword = document.getElementById('newPassword').value;
       const confirmNewPassword = document.getElementById('confirmNewPassword').value;
       
-      // Validaciones
       if (!currentPassword || !newPassword || !confirmNewPassword) {
         alert('Por favor complete todos los campos');
         return;
@@ -835,7 +787,6 @@
         await AuthService.changePassword(currentPassword, newPassword);
         alert('Contraseña cambiada correctamente');
         
-        // Limpiar y ocultar formulario
         document.getElementById('currentPassword').value = '';
         document.getElementById('newPassword').value = '';
         document.getElementById('confirmNewPassword').value = '';
@@ -847,7 +798,6 @@
       }
     });
 
-    // Llenar select de departamentos para edición
     const editDepartmentSelect = document.getElementById('editDepartment');
     const editMunicipalitySelect = document.getElementById('editMunicipality');
 
@@ -858,7 +808,6 @@
       editDepartmentSelect.appendChild(option);
     });
 
-    // Actualizar municipios cuando cambie el departamento en edición
     editDepartmentSelect.addEventListener('change', function() {
       editMunicipalitySelect.innerHTML = '<option value="">Seleccione un municipio</option>';
       editMunicipalitySelect.disabled = !this.value;
@@ -873,7 +822,6 @@
       }
     });
 
-    // Cargar datos del usuario cuando la página esté lista
     document.addEventListener('DOMContentLoaded', loadUserData);
   </script>
 </body>
