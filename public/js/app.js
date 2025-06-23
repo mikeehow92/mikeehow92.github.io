@@ -7,7 +7,7 @@ import {
 import { 
   getAuth, onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
-import { AuthService } from './auth.js';  // Ruta corregida
+import { AuthService } from './auth.js';
 
 // Configuración Firebase
 const firebaseConfig = {
@@ -35,7 +35,48 @@ onAuthStateChanged(auth, (user) => {
   loadCart();
 });
 
-// Funciones del carrito
+// Funciones del carrito (actualizadas)
+async function loadCart() {
+  try {
+    // Verificar si debemos limpiar el carrito (después de pago completado)
+    const shouldClearCart = sessionStorage.getItem('clearCartOnLoad');
+    
+    if (shouldClearCart) {
+      cart = [];
+      localStorage.removeItem('cart');
+      sessionStorage.removeItem('clearCartOnLoad');
+      
+      if (currentUser) {
+        await setDoc(doc(db, 'carts', currentUser.uid), {
+          items: [],
+          lastUpdated: serverTimestamp()
+        });
+      }
+      
+      updateCartUI();
+      return;
+    }
+
+    // Carga normal del carrito
+    const localCart = localStorage.getItem('cart');
+    if (localCart) {
+      cart = JSON.parse(localCart);
+    }
+    
+    if (currentUser) {
+      const docSnap = await getDoc(doc(db, 'carts', currentUser.uid));
+      if (docSnap.exists()) {
+        cart = docSnap.data().items || [];
+        localStorage.setItem('cart', JSON.stringify(cart));
+      }
+    }
+    
+    updateCartUI();
+  } catch (error) {
+    console.error("Error al cargar el carrito:", error);
+  }
+}
+
 function updateCartUI() {
   const cartItems = document.getElementById('cartItems');
   const cartTotal = document.getElementById('cartTotal');
@@ -70,11 +111,7 @@ function updateCartUI() {
       total += item.price * item.quantity;
     });
 
-    if (cartTotal) cartTotal.innerHTML = `$${total.toFixed(2)}`;
-    
-    // Actualizar total en botón de pago si existe
-    const paymentTotal = document.getElementById('paymentTotal');
-    if (paymentTotal) paymentTotal.textContent = total.toFixed(2);
+    if (cartTotal) cartTotal.textContent = total.toFixed(2);
   }
   updateCartCounter();
 }
@@ -82,7 +119,7 @@ function updateCartUI() {
 function updateCartCounter() {
   const counter = document.getElementById('cartCounter');
   if (counter) {
-    const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     counter.textContent = totalItems;
     counter.style.display = totalItems > 0 ? 'inline-block' : 'none';
   }
@@ -94,35 +131,10 @@ async function saveCartToFirestore() {
     await setDoc(doc(db, 'carts', userId), {
       items: cart,
       lastUpdated: serverTimestamp()
-    });
+    }, { merge: true });
   } catch (error) {
     console.error("Error al guardar en Firestore:", error);
     localStorage.setItem('cart', JSON.stringify(cart));
-  }
-}
-
-async function loadCart() {
-  try {
-    // Cargar del localStorage primero
-    const localCart = localStorage.getItem('cart');
-    if (localCart) {
-      cart = JSON.parse(localCart);
-      updateCartUI();
-    }
-    
-    // Si hay usuario, cargar desde Firestore
-    if (currentUser) {
-      const userId = currentUser.uid;
-      const docSnap = await getDoc(doc(db, 'carts', userId));
-      
-      if (docSnap.exists()) {
-        cart = docSnap.data().items || [];
-        updateCartUI();
-        localStorage.setItem('cart', JSON.stringify(cart));
-      }
-    }
-  } catch (error) {
-    console.error("Error al cargar el carrito:", error);
   }
 }
 
@@ -179,30 +191,22 @@ async function proceedToCheckout() {
       subtotal: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
       tax: calculateTax(),
       total: calculateTotal(),
-      createdAt: new Date().toISOString(),
       userId: user.uid,
-      userEmail: user.email,
-      userProfile: {
-        name: user.profileData?.nombre || user.email.split('@')[0],
-        address: user.profileData?.direccion || null
-      }
+      userEmail: user.email
     };
 
-    // Guardar en múltiples lugares
+    // Guardar datos de checkout
     localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
     sessionStorage.setItem('tempCheckout', JSON.stringify(checkoutData));
     
-    // Guardar en Firestore como checkout pendiente
+    // Guardar en Firestore
     await addDoc(collection(db, 'checkouts'), {
       ...checkoutData,
       status: 'pending',
-      user: {
-        uid: user.uid,
-        email: user.email
-      }
+      createdAt: serverTimestamp()
     });
 
-    // Redireccionar a página de pago
+    // Redireccionar a pago
     window.location.href = 'pago.html';
     return true;
   } catch (error) {
@@ -214,7 +218,7 @@ async function proceedToCheckout() {
 
 function calculateTax() {
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  return parseFloat((subtotal * 0.12).toFixed(2)); // 12% de IVA
+  return parseFloat((subtotal * 0.12).toFixed(2));
 }
 
 function calculateTotal() {
@@ -237,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Delegación de eventos
   document.addEventListener('click', function(e) {
-    // Añadir al carrito
     if (e.target.closest('.add-to-cart')) {
       const button = e.target.closest('.add-to-cart');
       const product = {
@@ -249,27 +252,23 @@ document.addEventListener('DOMContentLoaded', () => {
       addToCart(product);
     }
     
-    // Eliminar item
     if (e.target.closest('.remove-item')) {
       const productId = e.target.closest('.remove-item').dataset.id;
       removeFromCart(productId);
     }
     
-    // Aumentar cantidad
     if (e.target.closest('.quantity-btn.plus')) {
       const productId = e.target.closest('.quantity-btn').dataset.id;
       const item = cart.find(item => item.id === productId);
       if (item) updateQuantity(productId, item.quantity + 1);
     }
     
-    // Disminuir cantidad
     if (e.target.closest('.quantity-btn.minus')) {
       const productId = e.target.closest('.quantity-btn').dataset.id;
       const item = cart.find(item => item.id === productId);
       if (item) updateQuantity(productId, item.quantity - 1);
     }
     
-    // Checkout
     if (e.target.closest('#checkoutBtn')) {
       e.preventDefault();
       proceedToCheckout();
@@ -281,22 +280,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cartModal) {
     document.getElementById('cartIcon')?.addEventListener('click', () => {
       cartModal.classList.add('active');
-      document.body.style.overflow = 'hidden';
     });
 
     document.querySelector('.close-modal')?.addEventListener('click', () => {
       cartModal.classList.remove('active');
-      document.body.style.overflow = '';
     });
   }
 });
-
-// Exportar funciones necesarias para otros archivos
-export { 
-  addToCart, 
-  removeFromCart, 
-  updateQuantity, 
-  proceedToCheckout,
-  calculateTotal,
-  calculateTax
-};
