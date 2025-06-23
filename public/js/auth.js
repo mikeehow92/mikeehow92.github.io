@@ -178,7 +178,7 @@ export function initAuthUI() {
     if (nav) {
       nav.innerHTML += `
         <li><a href="perfil.html"><i class="fas fa-user"></i> Mi Perfil</a></li>
-        <li><a href="pedidos.html"><i class="fas fa-shopping-bag"></i> Mis Pedidos</a></li>
+        <li><a href="perfil.html"><i class="fas fa-shopping-bag"></i> Mis Pedidos</a></li>
       `;
     }
   }
