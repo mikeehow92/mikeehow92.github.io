@@ -157,6 +157,17 @@
       <div class="payment-form">
         <h2>Información de Pago</h2>
         <form id="paymentForm">
+          <div id="guestFields" style="display: none;">
+            <div class="form-group">
+              <label for="guestEmail">Email (opcional para factura)</label>
+              <input type="email" id="guestEmail">
+            </div>
+            <div class="form-group">
+              <label for="guestPhone">Teléfono (para seguimiento)</label>
+              <input type="tel" id="guestPhone" required>
+            </div>
+          </div>
+          
           <div class="form-group">
             <label for="cardName">Nombre en la Tarjeta</label>
             <input type="text" id="cardName" required>
@@ -212,11 +223,15 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        const user = await AuthService.checkAuth();
         const checkoutData = 
           JSON.parse(localStorage.getItem('checkoutData')) || 
           JSON.parse(sessionStorage.getItem('tempCheckout')) || 
           { items: [], total: 0 };
+
+        // Mostrar campos para guests si es necesario
+        if (checkoutData?.isGuest) {
+          document.getElementById('guestFields').style.display = 'block';
+        }
 
         if (!checkoutData.items || checkoutData.items.length === 0) {
           document.getElementById('orderItems').innerHTML = `
@@ -256,6 +271,9 @@
           e.preventDefault();
           
           try {
+            const checkoutData = JSON.parse(localStorage.getItem('checkoutData'));
+            const isGuest = !checkoutData.userId.startsWith('guest_') ? false : true;
+
             // Validar datos de tarjeta
             const cardName = document.getElementById('cardName').value.trim();
             const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
@@ -267,16 +285,25 @@
               return;
             }
 
+            // Validar campos adicionales para guests
+            if (isGuest) {
+              const guestPhone = document.getElementById('guestPhone').value.trim();
+              if (!guestPhone) {
+                alert('Por favor proporcione un número de teléfono para seguimiento');
+                return;
+              }
+            }
+
             // Guardar la orden en Firestore
             const orderRef = await addDoc(collection(db, 'orders'), {
-              userId: user.uid,
-              items: checkoutData.items,
-              total: checkoutData.total,
-              date: serverTimestamp(),
+              ...checkoutData,
               status: 'Completado',
               paymentMethod: 'Tarjeta de crédito',
-              shippingAddress: user.profileData?.direccion || 'No especificada',
-              cardLastFour: cardNumber.slice(-4)
+              date: serverTimestamp(),
+              cardLastFour: cardNumber.slice(-4),
+              // Campos adicionales para guests
+              guestEmail: isGuest ? document.getElementById('guestEmail')?.value : null,
+              guestPhone: isGuest ? document.getElementById('guestPhone')?.value : null
             });
 
             // Limpiar carrito y marcar para limpieza en la próxima carga
@@ -286,15 +313,16 @@
             sessionStorage.removeItem('tempCheckout');
             
             // Limpiar carrito en Firestore para usuarios registrados
-            if (user) {
-              await setDoc(doc(db, 'carts', user.uid), {
+            if (!isGuest) {
+              await setDoc(doc(db, 'carts', checkoutData.userId), {
                 items: [],
                 lastUpdated: serverTimestamp()
               });
             }
 
-            alert('✅ Pago procesado correctamente. Número de orden: ' + orderRef.id.substring(0, 8));
-            window.location.href = 'perfil.html#compras';
+            // Mostrar mensaje con número de orden
+            alert(`✅ Pedido #${orderRef.id.substring(0, 8)} completado. ${isGuest ? 'Guarde este número para seguimiento' : ''}`);
+            window.location.href = isGuest ? 'index.html' : 'perfil.html#compras';
           } catch (error) {
             console.error("Error al procesar pago:", error);
             alert('Error al procesar el pago: ' + error.message);
