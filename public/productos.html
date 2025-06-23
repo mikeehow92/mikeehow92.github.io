@@ -61,7 +61,7 @@
       font-size: 1rem;
     }
 
-    /* Estilos para el modal del carrito */
+    /* Estilos CORREGIDOS para el modal del carrito */
     .modal {
       display: none;
       position: fixed;
@@ -74,17 +74,15 @@
     }
     
     .modal.active {
-      display: block;
+      display: flex;
+      justify-content: flex-end; /* CORRECCIÓN: Ahora aparece a la derecha */
     }
     
     .modal-content {
-      position: fixed;
-      top: 0;
-      right: 0;
+      background: white;
       width: 100%;
       max-width: 400px;
-      height: 100%;
-      background: white;
+      height: 100vh;
       padding: 20px;
       box-shadow: -5px 0 15px rgba(0,0,0,0.1);
       overflow-y: auto;
@@ -96,6 +94,7 @@
       right: 15px;
       font-size: 1.5rem;
       cursor: pointer;
+      z-index: 2;
     }
     
     .cart-item {
@@ -123,6 +122,32 @@
       width: 100%;
       margin-top: 20px;
       cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .checkout-btn:hover {
+      background: #219955;
+    }
+
+    /* Estilos para feedback */
+    .feedback {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #27ae60;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 1100;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     @media (max-width: 768px) {
@@ -133,6 +158,7 @@
   </style>
 </head>
 <body>
+  <!-- Header -->
   <header>
     <div class="container header-container">
       <div class="logo">
@@ -156,6 +182,7 @@
     <h1><i class="fas fa-print"></i> Nuestros Productos</h1>
     
     <div class="productos-grid">
+      <!-- Producto 1 -->
       <div class="producto-card">
         <div class="producto-imagen">
           <img src="img/impresora1.webp" alt="Impresora Térmica EPSON">
@@ -173,6 +200,7 @@
         </div>
       </div>
       
+      <!-- Producto 2 -->
       <div class="producto-card">
         <div class="producto-imagen">
           <img src="img/impresora2.webp" alt="Impresora Térmica EPSON">
@@ -192,7 +220,7 @@
     </div>
   </main>
 
-  <!-- Modal del Carrito -->
+  <!-- Modal del Carrito - CORREGIDO -->
   <div id="cartModal" class="modal">
     <div class="modal-content">
       <span class="close-modal">&times;</span>
@@ -217,6 +245,7 @@
     let cart = [];
     const cartModal = document.getElementById('cartModal');
     const cartCounter = document.getElementById('cartCounter');
+    const checkoutBtn = document.getElementById('checkoutBtn');
 
     // Cargar carrito desde localStorage
     function loadCart() {
@@ -237,7 +266,6 @@
       const cartItems = document.getElementById('cartItems');
       const cartTotal = document.getElementById('cartTotal');
       
-      // Vaciar contenedor
       cartItems.innerHTML = '';
       
       if (cart.length === 0) {
@@ -252,7 +280,6 @@
         return;
       }
 
-      // Mostrar productos
       let total = 0;
       cart.forEach(item => {
         const itemElement = document.createElement('div');
@@ -275,7 +302,6 @@
         total += item.price * item.quantity;
       });
 
-      // Actualizar total y contador
       cartTotal.textContent = total.toFixed(2);
       updateCartCounter();
     }
@@ -318,6 +344,24 @@
       `;
       document.body.appendChild(feedback);
       setTimeout(() => feedback.remove(), 2000);
+    }
+
+    // Función para proceder al pago - CORREGIDA
+    function proceedToCheckout() {
+      if (cart.length === 0) {
+        showFeedback('Tu carrito está vacío');
+        return;
+      }
+      
+      // Guardar datos temporales
+      const checkoutData = {
+        items: cart,
+        total: document.getElementById('cartTotal').textContent,
+        timestamp: new Date().toISOString()
+      };
+      
+      localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
+      window.location.href = 'pago.html';
     }
 
     // Event Listeners
@@ -364,7 +408,8 @@
       });
 
       // Abrir/cerrar modal
-      document.getElementById('cartIcon').addEventListener('click', () => {
+      document.getElementById('cartIcon').addEventListener('click', (e) => {
+        e.stopPropagation();
         cartModal.classList.add('active');
       });
 
@@ -377,29 +422,13 @@
           cartModal.classList.remove('active');
         }
       });
+
+      // Botón de pago - CORREGIDO
+      checkoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        proceedToCheckout();
+      });
     });
   </script>
-
-  <style>
-    /* Estilos para feedback */
-    .feedback {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: #27ae60;
-      color: white;
-      padding: 15px;
-      border-radius: 5px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      animation: fadeIn 0.3s ease;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
 </body>
 </html>
