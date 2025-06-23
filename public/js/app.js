@@ -178,7 +178,8 @@ async function proceedToCheckout() {
   }
 
   try {
-    const user = await AuthService.checkAuth();
+    // Crear ID de guest si no hay usuario
+    const userId = currentUser ? currentUser.uid : `guest_${Date.now()}`;
     
     const checkoutData = {
       items: cart.map(item => ({
@@ -191,20 +192,24 @@ async function proceedToCheckout() {
       subtotal: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
       tax: calculateTax(),
       total: calculateTotal(),
-      userId: user.uid,
-      userEmail: user.email
+      userId: userId,
+      userEmail: currentUser ? currentUser.email : null,
+      isGuest: !currentUser, // Marcar como compra de invitado
+      createdAt: new Date().toISOString()
     };
 
     // Guardar datos de checkout
     localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
     sessionStorage.setItem('tempCheckout', JSON.stringify(checkoutData));
     
-    // Guardar en Firestore
-    await addDoc(collection(db, 'checkouts'), {
-      ...checkoutData,
-      status: 'pending',
-      createdAt: serverTimestamp()
-    });
+    // Guardar en Firestore solo si hay usuario autenticado
+    if (currentUser) {
+      await addDoc(collection(db, 'checkouts'), {
+        ...checkoutData,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
+    }
 
     // Redireccionar a pago
     window.location.href = 'pago.html';
@@ -213,6 +218,26 @@ async function proceedToCheckout() {
     console.error('Error en checkout:', error);
     showFeedback('Error al procesar tu pedido: ' + error.message, 'error');
     return false;
+  }
+}
+
+// Nueva función para vincular carrito guest con usuario después de registro
+async function migrateGuestCart(user) {
+  try {
+    const guestCart = localStorage.getItem('cart');
+    if (guestCart && user) {
+      await setDoc(doc(db, 'carts', user.uid), {
+        items: JSON.parse(guestCart),
+        lastUpdated: serverTimestamp()
+      });
+      localStorage.removeItem('cart');
+      
+      // Actualizar el carrito local
+      cart = JSON.parse(guestCart);
+      updateCartUI();
+    }
+  } catch (error) {
+    console.error("Error al migrar carrito de invitado:", error);
   }
 }
 
@@ -287,3 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Exportar funciones necesarias
+export { migrateGuestCart };
