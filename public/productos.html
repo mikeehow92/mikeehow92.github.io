@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <!-- Cabecera -->
   <header>
     <div class="container header-container">
       <div class="logo">
@@ -28,7 +27,6 @@
     </div>
   </header>
 
-  <!-- Contenido Principal -->
   <main class="container">
     <h1><i class="fas fa-print"></i> Nuestros Productos</h1>
     
@@ -91,31 +89,27 @@
     </div>
   </div>
 
-  <!-- Scripts - Versión corregida -->
+  <!-- Scripts Corregidos -->
   <script type="module">
-    // Importación de módulos
-    import { initCart, addToCart } from '/js/app.js';
+    // 1. Importar la configuración de Firebase primero
+    import { app } from '/js/firebase-config.js';
     
-    // Inicialización cuando el DOM esté listo
+    // 2. Luego importar las funciones del carrito
+    import { initializeCart } from '/js/app.js';
+    
+    // 3. Inicialización con verificación de errores
     document.addEventListener('DOMContentLoaded', () => {
-      // Inicializar el carrito
-      initCart();
-      
-      // Manejador directo para los botones (solución alternativa)
-      document.querySelectorAll('.add-to-cart').forEach(button => {
-        button.addEventListener('click', () => {
-          const product = {
-            id: button.dataset.id,
-            name: button.dataset.name,
-            price: parseFloat(button.dataset.price),
-            image: button.dataset.image
-          };
-          addToCart(product);
-        });
-      });
-      
-      // Verificación en consola
-      console.log('Botones configurados:', document.querySelectorAll('.add-to-cart').length);
+      try {
+        console.log("Inicializando carrito...");
+        initializeCart();
+        
+        // Verificación de que los botones existen
+        const buttons = document.querySelectorAll('.add-to-cart');
+        console.log(`Número de botones encontrados: ${buttons.length}`);
+        
+      } catch (error) {
+        console.error("Error al inicializar:", error);
+      }
     });
   </script>
 </body>
