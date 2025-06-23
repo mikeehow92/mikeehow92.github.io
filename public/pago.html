@@ -119,7 +119,12 @@
       border-bottom: 1px solid #f0f0f0;
     }
 
-    /* Estilos mejorados para tarjetas */
+    /* Estilos para cuentas guest */
+    .guest-field {
+      display: none;
+    }
+    
+    /* Estilos para tarjetas */
     .card-icon-container {
       display: flex;
       align-items: center;
@@ -155,11 +160,26 @@
       display: none;
     }
 
-    input:invalid + .error-message,
-    select:invalid + .error-message {
-      display: block;
+    /* Loading */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0,0,0,.3);
+      border-radius: 50%;
+      border-top-color: #3498db;
+      animation: spin 1s ease-in-out infinite;
     }
     
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loading-items {
+      text-align: center;
+      padding: 20px;
+    }
+
     @media (max-width: 768px) {
       .checkout-grid {
         grid-template-columns: 1fr;
@@ -198,7 +218,11 @@
     <div class="checkout-grid">
       <div class="order-summary">
         <h2>Resumen de tu Pedido</h2>
-        <div id="orderItems"></div>
+        <div id="orderItems">
+          <div class="loading-items">
+            <span class="loading"></span> Cargando productos...
+          </div>
+        </div>
         <div class="order-total">
           Total: $<span id="orderTotal">0.00</span>
         </div>
@@ -209,17 +233,23 @@
         <form id="paymentForm">
           <!-- Sección de Información de Contacto -->
           <div class="section-title">Información de Contacto</div>
-          <div id="guestFields">
-            <div class="form-group">
-              <label for="customerEmail">Correo Electrónico</label>
-              <input type="email" id="customerEmail" required>
-              <div class="error-message">Por favor ingrese un correo válido</div>
-            </div>
-            <div class="form-group">
-              <label for="customerPhone">Teléfono</label>
-              <input type="tel" id="customerPhone" required>
-              <div class="error-message">Por favor ingrese un teléfono válido</div>
-            </div>
+          
+          <!-- Campo para nombre completo en cuentas guest -->
+          <div id="guestNameField" class="form-group guest-field">
+            <label for="customerName">Nombre Completo</label>
+            <input type="text" id="customerName">
+            <div class="error-message">Por favor ingrese su nombre completo</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="customerEmail">Correo Electrónico</label>
+            <input type="email" id="customerEmail" required>
+            <div class="error-message">Por favor ingrese un correo válido</div>
+          </div>
+          <div class="form-group">
+            <label for="customerPhone">Teléfono</label>
+            <input type="tel" id="customerPhone" required>
+            <div class="error-message">Por favor ingrese un teléfono válido</div>
           </div>
           
           <!-- Sección de Dirección de Envío -->
@@ -330,46 +360,22 @@
       "Usulután": ["Usulután", "Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán"]
     };
 
-    // Llenar select de departamentos
-    const deptoSelect = document.getElementById('departamento');
-    const muniSelect = document.getElementById('municipio');
-
-    Object.keys(departamentos).forEach(depto => {
-      const option = document.createElement('option');
-      option.value = depto;
-      option.textContent = depto;
-      deptoSelect.appendChild(option);
-    });
-
-    // Manejar cambio de departamento
-    deptoSelect.addEventListener('change', function() {
-      muniSelect.innerHTML = '<option value="">Seleccione un municipio</option>';
-      muniSelect.disabled = !this.value;
-      
-      if (this.value) {
-        departamentos[this.value].forEach(muni => {
-          const option = document.createElement('option');
-          option.value = muni;
-          option.textContent = muni;
-          muniSelect.appendChild(option);
-        });
-      }
-    });
-
     document.addEventListener('DOMContentLoaded', async () => {
       try {
+        // Cargar departamentos y municipios
+        loadDepartamentos();
+        
         const user = await AuthService.checkAuth();
-        const checkoutData = 
-          JSON.parse(localStorage.getItem('checkoutData')) || 
-          JSON.parse(sessionStorage.getItem('tempCheckout')) || 
-          { items: [], total: 0 };
-
-        // Si hay usuario autenticado, prellenar campos de contacto
-        if (user) {
+        
+        // Mostrar campo de nombre completo solo para guest
+        if (!user) {
+          document.getElementById('guestNameField').classList.remove('guest-field');
+          document.getElementById('customerName').required = true;
+        } else {
+          // Prellenar datos del usuario registrado
           document.getElementById('customerEmail').value = user.email;
           document.getElementById('customerEmail').readOnly = true;
           
-          // Obtener datos adicionales del usuario si existen
           try {
             const userProfile = await AuthService.getUserProfile(user.uid);
             if (userProfile) {
@@ -385,147 +391,258 @@
           }
         }
 
-        if (!checkoutData.items || checkoutData.items.length === 0) {
-          document.getElementById('orderItems').innerHTML = `
-            <div class="error">
-              <i class="fas fa-exclamation-triangle"></i>
-              <p>No se encontraron productos. Redirigiendo...</p>
-            </div>
-          `;
-          setTimeout(() => window.location.href = 'productos.html', 2000);
-          return;
-        }
+        // Cargar datos del carrito
+        const checkoutData = await loadCheckoutData();
+        
+        // Mostrar productos en el resumen
+        displayOrderItems(checkoutData.items);
+        updateOrderTotals(checkoutData.total);
+        updateCartCounter(checkoutData.items);
+        
+        // Configurar envío del formulario
+        setupFormSubmission(user, checkoutData);
 
-        // Mostrar productos
-        let html = '';
-        checkoutData.items.forEach(item => {
-          html += `
-            <div class="order-item">
-              <span>${item.name}</span>
-              <span class="item-quantity">${item.quantity} ×</span>
-              <span class="item-price">$${item.price.toFixed(2)}</span>
-            </div>
-          `;
-        });
-        document.getElementById('orderItems').innerHTML = html;
-
-        // Mostrar totales
-        const total = checkoutData.total.toFixed(2);
-        document.getElementById('orderTotal').textContent = total;
-        document.getElementById('paymentTotal').textContent = total;
-
-        // Actualizar contador del carrito
-        document.getElementById('cartCounter').textContent = 
-          checkoutData.items.reduce((sum, item) => sum + item.quantity, 0);
-
-        // Manejar pago
-        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          try {
-            // Obtener datos de contacto
-            const customerEmail = document.getElementById('customerEmail').value.trim();
-            const customerPhone = document.getElementById('customerPhone').value.trim();
-
-            // Obtener datos de envío
-            const shippingAddress1 = document.getElementById('shippingAddress').value.trim();
-            const shippingAddress2 = document.getElementById('shippingAddress2').value.trim();
-            const departamento = document.getElementById('departamento').value;
-            const municipio = document.getElementById('municipio').value;
-
-            // Validar datos de contacto
-            if (!customerEmail || !customerPhone) {
-              alert('Por favor complete todos los campos de contacto');
-              return;
-            }
-
-            // Validar datos de envío
-            if (!shippingAddress1 || !departamento || !municipio) {
-              alert('Por favor complete todos los campos de dirección');
-              return;
-            }
-
-            // Obtener datos de pago
-            const cardName = document.getElementById('cardName').value.trim();
-            const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
-            const expiryDate = document.getElementById('expiryDate').value.trim();
-            const cvv = document.getElementById('cvv').value.trim();
-
-            // Validar datos de pago
-            if (!cardName || !cardNumber || !expiryDate || !cvv) {
-              alert('Por favor complete todos los campos de pago');
-              return;
-            }
-
-            // Crear dirección completa
-            const fullAddress = `${shippingAddress1}${shippingAddress2 ? ', ' + shippingAddress2 : ''}, ${municipio}, ${departamento}`;
-
-            // Crear objeto de orden
-            const orderData = {
-              userId: user ? user.uid : `guest_${Date.now()}`,
-              items: checkoutData.items,
-              subtotal: checkoutData.subtotal || checkoutData.total * 0.88,
-              tax: checkoutData.tax || checkoutData.total * 0.12,
-              total: checkoutData.total,
-              customerInfo: {
-                email: customerEmail,
-                phone: customerPhone
-              },
-              shippingInfo: {
-                address: fullAddress,
-                departamento: departamento,
-                municipio: municipio
-              },
-              paymentInfo: {
-                method: 'Tarjeta de crédito',
-                cardLastFour: cardNumber.slice(-4)
-              },
-              status: 'Procesando',
-              date: serverTimestamp()
-            };
-
-            // Guardar la orden en Firestore
-            const orderRef = await addDoc(collection(db, 'orders'), orderData);
-
-            // Para usuarios registrados, actualizar su perfil con la nueva información
-            if (user) {
-              try {
-                await updateDoc(doc(db, 'users', user.uid), {
-                  phone: customerPhone,
-                  address: fullAddress,
-                  lastUpdated: serverTimestamp()
-                });
-              } catch (error) {
-                console.error("Error al actualizar perfil:", error);
-              }
-
-              // Limpiar carrito en Firestore
-              await setDoc(doc(db, 'carts', user.uid), {
-                items: [],
-                lastUpdated: serverTimestamp()
-              });
-            }
-
-            // Limpiar datos temporales
-            sessionStorage.setItem('clearCartOnLoad', 'true');
-            localStorage.removeItem('cart');
-            localStorage.removeItem('checkoutData');
-            sessionStorage.removeItem('tempCheckout');
-
-            // Mostrar confirmación y redirigir
-            alert(`✅ Pedido #${orderRef.id.substring(0, 8)} completado.\nSe ha enviado un correo de confirmación a ${customerEmail}`);
-            window.location.href = user ? 'perfil.html#compras' : 'index.html';
-          } catch (error) {
-            console.error("Error al procesar pago:", error);
-            alert('Error al procesar el pago: ' + error.message);
-          }
-        });
       } catch (error) {
         console.error("Error:", error);
-        alert('Error al cargar la página de pago: ' + error.message);
-        window.location.href = 'productos.html';
+        showErrorAndRedirect('Error al cargar la página de pago: ' + error.message);
       }
     });
+
+    // Función para cargar departamentos y municipios
+    function loadDepartamentos() {
+      const deptoSelect = document.getElementById('departamento');
+      const muniSelect = document.getElementById('municipio');
+      
+      // Limpiar y cargar departamentos
+      deptoSelect.innerHTML = '<option value="">Seleccione un departamento</option>';
+      Object.keys(departamentos).forEach(depto => {
+        const option = document.createElement('option');
+        option.value = depto;
+        option.textContent = depto;
+        deptoSelect.appendChild(option);
+      });
+      
+      // Manejar cambio de departamento
+      deptoSelect.addEventListener('change', function() {
+        muniSelect.innerHTML = '<option value="">Seleccione un municipio</option>';
+        muniSelect.disabled = !this.value;
+        
+        if (this.value) {
+          departamentos[this.value].forEach(muni => {
+            const option = document.createElement('option');
+            option.value = muni;
+            option.textContent = muni;
+            muniSelect.appendChild(option);
+          });
+        }
+      });
+    }
+
+    // Función para cargar datos del checkout
+    async function loadCheckoutData() {
+      const checkoutData = 
+        JSON.parse(localStorage.getItem('checkoutData')) || 
+        JSON.parse(sessionStorage.getItem('tempCheckout'));
+      
+      if (!checkoutData || !checkoutData.items || checkoutData.items.length === 0) {
+        showEmptyCartMessage();
+        throw new Error('No se encontraron productos en el carrito');
+      }
+      
+      return checkoutData;
+    }
+
+    // Función para mostrar productos en el resumen
+    function displayOrderItems(items) {
+      const orderItemsContainer = document.getElementById('orderItems');
+      
+      if (!items || items.length === 0) {
+        orderItemsContainer.innerHTML = '<p class="error">No hay productos en el carrito</p>';
+        return;
+      }
+      
+      let html = '';
+      items.forEach(item => {
+        html += `
+          <div class="order-item">
+            <span>${item.name}</span>
+            <span class="item-quantity">${item.quantity} ×</span>
+            <span class="item-price">$${item.price.toFixed(2)}</span>
+          </div>
+        `;
+      });
+      
+      orderItemsContainer.innerHTML = html;
+    }
+
+    // Función para actualizar totales
+    function updateOrderTotals(total) {
+      document.getElementById('orderTotal').textContent = total.toFixed(2);
+      document.getElementById('paymentTotal').textContent = total.toFixed(2);
+    }
+
+    // Función para actualizar contador del carrito
+    function updateCartCounter(items) {
+      const counter = document.getElementById('cartCounter');
+      if (counter) {
+        const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+        counter.textContent = totalItems;
+        counter.style.display = totalItems > 0 ? 'inline-block' : 'none';
+      }
+    }
+
+    // Función para configurar el envío del formulario
+    function setupFormSubmission(user, checkoutData) {
+      document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        try {
+          // Validar y obtener datos del formulario
+          const formData = validateFormData(user);
+          
+          // Crear y guardar la orden
+          const orderId = await processOrder(user, checkoutData, formData);
+          
+          // Limpiar y redirigir
+          await clearCartAndRedirect(user, formData.customerEmail, orderId);
+          
+        } catch (error) {
+          console.error("Error al procesar pago:", error);
+          alert(error.message);
+        }
+      });
+    }
+
+    // Función para validar datos del formulario
+    function validateFormData(user) {
+      // Obtener datos básicos
+      const customerName = !user ? document.getElementById('customerName').value.trim() : null;
+      const customerEmail = document.getElementById('customerEmail').value.trim();
+      const customerPhone = document.getElementById('customerPhone').value.trim();
+      
+      // Validar datos de contacto
+      if (!customerEmail || !customerPhone || (!user && !customerName)) {
+        throw new Error('Por favor complete todos los campos de contacto');
+      }
+      
+      // Obtener y validar datos de envío
+      const shippingAddress1 = document.getElementById('shippingAddress').value.trim();
+      const departamento = document.getElementById('departamento').value;
+      const municipio = document.getElementById('municipio').value;
+      
+      if (!shippingAddress1 || !departamento || !municipio) {
+        throw new Error('Por favor complete todos los campos de dirección');
+      }
+      
+      // Obtener y validar datos de pago
+      const cardName = document.getElementById('cardName').value.trim();
+      const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+      const expiryDate = document.getElementById('expiryDate').value.trim();
+      const cvv = document.getElementById('cvv').value.trim();
+      
+      if (!cardName || !cardNumber || !expiryDate || !cvv) {
+        throw new Error('Por favor complete todos los campos de pago');
+      }
+      
+      return {
+        customerName,
+        customerEmail,
+        customerPhone,
+        shippingAddress1,
+        shippingAddress2: document.getElementById('shippingAddress2').value.trim(),
+        departamento,
+        municipio,
+        cardName,
+        cardNumber,
+        expiryDate,
+        cvv
+      };
+    }
+
+    // Función para procesar la orden
+    async function processOrder(user, checkoutData, formData) {
+      // Crear dirección completa
+      const fullAddress = `${formData.shippingAddress1}${
+        formData.shippingAddress2 ? ', ' + formData.shippingAddress2 : ''
+      }, ${formData.municipio}, ${formData.departamento}`;
+      
+      // Crear objeto de orden
+      const orderData = {
+        userId: user ? user.uid : `guest_${Date.now()}`,
+        items: checkoutData.items,
+        subtotal: checkoutData.subtotal || checkoutData.total * 0.88,
+        tax: checkoutData.tax || checkoutData.total * 0.12,
+        total: checkoutData.total,
+        customerInfo: {
+          email: formData.customerEmail,
+          phone: formData.customerPhone,
+          ...(!user && { name: formData.customerName })
+        },
+        shippingInfo: {
+          address: fullAddress,
+          departamento: formData.departamento,
+          municipio: formData.municipio
+        },
+        paymentInfo: {
+          method: 'Tarjeta de crédito',
+          cardLastFour: formData.cardNumber.slice(-4)
+        },
+        status: 'Procesando',
+        date: serverTimestamp()
+      };
+      
+      // Guardar la orden en Firestore
+      const orderRef = await addDoc(collection(db, 'orders'), orderData);
+      
+      // Actualizar perfil de usuario si está registrado
+      if (user) {
+        try {
+          await updateDoc(doc(db, 'users', user.uid), {
+            phone: orderData.customerInfo.phone,
+            address: orderData.shippingInfo.address,
+            lastUpdated: serverTimestamp()
+          });
+          
+          // Limpiar carrito en Firestore
+          await setDoc(doc(db, 'carts', user.uid), {
+            items: [],
+            lastUpdated: serverTimestamp()
+          });
+        } catch (error) {
+          console.error("Error al actualizar perfil:", error);
+        }
+      }
+      
+      return orderRef.id;
+    }
+
+    // Función para limpiar carrito y redirigir
+    async function clearCartAndRedirect(user, email, orderId) {
+      sessionStorage.setItem('clearCartOnLoad', 'true');
+      localStorage.removeItem('cart');
+      localStorage.removeItem('checkoutData');
+      sessionStorage.removeItem('tempCheckout');
+      
+      alert(`✅ Pedido #${orderId.substring(0, 8)} completado.\nSe ha enviado un correo de confirmación a ${email}`);
+      window.location.href = user ? 'perfil.html#compras' : 'index.html';
+    }
+
+    // Función para mostrar mensaje de carrito vacío
+    function showEmptyCartMessage() {
+      document.getElementById('orderItems').innerHTML = `
+        <div class="error">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>No se encontraron productos. Redirigiendo...</p>
+        </div>
+      `;
+      setTimeout(() => window.location.href = 'productos.html', 2000);
+    }
+
+    // Función para mostrar error y redirigir
+    function showErrorAndRedirect(message) {
+      alert(message);
+      window.location.href = 'productos.html';
+    }
   </script>
 </body>
 </html>
