@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <!-- Cabecera -->
   <header>
     <div class="container header-container">
       <div class="logo">
@@ -27,6 +28,7 @@
     </div>
   </header>
 
+  <!-- Contenido Principal -->
   <main class="container">
     <h1><i class="fas fa-print"></i> Nuestros Productos</h1>
     
@@ -89,19 +91,31 @@
     </div>
   </div>
 
-  <!-- Scripts -->
+  <!-- Scripts - Versión corregida -->
   <script type="module">
-    // Importar configuración de Firebase primero
-    import { app } from '/js/firebase-config.js';
-    // Luego importar las funciones del carrito
-    import { initCart } from '/js/app.js';
+    // Importación de módulos
+    import { initCart, addToCart } from '/js/app.js';
     
-    // Inicializar el carrito cuando el DOM esté listo
+    // Inicialización cuando el DOM esté listo
     document.addEventListener('DOMContentLoaded', () => {
+      // Inicializar el carrito
       initCart();
       
-      // Verificar si los productos se muestran
-      console.log("Productos cargados:", document.querySelectorAll('.producto-card').length);
+      // Manejador directo para los botones (solución alternativa)
+      document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', () => {
+          const product = {
+            id: button.dataset.id,
+            name: button.dataset.name,
+            price: parseFloat(button.dataset.price),
+            image: button.dataset.image
+          };
+          addToCart(product);
+        });
+      });
+      
+      // Verificación en consola
+      console.log('Botones configurados:', document.querySelectorAll('.add-to-cart').length);
     });
   </script>
 </body>
