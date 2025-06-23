@@ -1,4 +1,4 @@
-// firebase-config.js debe exportar { app, db, auth }
+// Importaciones de Firebase
 import { app, db, auth } from './firebase-config.js';
 import { 
   doc, setDoc, getDoc, serverTimestamp,
@@ -6,55 +6,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
 
-// ==================== VARIABLES GLOBALES ====================
+// Variables globales
 let cart = [];
 let currentUser = null;
 
 // ==================== FUNCIONES DEL CARRITO ====================
 
 /**
- * Carga el carrito desde Firestore (usuario) o localStorage (invitado)
- */
-async function loadCart() {
-  try {
-    // Limpiar carrito si se completó un pago
-    if (sessionStorage.getItem('clearCartOnLoad')) {
-      cart = [];
-      localStorage.removeItem('cart');
-      sessionStorage.removeItem('clearCartOnLoad');
-      
-      if (currentUser) {
-        await setDoc(doc(db, 'carts', currentUser.uid), {
-          items: [],
-          lastUpdated: serverTimestamp()
-        });
-      }
-      updateCartUI();
-      return;
-    }
-
-    // 1. Cargar desde localStorage
-    const localCart = localStorage.getItem('cart');
-    if (localCart) cart = JSON.parse(localCart);
-
-    // 2. Sincronizar con Firestore si hay usuario
-    if (currentUser) {
-      const docSnap = await getDoc(doc(db, 'carts', currentUser.uid));
-      if (docSnap.exists()) {
-        cart = docSnap.data().items || [];
-        localStorage.setItem('cart', JSON.stringify(cart));
-      }
-    }
-    
-    updateCartUI();
-  } catch (error) {
-    console.error("Error al cargar el carrito:", error);
-    showFeedback('Error al cargar el carrito', 'error');
-  }
-}
-
-/**
- * Actualiza la interfaz del carrito (modal + contador)
+ * Actualiza la interfaz visual del carrito
  */
 function updateCartUI() {
   const cartItems = document.getElementById('cartItems');
@@ -96,7 +55,7 @@ function updateCartUI() {
 }
 
 /**
- * Actualiza el contador del ícono del carrito
+ * Actualiza el contador del icono del carrito
  */
 function updateCartCounter() {
   const counter = document.getElementById('cartCounter');
@@ -108,7 +67,7 @@ function updateCartCounter() {
 }
 
 /**
- * Guarda el carrito en Firestore o localStorage
+ * Guarda el carrito en Firestore (usuario) o localStorage (invitado)
  */
 async function saveCartToFirestore() {
   try {
@@ -126,14 +85,51 @@ async function saveCartToFirestore() {
   }
 }
 
+/**
+ * Carga el carrito desde Firestore o localStorage
+ */
+async function loadCart() {
+  try {
+    if (sessionStorage.getItem('clearCartOnLoad')) {
+      cart = [];
+      localStorage.removeItem('cart');
+      sessionStorage.removeItem('clearCartOnLoad');
+      
+      if (currentUser) {
+        await setDoc(doc(db, 'carts', currentUser.uid), {
+          items: [],
+          lastUpdated: serverTimestamp()
+        });
+      }
+      updateCartUI();
+      return;
+    }
+
+    const localCart = localStorage.getItem('cart');
+    if (localCart) cart = JSON.parse(localCart);
+    
+    if (currentUser) {
+      const docSnap = await getDoc(doc(db, 'carts', currentUser.uid));
+      if (docSnap.exists()) {
+        cart = docSnap.data().items || [];
+        localStorage.setItem('cart', JSON.stringify(cart));
+      }
+    }
+    
+    updateCartUI();
+  } catch (error) {
+    console.error("Error al cargar el carrito:", error);
+    showFeedback('Error al cargar el carrito', 'error');
+  }
+}
+
 // ==================== OPERACIONES DEL CARRITO ====================
 
 /**
- * Añade un producto al carrito (exportada para uso en productos.html)
+ * Añade un producto al carrito
  */
 export function addToCart(product) {
   const existingItem = cart.find(item => item.id === product.id);
-  
   if (existingItem) {
     existingItem.quantity++;
   } else {
@@ -161,7 +157,7 @@ function removeFromCart(productId) {
 }
 
 /**
- * Modifica la cantidad de un producto
+ * Actualiza la cantidad de un producto
  */
 function updateQuantity(productId, newQuantity) {
   const item = cart.find(item => item.id === productId);
@@ -175,7 +171,7 @@ function updateQuantity(productId, newQuantity) {
 // ==================== CHECKOUT ====================
 
 /**
- * Procesa el checkout (exportada para uso en productos.html)
+ * Procesa el checkout y redirige a pago.html
  */
 export async function proceedToCheckout() {
   if (cart.length === 0) {
@@ -205,7 +201,6 @@ export async function proceedToCheckout() {
       createdAt: new Date().toISOString()
     };
 
-    // Guardar en múltiples lugares para redundancia
     localStorage.setItem('currentCheckout', JSON.stringify(checkoutData));
     sessionStorage.setItem('checkoutData', JSON.stringify(checkoutData));
 
@@ -245,20 +240,19 @@ function showFeedback(message, type = 'success') {
 // ==================== INICIALIZACIÓN ====================
 
 /**
- * Función principal de inicialización (exportada para productos.html)
+ * Inicializa todo el sistema del carrito
  */
 export function initializeCart() {
   console.log("Inicializando sistema de carrito...");
 
-  // 1. Configurar observador de autenticación
+  // Configurar observador de autenticación
   onAuthStateChanged(auth, (user) => {
     currentUser = user;
     loadCart();
   });
 
-  // 2. Manejador de eventos delegado (para elementos dinámicos)
+  // Manejador de eventos delegado
   document.addEventListener('click', (e) => {
-    // Añadir al carrito
     if (e.target.closest('.add-to-cart')) {
       const button = e.target.closest('.add-to-cart');
       addToCart({
@@ -269,12 +263,10 @@ export function initializeCart() {
       });
     }
     
-    // Eliminar producto
     if (e.target.closest('.remove-item')) {
       removeFromCart(e.target.closest('.remove-item').dataset.id);
     }
     
-    // Modificar cantidad
     if (e.target.closest('.quantity-btn')) {
       const btn = e.target.closest('.quantity-btn');
       const item = cart.find(item => item.id === btn.dataset.id);
@@ -286,14 +278,13 @@ export function initializeCart() {
       }
     }
     
-    // Checkout
     if (e.target.closest('#checkoutBtn')) {
       e.preventDefault();
       proceedToCheckout();
     }
   });
 
-  // 3. Configurar modal del carrito
+  // Configurar modal del carrito
   const cartModal = document.getElementById('cartModal');
   if (cartModal) {
     document.getElementById('cartIcon')?.addEventListener('click', () => {
