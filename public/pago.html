@@ -6,6 +6,121 @@
   <title>Pago - TecnoExpress</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-top: 30px;
+    }
+    
+    .order-summary, .payment-form {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+    
+    .order-summary h2, .payment-form h2 {
+      font-size: 1.5rem;
+      color: #2c3e50;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .item-quantity {
+      margin: 0 10px;
+    }
+    
+    .order-total {
+      font-weight: bold;
+      font-size: 1.2rem;
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 2px solid #f0f0f0;
+      text-align: right;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    .submit-payment {
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+      width: 100%;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+    }
+    
+    .submit-payment:hover {
+      background-color: #219955;
+      transform: translateY(-2px);
+    }
+    
+    .error {
+      color: #e74c3c;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .error i {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+    
+    @media (max-width: 768px) {
+      .checkout-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -72,60 +187,127 @@
     </div>
   </main>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Cargar datos desde múltiples fuentes
-      const checkoutData = 
-        JSON.parse(localStorage.getItem('checkoutData')) || 
-        JSON.parse(sessionStorage.getItem('tempCheckout')) || 
-        { items: [], total: 0 };
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
+    import { 
+      getFirestore, collection, addDoc, serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
+    import { AuthService } from '/js/auth.js';
 
-      const orderItems = document.getElementById('orderItems');
-      const orderTotal = document.getElementById('orderTotal');
-      const paymentTotal = document.getElementById('paymentTotal');
+    const firebaseConfig = {
+      apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
+      authDomain: "mitienda-c2609.firebaseapp.com",
+      databaseURL: "https://mitienda-c2609-default-rtdb.firebaseio.com",
+      projectId: "mitienda-c2609",
+      storageBucket: "mitienda-c2609.firebasestorage.app",
+      messagingSenderId: "536746062790",
+      appId: "1:536746062790:web:cd39eb0057aac14c6538c7"
+    };
 
-      if (!checkoutData.items || checkoutData.items.length === 0) {
-        orderItems.innerHTML = `
-          <div class="error">
-            <i class="fas fa-exclamation-triangle"></i>
-            <p>No se encontraron productos. Redirigiendo...</p>
-          </div>
-        `;
-        setTimeout(() => window.location.href = 'productos.html', 2000);
-        return;
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const user = await AuthService.checkAuth();
+        const checkoutData = 
+          JSON.parse(localStorage.getItem('checkoutData')) || 
+          JSON.parse(sessionStorage.getItem('tempCheckout')) || 
+          { items: [], total: 0 };
+
+        if (!checkoutData.items || checkoutData.items.length === 0) {
+          document.getElementById('orderItems').innerHTML = `
+            <div class="error">
+              <i class="fas fa-exclamation-triangle"></i>
+              <p>No se encontraron productos. Redirigiendo...</p>
+            </div>
+          `;
+          setTimeout(() => window.location.href = 'productos.html', 2000);
+          return;
+        }
+
+        // Mostrar productos
+        let html = '';
+        checkoutData.items.forEach(item => {
+          html += `
+            <div class="order-item">
+              <span>${item.name}</span>
+              <span class="item-quantity">${item.quantity} ×</span>
+              <span class="item-price">$${item.price.toFixed(2)}</span>
+            </div>
+          `;
+        });
+        document.getElementById('orderItems').innerHTML = html;
+
+        // Mostrar totales
+        const total = checkoutData.total.toFixed(2);
+        document.getElementById('orderTotal').textContent = total;
+        document.getElementById('paymentTotal').textContent = total;
+
+        // Actualizar contador
+        document.getElementById('cartCounter').textContent = 
+          checkoutData.items.reduce((sum, item) => sum + item.quantity, 0);
+
+        // Manejar pago
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          try {
+            // Validar datos de tarjeta (simplificado)
+            const cardName = document.getElementById('cardName').value.trim();
+            const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+            const expiryDate = document.getElementById('expiryDate').value.trim();
+            const cvv = document.getElementById('cvv').value.trim();
+
+            if (!cardName || !cardNumber || !expiryDate || !cvv) {
+              alert('Por favor complete todos los campos de pago');
+              return;
+            }
+
+            if (!/^\d{16}$/.test(cardNumber)) {
+              alert('Número de tarjeta inválido. Debe tener 16 dígitos');
+              return;
+            }
+
+            if (!/^\d{3,4}$/.test(cvv)) {
+              alert('CVV inválido. Debe tener 3 o 4 dígitos');
+              return;
+            }
+
+            // Guardar la orden en Firestore
+            const orderRef = await addDoc(collection(db, 'orders'), {
+              userId: user.uid,
+              userEmail: user.email,
+              items: checkoutData.items,
+              subtotal: checkoutData.subtotal || checkoutData.total,
+              tax: checkoutData.tax || 0,
+              total: checkoutData.total,
+              date: serverTimestamp(),
+              status: 'Completado',
+              paymentMethod: 'Tarjeta de crédito',
+              shippingAddress: user.profileData?.direccion || 'No especificada',
+              cardLastFour: cardNumber.slice(-4)
+            });
+
+            // Limpiar carrito y datos temporales
+            localStorage.removeItem('cart');
+            localStorage.removeItem('checkoutData');
+            sessionStorage.removeItem('tempCheckout');
+            
+            alert('✅ Pago procesado correctamente. Número de orden: ' + orderRef.id.substring(0, 8));
+            window.location.href = 'perfil.html#compras';
+          } catch (error) {
+            console.error("Error al procesar pago:", error);
+            alert('Error al procesar el pago: ' + error.message);
+          }
+        });
+      } catch (error) {
+        console.error("Error de autenticación:", error);
+        alert('Debes iniciar sesión para realizar un pago. Redirigiendo...');
+        window.location.href = 'login.html';
       }
-
-      // Mostrar productos
-      let html = '';
-      checkoutData.items.forEach(item => {
-        html += `
-          <div class="order-item">
-            <span>${item.name}</span>
-            <span class="item-quantity">${item.quantity} ×</span>
-            <span class="item-price">$${item.price.toFixed(2)}</span>
-          </div>
-        `;
-      });
-      orderItems.innerHTML = html;
-
-      // Mostrar totales
-      const total = checkoutData.total.toFixed(2);
-      orderTotal.textContent = total;
-      paymentTotal.textContent = total;
-
-      // Actualizar contador
-      document.getElementById('cartCounter').textContent = 
-        checkoutData.items.reduce((sum, item) => sum + item.quantity, 0);
-
-      // Manejar pago
-      document.getElementById('paymentForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        alert('✅ Pago procesado correctamente');
-        localStorage.removeItem('cart');
-        localStorage.removeItem('checkoutData');
-        sessionStorage.removeItem('tempCheckout');
-        window.location.href = 'index.html';
-      });
     });
   </script>
 </body>
