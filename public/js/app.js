@@ -7,6 +7,7 @@ import {
 import { 
   getAuth, onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
+import { AuthService } from './auth.js';  // Ruta corregida
 
 // Configuración Firebase
 const firebaseConfig = {
@@ -206,7 +207,7 @@ async function proceedToCheckout() {
     return true;
   } catch (error) {
     console.error('Error en checkout:', error);
-    showFeedback('Error al procesar tu pedido', 'error');
+    showFeedback('Error al procesar tu pedido: ' + error.message, 'error');
     return false;
   }
 }
