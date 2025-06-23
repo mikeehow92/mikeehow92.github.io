@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <!-- Cabecera -->
   <header>
     <div class="container header-container">
       <div class="logo">
@@ -27,6 +28,7 @@
     </div>
   </header>
 
+  <!-- Contenido Principal -->
   <main class="container">
     <h1><i class="fas fa-print"></i> Nuestros Productos</h1>
     
@@ -89,28 +91,34 @@
     </div>
   </div>
 
-  <!-- Scripts Corregidos -->
+  <!-- Scripts - Versión definitiva -->
   <script type="module">
-    // 1. Importar la configuración de Firebase primero
-    import { app } from '/js/firebase-config.js';
-    
-    // 2. Luego importar las funciones del carrito
-    import { initializeCart } from '/js/app.js';
-    
-    // 3. Inicialización con verificación de errores
-    document.addEventListener('DOMContentLoaded', () => {
-      try {
-        console.log("Inicializando carrito...");
-        initializeCart();
-        
-        // Verificación de que los botones existen
-        const buttons = document.querySelectorAll('.add-to-cart');
-        console.log(`Número de botones encontrados: ${buttons.length}`);
-        
-      } catch (error) {
-        console.error("Error al inicializar:", error);
-      }
-    });
+    // Solución definitiva con manejo de errores
+    try {
+      // 1. Importar configuración de Firebase primero
+      import { app } from './js/firebase-config.js';
+      
+      // 2. Importar funciones del carrito
+      import { initializeCart } from './js/app.js';
+      
+      // 3. Inicialización con retardo seguro
+      document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+          console.log("Inicializando carrito...");
+          initializeCart();
+          
+          // Verificación manual de eventos
+          document.querySelectorAll('.add-to-cart').forEach(button => {
+            button.addEventListener('click', () => {
+              console.log("Botón clickeado - ID:", button.dataset.id);
+            });
+          });
+        }, 100);
+      });
+    } catch (error) {
+      console.error("Error crítico:", error);
+      alert("Error al cargar la aplicación. Por favor recarga la página.");
+    }
   </script>
 </body>
 </html>
