@@ -61,7 +61,7 @@
       font-size: 1rem;
     }
 
-    /* Estilos modificados para el modal del carrito (ahora a la izquierda) */
+    /* Estilos CORREGIDOS para el modal del carrito (a la derecha) */
     .modal {
       display: none;
       position: fixed;
@@ -75,7 +75,7 @@
     
     .modal.active {
       display: flex;
-      justify-content: flex-start; /* Cambiado a flex-start para alinear a la izquierda */
+      justify-content: flex-end; /* Aseguramos que aparezca a la derecha */
     }
     
     .modal-content {
@@ -84,8 +84,18 @@
       max-width: 400px;
       height: 100vh;
       padding: 20px;
-      box-shadow: 5px 0 15px rgba(0,0,0,0.1); /* Sombra a la derecha ahora */
+      box-shadow: -5px 0 15px rgba(0,0,0,0.1); /* Sombra a la izquierda */
       overflow-y: auto;
+      transform: translateX(100%); /* Inicia fuera de pantalla */
+      animation: slideIn 0.3s forwards; /* Animación de entrada */
+    }
+    
+    @keyframes slideIn {
+      to { transform: translateX(0); }
+    }
+    
+    .modal.active .modal-content {
+      transform: translateX(0);
     }
     
     .close-modal {
@@ -152,7 +162,7 @@
 
     @media (max-width: 768px) {
       .modal-content {
-        width: 85%;
+        width: 90%;
       }
     }
   </style>
@@ -220,7 +230,7 @@
     </div>
   </main>
 
-  <!-- Modal del Carrito - Ahora a la izquierda -->
+  <!-- Modal del Carrito - AHORA A LA DERECHA CORRECTAMENTE -->
   <div id="cartModal" class="modal">
     <div class="modal-content">
       <span class="close-modal">&times;</span>
@@ -411,18 +421,18 @@
       document.getElementById('cartIcon').addEventListener('click', (e) => {
         e.stopPropagation();
         cartModal.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Bloquear scroll
+        document.body.style.overflow = 'hidden';
       });
 
       document.querySelector('.close-modal').addEventListener('click', () => {
         cartModal.classList.remove('active');
-        document.body.style.overflow = ''; // Restaurar scroll
+        document.body.style.overflow = '';
       });
 
       cartModal.addEventListener('click', (e) => {
         if (e.target === cartModal) {
           cartModal.classList.remove('active');
-          document.body.style.overflow = ''; // Restaurar scroll
+          document.body.style.overflow = '';
         }
       });
 
@@ -436,7 +446,7 @@
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && cartModal.classList.contains('active')) {
           cartModal.classList.remove('active');
-          document.body.style.overflow = ''; // Restaurar scroll
+          document.body.style.overflow = '';
         }
       });
     });
