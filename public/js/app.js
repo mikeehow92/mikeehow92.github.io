@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
 import { 
   getFirestore, doc, setDoc, getDoc, serverTimestamp,
-  collection, addDoc
+  collection, addDoc, query, where, getDocs
 } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
 import { 
   getAuth, onAuthStateChanged 
@@ -165,37 +165,43 @@ async function proceedToCheckout() {
   }
 
   try {
+    const user = await AuthService.checkAuth();
+    
     const checkoutData = {
       items: cart.map(item => ({
         id: item.id,
         name: item.name,
         price: item.price,
-        quantity: item.quantity
+        quantity: item.quantity,
+        image: item.image || 'img/default-product.webp'
       })),
       subtotal: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
       tax: calculateTax(),
       total: calculateTotal(),
       createdAt: new Date().toISOString(),
-      userId: currentUser?.uid || 'guest'
+      userId: user.uid,
+      userEmail: user.email,
+      userProfile: {
+        name: user.profileData?.nombre || user.email.split('@')[0],
+        address: user.profileData?.direccion || null
+      }
     };
 
     // Guardar en múltiples lugares
     localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
     sessionStorage.setItem('tempCheckout', JSON.stringify(checkoutData));
     
-    // Guardar en Firestore si hay usuario
-    if (currentUser) {
-      await addDoc(collection(db, 'checkouts'), {
-        ...checkoutData,
-        status: 'pending',
-        user: {
-          uid: currentUser.uid,
-          email: currentUser.email || 'guest'
-        }
-      });
-    }
+    // Guardar en Firestore como checkout pendiente
+    await addDoc(collection(db, 'checkouts'), {
+      ...checkoutData,
+      status: 'pending',
+      user: {
+        uid: user.uid,
+        email: user.email
+      }
+    });
 
-    // Redireccionar
+    // Redireccionar a página de pago
     window.location.href = 'pago.html';
     return true;
   } catch (error) {
@@ -283,3 +289,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Exportar funciones necesarias para otros archivos
+export { 
+  addToCart, 
+  removeFromCart, 
+  updateQuantity, 
+  proceedToCheckout,
+  calculateTotal,
+  calculateTax
+};
