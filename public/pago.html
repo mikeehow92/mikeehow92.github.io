@@ -190,7 +190,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
     import { 
-      getFirestore, collection, addDoc, serverTimestamp 
+      getFirestore, collection, addDoc, serverTimestamp, 
+      doc, setDoc
     } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
     import { AuthService } from '/js/auth.js';
@@ -246,7 +247,7 @@
         document.getElementById('orderTotal').textContent = total;
         document.getElementById('paymentTotal').textContent = total;
 
-        // Actualizar contador
+        // Actualizar contador del carrito
         document.getElementById('cartCounter').textContent = 
           checkoutData.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -255,7 +256,7 @@
           e.preventDefault();
           
           try {
-            // Validar datos de tarjeta (simplificado)
+            // Validar datos de tarjeta
             const cardName = document.getElementById('cardName').value.trim();
             const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
             const expiryDate = document.getElementById('expiryDate').value.trim();
@@ -266,23 +267,10 @@
               return;
             }
 
-            if (!/^\d{16}$/.test(cardNumber)) {
-              alert('Número de tarjeta inválido. Debe tener 16 dígitos');
-              return;
-            }
-
-            if (!/^\d{3,4}$/.test(cvv)) {
-              alert('CVV inválido. Debe tener 3 o 4 dígitos');
-              return;
-            }
-
             // Guardar la orden en Firestore
             const orderRef = await addDoc(collection(db, 'orders'), {
               userId: user.uid,
-              userEmail: user.email,
               items: checkoutData.items,
-              subtotal: checkoutData.subtotal || checkoutData.total,
-              tax: checkoutData.tax || 0,
               total: checkoutData.total,
               date: serverTimestamp(),
               status: 'Completado',
@@ -290,14 +278,21 @@
               shippingAddress: user.profileData?.direccion || 'No especificada',
               cardLastFour: cardNumber.slice(-4)
             });
-            
+
+            // Limpiar carrito y marcar para limpieza en la próxima carga
             sessionStorage.setItem('clearCartOnLoad', 'true');
-            
-            // Limpiar carrito y datos temporales
             localStorage.removeItem('cart');
             localStorage.removeItem('checkoutData');
             sessionStorage.removeItem('tempCheckout');
             
+            // Limpiar carrito en Firestore para usuarios registrados
+            if (user) {
+              await setDoc(doc(db, 'carts', user.uid), {
+                items: [],
+                lastUpdated: serverTimestamp()
+              });
+            }
+
             alert('✅ Pago procesado correctamente. Número de orden: ' + orderRef.id.substring(0, 8));
             window.location.href = 'perfil.html#compras';
           } catch (error) {
