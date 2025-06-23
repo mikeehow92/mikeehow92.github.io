@@ -180,6 +180,46 @@
       padding: 20px;
     }
 
+    /* Estilos para feedback */
+    .feedback-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    
+    .feedback-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    .feedback-content {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    
+    .feedback-icon {
+      font-size: 3rem;
+      margin-bottom: 20px;
+    }
+    
+    .success { color: #27ae60; }
+    .error { color: #e74c3c; }
+    .warning { color: #f39c12; }
+
     @media (max-width: 768px) {
       .checkout-grid {
         grid-template-columns: 1fr;
@@ -319,6 +359,18 @@
     </div>
   </main>
 
+  <!-- Feedback Modal -->
+  <div class="feedback-overlay" id="feedbackModal">
+    <div class="feedback-content">
+      <div class="feedback-icon" id="feedbackIcon">
+        <i class="fas fa-check-circle success"></i>
+      </div>
+      <h3 id="feedbackTitle">¡Pago Completado!</h3>
+      <p id="feedbackMessage">Tu pedido ha sido procesado correctamente.</p>
+      <button class="submit-payment" id="feedbackClose">Aceptar</button>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
     import { 
@@ -362,17 +414,30 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        // Cargar departamentos y municipios
+        // Cargar departamentos y municipios primero
         loadDepartamentos();
         
-        const user = await AuthService.checkAuth();
+        // Verificar datos de checkout
+        const checkoutData = await loadCheckoutData();
+        if (!checkoutData) {
+          showErrorAndRedirect('No se encontraron productos en el carrito');
+          return;
+        }
+
+        // Mostrar productos en el resumen
+        displayOrderItems(checkoutData.items);
+        updateOrderTotals(checkoutData.total);
+        updateCartCounter(checkoutData.items);
         
-        // Mostrar campo de nombre completo solo para guest
+        // Verificar autenticación
+        const user = await AuthService.checkAuth().catch(() => null);
+        
+        // Configurar campos según autenticación
         if (!user) {
           document.getElementById('guestNameField').classList.remove('guest-field');
           document.getElementById('customerName').required = true;
         } else {
-          // Prellenar datos del usuario registrado
+          // Prellenar datos del usuario
           document.getElementById('customerEmail').value = user.email;
           document.getElementById('customerEmail').readOnly = true;
           
@@ -391,14 +456,6 @@
           }
         }
 
-        // Cargar datos del carrito
-        const checkoutData = await loadCheckoutData();
-        
-        // Mostrar productos en el resumen
-        displayOrderItems(checkoutData.items);
-        updateOrderTotals(checkoutData.total);
-        updateCartCounter(checkoutData.items);
-        
         // Configurar envío del formulario
         setupFormSubmission(user, checkoutData);
 
@@ -440,13 +497,15 @@
 
     // Función para cargar datos del checkout
     async function loadCheckoutData() {
+      // Intentar múltiples fuentes de datos
       const checkoutData = 
-        JSON.parse(localStorage.getItem('checkoutData')) || 
-        JSON.parse(sessionStorage.getItem('tempCheckout'));
+        JSON.parse(localStorage.getItem('currentCheckout')) || 
+        JSON.parse(sessionStorage.getItem('checkoutData')) ||
+        JSON.parse(localStorage.getItem('lastCheckoutBackup'));
       
       if (!checkoutData || !checkoutData.items || checkoutData.items.length === 0) {
         showEmptyCartMessage();
-        throw new Error('No se encontraron productos en el carrito');
+        return null;
       }
       
       return checkoutData;
@@ -497,18 +556,34 @@
         e.preventDefault();
         
         try {
+          // Mostrar carga
+          const submitBtn = e.target.querySelector('button[type="submit"]');
+          const originalText = submitBtn.innerHTML;
+          submitBtn.innerHTML = '<span class="loading"></span> Procesando...';
+          submitBtn.disabled = true;
+          
           // Validar y obtener datos del formulario
           const formData = validateFormData(user);
           
           // Crear y guardar la orden
           const orderId = await processOrder(user, checkoutData, formData);
           
-          // Limpiar y redirigir
-          await clearCartAndRedirect(user, formData.customerEmail, orderId);
+          // Mostrar feedback
+          showFeedback('¡Pago completado!', `Pedido #${orderId.substring(0, 8)} procesado`, 'success');
+          
+          // Limpiar y redirigir después de 3 segundos
+          setTimeout(() => {
+            clearCartAndRedirect(user, formData.customerEmail, orderId);
+          }, 3000);
           
         } catch (error) {
           console.error("Error al procesar pago:", error);
-          alert(error.message);
+          showFeedback('Error en el pago', error.message, 'error');
+          
+          // Restaurar botón
+          const submitBtn = document.querySelector('#paymentForm button[type="submit"]');
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
         }
       });
     }
@@ -523,6 +598,12 @@
       // Validar datos de contacto
       if (!customerEmail || !customerPhone || (!user && !customerName)) {
         throw new Error('Por favor complete todos los campos de contacto');
+      }
+      
+      // Validar email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(customerEmail)) {
+        throw new Error('Por favor ingrese un correo electrónico válido');
       }
       
       // Obtener y validar datos de envío
@@ -542,6 +623,17 @@
       
       if (!cardName || !cardNumber || !expiryDate || !cvv) {
         throw new Error('Por favor complete todos los campos de pago');
+      }
+      
+      // Validar tarjeta (simplificado)
+      if (cardNumber.length < 13 || cardNumber.length > 19) {
+        throw new Error('El número de tarjeta debe tener entre 13 y 19 dígitos');
+      }
+      
+      // Validar fecha de expiración
+      const [month, year] = expiryDate.split('/');
+      if (!month || !year || month.length !== 2 || year.length !== 2) {
+        throw new Error('Formato de fecha de expiración inválido (use MM/AA)');
       }
       
       return {
@@ -585,7 +677,8 @@
         },
         paymentInfo: {
           method: 'Tarjeta de crédito',
-          cardLastFour: formData.cardNumber.slice(-4)
+          cardLastFour: formData.cardNumber.slice(-4),
+          cardType: detectCardType(formData.cardNumber)
         },
         status: 'Procesando',
         date: serverTimestamp()
@@ -616,15 +709,49 @@
       return orderRef.id;
     }
 
+    // Función para detectar tipo de tarjeta (simplificado)
+    function detectCardType(cardNumber) {
+      const firstDigit = cardNumber.charAt(0);
+      if (firstDigit === '4') return 'Visa';
+      if (firstDigit === '5') return 'Mastercard';
+      if (firstDigit === '3') return 'American Express';
+      return 'Otra';
+    }
+
     // Función para limpiar carrito y redirigir
     async function clearCartAndRedirect(user, email, orderId) {
       sessionStorage.setItem('clearCartOnLoad', 'true');
       localStorage.removeItem('cart');
-      localStorage.removeItem('checkoutData');
-      sessionStorage.removeItem('tempCheckout');
+      localStorage.removeItem('currentCheckout');
+      localStorage.removeItem('lastCheckoutBackup');
+      sessionStorage.removeItem('checkoutData');
       
-      alert(`✅ Pedido #${orderId.substring(0, 8)} completado.\nSe ha enviado un correo de confirmación a ${email}`);
       window.location.href = user ? 'perfil.html#compras' : 'index.html';
+    }
+
+    // Función para mostrar feedback
+    function showFeedback(title, message, type = 'success') {
+      const modal = document.getElementById('feedbackModal');
+      const icon = document.getElementById('feedbackIcon');
+      const feedbackTitle = document.getElementById('feedbackTitle');
+      const feedbackMessage = document.getElementById('feedbackMessage');
+      
+      // Configurar contenido
+      icon.innerHTML = `<i class="fas fa-${
+        type === 'success' ? 'check-circle' : 
+        type === 'error' ? 'times-circle' : 'exclamation-circle'
+      } ${type}"></i>`;
+      
+      feedbackTitle.textContent = title;
+      feedbackMessage.textContent = message;
+      
+      // Mostrar modal
+      modal.classList.add('active');
+      
+      // Configurar cierre
+      document.getElementById('feedbackClose').onclick = () => {
+        modal.classList.remove('active');
+      };
     }
 
     // Función para mostrar mensaje de carrito vacío
@@ -640,8 +767,8 @@
 
     // Función para mostrar error y redirigir
     function showErrorAndRedirect(message) {
-      alert(message);
-      window.location.href = 'productos.html';
+      showFeedback('Error', message, 'error');
+      setTimeout(() => window.location.href = 'productos.html', 3000);
     }
   </script>
 </body>
