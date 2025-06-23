@@ -290,7 +290,9 @@
               shippingAddress: user.profileData?.direccion || 'No especificada',
               cardLastFour: cardNumber.slice(-4)
             });
-
+            
+            sessionStorage.setItem('clearCartOnLoad', 'true');
+            
             // Limpiar carrito y datos temporales
             localStorage.removeItem('cart');
             localStorage.removeItem('checkoutData');
