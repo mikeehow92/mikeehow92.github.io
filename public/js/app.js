@@ -1,23 +1,18 @@
 import { app, db, auth } from './firebase-config.js';
 import { 
   doc, setDoc, getDoc, serverTimestamp,
-  collection, addDoc, query, where, getDocs 
+  collection, addDoc 
 } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
-import { AuthService } from './auth.js';
 
-// ==================== GESTIÓN DEL CARRITO ====================
+// ==================== VARIABLES GLOBALES ====================
 let cart = [];
 let currentUser = null;
 
-// Observador de autenticación
-onAuthStateChanged(auth, (user) => {
-  currentUser = user;
-  loadCart();
-});
+// ==================== FUNCIONES DEL CARRITO ====================
 
 /**
- * Carga el carrito desde Firestore o localStorage
+ * Carga el carrito desde Firestore (usuario logueado) o localStorage (invitado)
  */
 async function loadCart() {
   try {
@@ -33,7 +28,8 @@ async function loadCart() {
           lastUpdated: serverTimestamp()
         });
       }
-      return updateCartUI();
+      updateCartUI();
+      return;
     }
 
     // Cargar desde localStorage
@@ -57,7 +53,7 @@ async function loadCart() {
 }
 
 /**
- * Actualiza la interfaz del carrito
+ * Actualiza la interfaz del carrito (modal y contador)
  */
 function updateCartUI() {
   const cartItems = document.getElementById('cartItems');
@@ -99,7 +95,7 @@ function updateCartUI() {
 }
 
 /**
- * Actualiza el contador del carrito
+ * Actualiza el contador de items en el ícono del carrito
  */
 function updateCartCounter() {
   const counter = document.getElementById('cartCounter');
@@ -111,7 +107,7 @@ function updateCartCounter() {
 }
 
 /**
- * Guarda el carrito en Firestore o localStorage
+ * Guarda el carrito en Firestore (usuario) o localStorage (invitado)
  */
 async function saveCartToFirestore() {
   try {
@@ -132,7 +128,7 @@ async function saveCartToFirestore() {
 // ==================== OPERACIONES DEL CARRITO ====================
 
 /**
- * Añade un producto al carrito
+ * Añade un producto al carrito (o incrementa su cantidad si ya existe)
  */
 export function addToCart(product) {
   const existingItem = cart.find(item => item.id === product.id);
@@ -163,7 +159,7 @@ function removeFromCart(productId) {
 }
 
 /**
- * Actualiza la cantidad de un producto
+ * Actualiza la cantidad de un producto en el carrito
  */
 function updateQuantity(productId, newQuantity) {
   const item = cart.find(item => item.id === productId);
@@ -177,7 +173,7 @@ function updateQuantity(productId, newQuantity) {
 // ==================== CHECKOUT ====================
 
 /**
- * Prepara los datos para el pago
+ * Prepara los datos para el pago y redirige a la página de pago
  */
 export async function proceedToCheckout() {
   if (cart.length === 0) {
@@ -228,14 +224,6 @@ export async function proceedToCheckout() {
   }
 }
 
-/**
- * Calcula el total con impuestos
- */
-export function calculateTotal() {
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  return parseFloat((subtotal * 1.12).toFixed(2));
-}
-
 // ==================== UTILIDADES ====================
 
 /**
@@ -252,12 +240,19 @@ function showFeedback(message, type = 'success') {
   setTimeout(() => feedback.remove(), 3000);
 }
 
-// ==================== EVENT LISTENERS ====================
+// ==================== INICIALIZACIÓN ====================
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadCart();
+/**
+ * Configura todos los event listeners y observadores
+ */
+export function initCart() {
+  // Observador de autenticación
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    loadCart();
+  });
 
-  // Delegación de eventos
+  // Delegación de eventos para el carrito
   document.addEventListener('click', (e) => {
     // Añadir al carrito
     if (e.target.closest('.add-to-cart')) {
@@ -294,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Modal del carrito
+  // Configuración del modal del carrito
   const cartModal = document.getElementById('cartModal');
   if (cartModal) {
     document.getElementById('cartIcon')?.addEventListener('click', () => {
@@ -314,4 +309,4 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-});
+}
