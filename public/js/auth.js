@@ -6,13 +6,16 @@ import {
   onAuthStateChanged,
   updatePassword,
   EmailAuthProvider,
-  reauthenticateWithCredential
+  reauthenticateWithCredential,
+  createUserWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
 import { 
   getFirestore,
   doc,
-  getDoc
+  getDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
+import { migrateGuestCart } from './app.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
@@ -52,6 +55,29 @@ export const AuthService = {
     
     await reauthenticateWithCredential(user, credential);
     return await updatePassword(user, newPassword);
+  },
+  
+  register: async (email, password, userData) => {
+    try {
+      // Crear usuario en Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Crear documento en Firestore con datos adicionales
+      await setDoc(doc(db, 'users', user.uid), {
+        ...userData,
+        createdAt: new Date().toISOString(),
+        email: user.email
+      });
+      
+      // Migrar carrito de invitado si existe
+      await migrateGuestCart(user);
+      
+      return user;
+    } catch (error) {
+      console.error("Error en registro:", error);
+      throw error;
+    }
   },
   
   checkAuth: () => {
@@ -104,9 +130,13 @@ export const AuthService = {
 export function initAuthUI() {
   // Elementos del DOM
   const loginModal = document.getElementById('login-modal');
+  const registerModal = document.getElementById('register-modal');
   const openLoginBtn = document.getElementById('open-login-btn');
-  const closeLoginBtn = document.querySelector('.close-modal');
+  const openRegisterBtn = document.getElementById('open-register-btn');
+  const closeLoginBtn = document.querySelector('.close-login-modal');
+  const closeRegisterBtn = document.querySelector('.close-register-modal');
   const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
   const guestButtons = document.getElementById('guest-buttons');
   const userInfo = document.getElementById('user-info');
   const userEmail = document.getElementById('user-email');
@@ -119,9 +149,21 @@ export function initAuthUI() {
     });
   }
 
+  if (openRegisterBtn && registerModal) {
+    openRegisterBtn.addEventListener('click', () => {
+      registerModal.classList.add('active');
+    });
+  }
+
   if (closeLoginBtn && loginModal) {
     closeLoginBtn.addEventListener('click', () => {
       loginModal.classList.remove('active');
+    });
+  }
+
+  if (closeRegisterBtn && registerModal) {
+    closeRegisterBtn.addEventListener('click', () => {
+      registerModal.classList.remove('active');
     });
   }
 
@@ -129,6 +171,14 @@ export function initAuthUI() {
     loginModal.addEventListener('click', (e) => {
       if (e.target === loginModal) {
         loginModal.classList.remove('active');
+      }
+    });
+  }
+
+  if (registerModal) {
+    registerModal.addEventListener('click', (e) => {
+      if (e.target === registerModal) {
+        registerModal.classList.remove('active');
       }
     });
   }
@@ -148,6 +198,37 @@ export function initAuthUI() {
         .catch((error) => {
           alert(error.message);
         });
+    });
+  }
+
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('register-email')?.value;
+      const password = document.getElementById('register-password')?.value;
+      const confirmPassword = document.getElementById('register-confirm-password')?.value;
+      const name = document.getElementById('register-name')?.value;
+      const phone = document.getElementById('register-phone')?.value;
+
+      if (password !== confirmPassword) {
+        alert("Las contraseñas no coinciden");
+        return;
+      }
+
+      try {
+        await AuthService.register(email, password, {
+          name,
+          phone,
+          role: 'customer'
+        });
+        
+        if (registerModal) registerModal.classList.remove('active');
+        if (registerForm) registerForm.reset();
+        alert("Registro exitoso. Por favor verifica tu correo electrónico.");
+      } catch (error) {
+        alert(`Error en registro: ${error.message}`);
+      }
     });
   }
 
