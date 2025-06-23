@@ -6,11 +6,6 @@
   <title>Productos - TecnoExpress</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
-  
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
 </head>
 <body>
   <header>
@@ -91,80 +86,37 @@
     </div>
   </div>
 
-  <!-- Configuración Firebase y lógica del carrito -->
-  <script>
-    // Configuración Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
-      authDomain: "mitienda-c2609.firebaseapp.com",
-      projectId: "mitienda-c2609",
-      storageBucket: "mitienda-c2609.appspot.com",
-      messagingSenderId: "536746062790",
-      appId: "1:536746062790:web:cd39eb0057aac14c6538c7"
-    };
+  <!-- Scripts Corregidos - Versión Definitiva -->
+  <script type="module">
+    // Importar solo lo necesario desde app.js
+    import { initializeCart } from './js/app.js';
     
-    // Inicializar Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-
-    // Variables globales
-    let cart = [];
-    let currentUser = null;
-
-    // Función para añadir al carrito
-    function addToCart(product) {
-      const existingItem = cart.find(item => item.id === product.id);
-      if (existingItem) {
-        existingItem.quantity++;
-      } else {
-        cart.push({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          quantity: 1,
-          image: product.image || ''
-        });
+    // Inicialización con manejo de errores
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        console.log("Inicializando módulo de carrito...");
+        initializeCart();
+        
+        // Verificación de que los botones están configurados
+        const buttons = document.querySelectorAll('.add-to-cart');
+        console.log(`Botones de producto encontrados: ${buttons.length}`);
+        
+      } catch (error) {
+        console.error("Error crítico al inicializar:", error);
+        // Mostrar feedback al usuario
+        const errorDiv = document.createElement('div');
+        errorDiv.style.position = 'fixed';
+        errorDiv.style.top = '20px';
+        errorDiv.style.left = '50%';
+        errorDiv.style.transform = 'translateX(-50%)';
+        errorDiv.style.backgroundColor = '#ff4444';
+        errorDiv.style.color = 'white';
+        errorDiv.style.padding = '15px';
+        errorDiv.style.borderRadius = '5px';
+        errorDiv.style.zIndex = '10000';
+        errorDiv.textContent = 'Error al cargar la aplicación. Por favor recarga la página.';
+        document.body.appendChild(errorDiv);
       }
-      updateCartUI();
-      showFeedback(`${product.name} añadido al carrito`);
-    }
-
-    // Función para mostrar feedback
-    function showFeedback(message) {
-      const feedback = document.createElement('div');
-      feedback.className = 'feedback';
-      feedback.innerHTML = `
-        <i class="fas fa-check-circle"></i>
-        <span>${message}</span>
-      `;
-      document.body.appendChild(feedback);
-      setTimeout(() => feedback.remove(), 3000);
-    }
-
-    // Inicialización cuando el DOM esté listo
-    document.addEventListener('DOMContentLoaded', function() {
-      // Asignar eventos a los botones
-      document.querySelectorAll('.add-to-cart').forEach(button => {
-        button.addEventListener('click', function() {
-          const product = {
-            id: this.dataset.id,
-            name: this.dataset.name,
-            price: parseFloat(this.dataset.price),
-            image: this.dataset.image
-          };
-          addToCart(product);
-        });
-      });
-
-      // Eventos del modal del carrito
-      const cartModal = document.getElementById('cartModal');
-      document.getElementById('cartIcon').addEventListener('click', () => {
-        cartModal.classList.add('active');
-      });
-      document.querySelector('.close-modal').addEventListener('click', () => {
-        cartModal.classList.remove('active');
-      });
     });
   </script>
 </body>
