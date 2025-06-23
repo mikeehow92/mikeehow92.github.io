@@ -60,7 +60,7 @@
       color: #2c3e50;
     }
     
-    .form-group input {
+    .form-group input, .form-group select {
       width: 100%;
       padding: 12px;
       border: 1px solid #ddd;
@@ -68,7 +68,7 @@
       font-size: 1rem;
     }
     
-    .form-group input:focus {
+    .form-group input:focus, .form-group select:focus {
       outline: none;
       border-color: #3498db;
       box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
@@ -108,6 +108,14 @@
       font-size: 2rem;
       margin-bottom: 10px;
       display: block;
+    }
+    
+    .section-title {
+      font-size: 1.2rem;
+      color: #2c3e50;
+      margin: 25px 0 15px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f0f0f0;
     }
     
     @media (max-width: 768px) {
@@ -155,19 +163,57 @@
       </div>
       
       <div class="payment-form">
-        <h2>Información de Pago</h2>
+        <h2>Información de Envío y Pago</h2>
         <form id="paymentForm">
-          <div id="guestFields" style="display: none;">
+          <!-- Sección de Información de Contacto -->
+          <div class="section-title">Información de Contacto</div>
+          <div id="guestFields">
             <div class="form-group">
-              <label for="guestEmail">Email (opcional para factura)</label>
-              <input type="email" id="guestEmail">
+              <label for="customerEmail">Correo Electrónico</label>
+              <input type="email" id="customerEmail" required>
             </div>
             <div class="form-group">
-              <label for="guestPhone">Teléfono (para seguimiento)</label>
-              <input type="tel" id="guestPhone" required>
+              <label for="customerPhone">Teléfono</label>
+              <input type="tel" id="customerPhone" required>
             </div>
           </div>
           
+          <!-- Sección de Dirección de Envío -->
+          <div class="section-title">Dirección de Envío</div>
+          <div class="form-group">
+            <label for="shippingAddress">Dirección</label>
+            <input type="text" id="shippingAddress" placeholder="Calle y número" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="shippingAddress2">Detalles adicionales (opcional)</label>
+            <input type="text" id="shippingAddress2" placeholder="Apartamento, suite, etc.">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="shippingCity">Ciudad</label>
+              <input type="text" id="shippingCity" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="shippingState">Estado/Provincia</label>
+              <select id="shippingState" required>
+                <option value="">Seleccionar...</option>
+                <option value="AGU">Aguascalientes</option>
+                <option value="BCN">Baja California</option>
+                <!-- Agrega más estados según sea necesario -->
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="shippingZip">Código Postal</label>
+            <input type="text" id="shippingZip" required>
+          </div>
+          
+          <!-- Sección de Método de Pago -->
+          <div class="section-title">Método de Pago</div>
           <div class="form-group">
             <label for="cardName">Nombre en la Tarjeta</label>
             <input type="text" id="cardName" required>
@@ -180,13 +226,13 @@
           
           <div class="form-row">
             <div class="form-group">
-              <label for="expiryDate">Fecha de Expiración (MM/AA)</label>
-              <input type="text" id="expiryDate" required>
+              <label for="expiryDate">Fecha de Expiración</label>
+              <input type="text" id="expiryDate" placeholder="MM/AA" required>
             </div>
             
             <div class="form-group">
               <label for="cvv">CVV</label>
-              <input type="text" id="cvv" required>
+              <input type="text" id="cvv" placeholder="123" required>
             </div>
           </div>
           
@@ -202,7 +248,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
     import { 
       getFirestore, collection, addDoc, serverTimestamp, 
-      doc, setDoc
+      doc, setDoc, updateDoc
     } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
     import { AuthService } from '/js/auth.js';
@@ -212,7 +258,7 @@
       authDomain: "mitienda-c2609.firebaseapp.com",
       databaseURL: "https://mitienda-c2609-default-rtdb.firebaseio.com",
       projectId: "mitienda-c2609",
-      storageBucket: "mitienda-c2609.firebasestorage.app",
+      storageBucket: "mitienda-c2609.appspot.com",
       messagingSenderId: "536746062790",
       appId: "1:536746062790:web:cd39eb0057aac14c6538c7"
     };
@@ -223,14 +269,31 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       try {
+        const user = await AuthService.checkAuth();
         const checkoutData = 
           JSON.parse(localStorage.getItem('checkoutData')) || 
           JSON.parse(sessionStorage.getItem('tempCheckout')) || 
           { items: [], total: 0 };
 
-        // Mostrar campos para guests si es necesario
-        if (checkoutData?.isGuest) {
-          document.getElementById('guestFields').style.display = 'block';
+        // Si hay usuario autenticado, prellenar campos de contacto
+        if (user) {
+          document.getElementById('customerEmail').value = user.email;
+          document.getElementById('customerEmail').readOnly = true;
+          
+          // Obtener datos adicionales del usuario si existen
+          try {
+            const userProfile = await AuthService.getUserProfile(user.uid);
+            if (userProfile) {
+              if (userProfile.phone) {
+                document.getElementById('customerPhone').value = userProfile.phone;
+              }
+              if (userProfile.address) {
+                document.getElementById('shippingAddress').value = userProfile.address;
+              }
+            }
+          } catch (error) {
+            console.error("Error al obtener perfil:", error);
+          }
         }
 
         if (!checkoutData.items || checkoutData.items.length === 0) {
@@ -271,67 +334,109 @@
           e.preventDefault();
           
           try {
-            const checkoutData = JSON.parse(localStorage.getItem('checkoutData'));
-            const isGuest = !checkoutData.userId.startsWith('guest_') ? false : true;
+            // Obtener datos de contacto
+            const customerEmail = document.getElementById('customerEmail').value.trim();
+            const customerPhone = document.getElementById('customerPhone').value.trim();
 
-            // Validar datos de tarjeta
+            // Obtener datos de envío
+            const shippingAddress1 = document.getElementById('shippingAddress').value.trim();
+            const shippingAddress2 = document.getElementById('shippingAddress2').value.trim();
+            const shippingCity = document.getElementById('shippingCity').value.trim();
+            const shippingState = document.getElementById('shippingState').value;
+            const shippingZip = document.getElementById('shippingZip').value.trim();
+
+            // Validar datos de contacto
+            if (!customerEmail || !customerPhone) {
+              alert('Por favor complete todos los campos de contacto');
+              return;
+            }
+
+            // Validar datos de envío
+            if (!shippingAddress1 || !shippingCity || !shippingState || !shippingZip) {
+              alert('Por favor complete todos los campos de dirección');
+              return;
+            }
+
+            // Obtener datos de pago
             const cardName = document.getElementById('cardName').value.trim();
             const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
             const expiryDate = document.getElementById('expiryDate').value.trim();
             const cvv = document.getElementById('cvv').value.trim();
 
+            // Validar datos de pago
             if (!cardName || !cardNumber || !expiryDate || !cvv) {
               alert('Por favor complete todos los campos de pago');
               return;
             }
 
-            // Validar campos adicionales para guests
-            if (isGuest) {
-              const guestPhone = document.getElementById('guestPhone').value.trim();
-              if (!guestPhone) {
-                alert('Por favor proporcione un número de teléfono para seguimiento');
-                return;
-              }
-            }
+            // Crear dirección completa
+            const fullAddress = `${shippingAddress1}${shippingAddress2 ? ', ' + shippingAddress2 : ''}, ${shippingCity}, ${shippingState} ${shippingZip}`;
+
+            // Crear objeto de orden
+            const orderData = {
+              userId: user ? user.uid : `guest_${Date.now()}`,
+              items: checkoutData.items,
+              subtotal: checkoutData.subtotal,
+              tax: checkoutData.tax,
+              total: checkoutData.total,
+              customerInfo: {
+                email: customerEmail,
+                phone: customerPhone
+              },
+              shippingInfo: {
+                address: fullAddress,
+                city: shippingCity,
+                state: shippingState,
+                zip: shippingZip
+              },
+              paymentInfo: {
+                method: 'Tarjeta de crédito',
+                cardLastFour: cardNumber.slice(-4)
+              },
+              status: 'Procesando',
+              date: serverTimestamp()
+            };
 
             // Guardar la orden en Firestore
-            const orderRef = await addDoc(collection(db, 'orders'), {
-              ...checkoutData,
-              status: 'Completado',
-              paymentMethod: 'Tarjeta de crédito',
-              date: serverTimestamp(),
-              cardLastFour: cardNumber.slice(-4),
-              // Campos adicionales para guests
-              guestEmail: isGuest ? document.getElementById('guestEmail')?.value : null,
-              guestPhone: isGuest ? document.getElementById('guestPhone')?.value : null
-            });
+            const orderRef = await addDoc(collection(db, 'orders'), orderData);
 
-            // Limpiar carrito y marcar para limpieza en la próxima carga
-            sessionStorage.setItem('clearCartOnLoad', 'true');
-            localStorage.removeItem('cart');
-            localStorage.removeItem('checkoutData');
-            sessionStorage.removeItem('tempCheckout');
-            
-            // Limpiar carrito en Firestore para usuarios registrados
-            if (!isGuest) {
-              await setDoc(doc(db, 'carts', checkoutData.userId), {
+            // Para usuarios registrados, actualizar su perfil con la nueva información
+            if (user) {
+              try {
+                await updateDoc(doc(db, 'users', user.uid), {
+                  phone: customerPhone,
+                  address: fullAddress,
+                  lastUpdated: serverTimestamp()
+                });
+              } catch (error) {
+                console.error("Error al actualizar perfil:", error);
+              }
+
+              // Limpiar carrito en Firestore
+              await setDoc(doc(db, 'carts', user.uid), {
                 items: [],
                 lastUpdated: serverTimestamp()
               });
             }
 
-            // Mostrar mensaje con número de orden
-            alert(`✅ Pedido #${orderRef.id.substring(0, 8)} completado. ${isGuest ? 'Guarde este número para seguimiento' : ''}`);
-            window.location.href = isGuest ? 'index.html' : 'perfil.html#compras';
+            // Limpiar datos temporales
+            sessionStorage.setItem('clearCartOnLoad', 'true');
+            localStorage.removeItem('cart');
+            localStorage.removeItem('checkoutData');
+            sessionStorage.removeItem('tempCheckout');
+
+            // Mostrar confirmación y redirigir
+            alert(`✅ Pedido #${orderRef.id.substring(0, 8)} completado.\nSe ha enviado un correo de confirmación a ${customerEmail}`);
+            window.location.href = user ? 'perfil.html#compras' : 'index.html';
           } catch (error) {
             console.error("Error al procesar pago:", error);
             alert('Error al procesar el pago: ' + error.message);
           }
         });
       } catch (error) {
-        console.error("Error de autenticación:", error);
-        alert('Debes iniciar sesión para realizar un pago. Redirigiendo...');
-        window.location.href = 'login.html';
+        console.error("Error:", error);
+        alert('Error al cargar la página de pago: ' + error.message);
+        window.location.href = 'productos.html';
       }
     });
   </script>
