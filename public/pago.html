@@ -190,28 +190,29 @@
             <input type="text" id="shippingAddress2" placeholder="Apartamento, suite, etc.">
           </div>
           
-          <div class="form-row">
             <div class="form-group">
-              <label for="shippingCity">Ciudad</label>
-              <input type="text" id="shippingCity" required>
+                <label for="departamento">Departamento</label>
+                <select id="departamento" name="departamento" required>
+                    <option value="">Seleccione un departamento</option>
+                </select>
+                <div class="error-message">Por favor seleccione un departamento</div>
             </div>
             
             <div class="form-group">
-              <label for="shippingState">Estado/Provincia</label>
-              <select id="shippingState" required>
-                <option value="">Seleccionar...</option>
-                <option value="AGU">Aguascalientes</option>
-                <option value="BCN">Baja California</option>
-                <!-- Agrega más estados según sea necesario -->
-              </select>
+                <label for="municipio">Municipio</label>
+                <select id="municipio" name="municipio" required disabled>
+                    <option value="">Primero seleccione un departamento</option>
+                </select>
+                <div class="error-message">Por favor seleccione un municipio</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="direccion">Dirección exacta</label>
+                <input type="text" id="direccion" name="direccion" required>
+                <div class="error-message">Por favor ingrese su dirección</div>
             </div>
           </div>
-          
-          <div class="form-group">
-            <label for="shippingZip">Código Postal</label>
-            <input type="text" id="shippingZip" required>
-          </div>
-          
+            
           <!-- Sección de Método de Pago -->
           <div class="section-title">Método de Pago</div>
           <div class="form-group">
