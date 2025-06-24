@@ -485,6 +485,100 @@
       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .login-modal {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .login-form .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .login-form label {
+      font-weight: 500;
+    }
+
+    .login-form input {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .forgot-password {
+      font-size: 0.8rem;
+      text-align: right;
+      color: #3498db;
+    }
+
+    .btn-login {
+      background-color: #3498db;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .form-footer {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 0.9rem;
+    }
+
+    .register-link {
+      color: #3498db;
+      font-weight: 500;
+    }
+
     /* Responsive */
     @media (max-width: 992px) {
       .hero h1 {
@@ -713,44 +807,45 @@
   </footer>
 
   <!-- Modal de Login -->
-<div id="login-modal" class="modal-overlay">
-  <div class="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
-    <div class="modal-header">
-      <h2 id="login-modal-title">Iniciar Sesión</h2>
-      <button class="close-modal" aria-label="Cerrar modal de inicio de sesión">&times;</button>
+  <div id="login-modal" class="modal-overlay">
+    <div class="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+      <div class="modal-header">
+        <h2 id="login-modal-title">Iniciar Sesión</h2>
+        <button class="close-modal" aria-label="Cerrar modal de inicio de sesión">&times;</button>
+      </div>
+      <form id="login-form" class="login-form">
+        <div class="form-group">
+          <label for="login-email">Correo Electrónico</label>
+          <input 
+            type="email" 
+            id="login-email" 
+            required
+            autocomplete="email"
+            placeholder="tucorreo@ejemplo.com"
+          >
+        </div>
+        <div class="form-group">
+          <label for="login-password">Contraseña</label>
+          <input 
+            type="password" 
+            id="login-password" 
+            required
+            autocomplete="current-password"
+            placeholder="••••••••"
+            minlength="8"
+          >
+          <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+        </div>
+        <button type="submit" class="btn-login">Ingresar</button>
+        <div class="form-footer">
+          <p>¿No tienes cuenta? <a href="registro.html" id="switch-to-signup" class="register-link">Regístrate aquí</a></p>
+        </div>
+      </form>
     </div>
-    <form id="login-form" class="login-form">
-      <div class="form-group">
-        <label for="login-email">Correo Electrónico</label>
-        <input 
-          type="email" 
-          id="login-email" 
-          required
-          autocomplete="email"
-          placeholder="tucorreo@ejemplo.com"
-        >
-      </div>
-      <div class="form-group">
-        <label for="login-password">Contraseña</label>
-        <input 
-          type="password" 
-          id="login-password" 
-          required
-          autocomplete="current-password"
-          placeholder="••••••••"
-          minlength="8"
-        >
-        <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
-      </div>
-      <button type="submit" class="btn-login">Ingresar</button>
-      <div class="form-footer">
-        <p>¿No tienes cuenta? <a href="registro.html" id="switch-to-signup" class="register-link">Regístrate aquí</a></p>
-      </div>
-    </form>
   </div>
-</div>
+
   <!-- Scripts -->
-  <script>
+  <script type="module">
     // Carrusel automático
     document.addEventListener('DOMContentLoaded', function() {
       const slides = document.querySelectorAll('.slide');
