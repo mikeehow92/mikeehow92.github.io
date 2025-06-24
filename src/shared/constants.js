@@ -1,7 +1,12 @@
-/**
- * Constantes globales para la aplicación
- * Centraliza todas las configuraciones fijas
- */
+const firebaseConfig = {
+  apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
+  authDomain: "mitienda-c2609.firebaseapp.com",
+  databaseURL: "https://mitienda-c2609-default-rtdb.firebaseio.com",
+  projectId: "mitienda-c2609",
+  storageBucket: "mitienda-c2609.firebasestorage.app",
+  messagingSenderId: "536746062790",
+  appId: "1:536746062790:web:6e545efbc8f037e36538c7"
+};
 
 // ==================== CONSTANTES DE FIREBASE ====================
 export const FIREBASE_CONFIG = {
