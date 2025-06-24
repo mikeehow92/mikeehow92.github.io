@@ -5,18 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Productos - TecnoExpress</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/assets/css/styles.css"></head>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
 <body>
-  <header>
+  <header class="header">
     <div class="container header-container">
       <div class="logo">
         <a href="index.html"><img src="img/logo.png" alt="TecnoExpress"></a>
       </div>
       <nav>
-        <ul>
-          <li><a href="index.html"><i class="fas fa-home"></i> Inicio</a></li>
-          <li><a href="productos.html" class="active"><i class="fas fa-laptop"></i> Productos</a></li>
-          <li><a href="index.html#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
+        <ul class="nav-list">
+          <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Inicio</a></li>
+          <li><a href="productos.html" class="nav-link active"><i class="fas fa-laptop"></i> Productos</a></li>
+          <li><a href="index.html#contacto" class="nav-link"><i class="fas fa-envelope"></i> Contacto</a></li>
         </ul>
       </nav>
       <div class="auth-section">
@@ -37,7 +38,7 @@
 
   <main class="container">
     <section class="section">
-      <h2><i class="fas fa-laptop"></i> Nuestros Productos</h2>
+      <h2 class="section-title"><i class="fas fa-laptop"></i> Nuestros Productos</h2>
       
       <div class="productos-grid">
         <div class="producto-card">
@@ -76,7 +77,43 @@
           </div>
         </div>
 
-        <!-- Puedes añadir más productos siguiendo el mismo patrón -->
+        <!-- Producto adicional de ejemplo -->
+        <div class="producto-card">
+          <div class="producto-imagen">
+            <img src="img/impresora3.webp" alt="Impresora Térmica EPSON">
+          </div>
+          <div class="producto-info">
+            <h3>Impresora EPSON TM-U220</h3>
+            <p>Impresora de recibos con alimentación por papel</p>
+            <div class="precio">$120.00</div>
+            <button class="add-to-cart" 
+                    data-id="prod003"
+                    data-name="Impresora EPSON TM-U220"
+                    data-price="120.00"
+                    data-image="img/impresora3.webp">
+              <i class="fas fa-cart-plus"></i> Añadir al carrito
+            </button>
+          </div>
+        </div>
+
+        <!-- Producto adicional de ejemplo -->
+        <div class="producto-card">
+          <div class="producto-imagen">
+            <img src="img/impresora4.webp" alt="Impresora Térmica EPSON">
+          </div>
+          <div class="producto-info">
+            <h3>Impresora EPSON TM-m30II</h3>
+            <p>Impresora móvil con conectividad Bluetooth</p>
+            <div class="precio">$200.00</div>
+            <button class="add-to-cart" 
+                    data-id="prod004"
+                    data-name="Impresora EPSON TM-m30II"
+                    data-price="200.00"
+                    data-image="img/impresora4.webp">
+              <i class="fas fa-cart-plus"></i> Añadir al carrito
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -103,9 +140,9 @@
 
   <!-- Modal de Login -->
   <div id="login-modal" class="modal-overlay">
-    <div class="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+    <div class="login-modal">
       <div class="modal-header">
-        <h2 id="login-modal-title">Iniciar Sesión</h2>
+        <h2>Iniciar Sesión</h2>
         <button class="close-modal" aria-label="Cerrar modal de inicio de sesión">&times;</button>
       </div>
       <form id="login-form" class="login-form">
@@ -139,7 +176,7 @@
     </div>
   </div>
 
-  <footer>
+  <footer class="footer">
     <div class="container">
       <div class="footer-content">
         <div class="footer-logo">
