@@ -6,13 +6,13 @@ import { FIREBASE_CONFIG } from "../constants";
 
 // Configuración de Firebase (extraída de constantes.js)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  VITE_FIREBASE_API_KEY=AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY
+  VITE_FIREBASE_AUTH_DOMAIN=mitienda-c2609.firebaseapp.com
+  VITE_FIREBASE_PROJECT_ID=mitienda-c2609
+  VITE_FIREBASE_STORAGE_BUCKET=mitienda-c2609.appspot.com
+  VITE_FIREBASE_MESSAGING_SENDER_ID=536746062790
+  VITE_FIREBASE_APP_ID=1:536746062790:web:6e545efbc8f037e36538c7
+  VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
 };
 
 /**
