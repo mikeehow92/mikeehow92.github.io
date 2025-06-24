@@ -1,307 +1,252 @@
-// Importaciones de Firebase
-import { app, db, auth } from './firebase-config.js';
-import { 
-  doc, setDoc, getDoc, serverTimestamp,
-  collection, addDoc 
-} from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
+// app.js - Archivo unificado completo
 
-// Variables globales
-let cart = [];
-let currentUser = null;
+/**************************************
+ * 1. CONSTANTES Y CONFIGURACIÓN INICIAL
+ **************************************/
+const CART_STORAGE_KEY = 'tecnoexpress_cart';
 
-// ==================== FUNCIONES DEL CARRITO ====================
+/**************************************
+ * 2. INICIALIZACIÓN DE LA APLICACIÓN
+ **************************************/
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    initAuth();
+    initCart();
+    initProductos();
+    updateAuthUI();
+    console.log('Aplicación inicializada correctamente');
+  } catch (error) {
+    console.error('Error al inicializar la aplicación:', error);
+    showError('Error al cargar la aplicación. Por favor recarga la página.');
+  }
+});
 
-/**
- * Actualiza la interfaz visual del carrito
- */
-function updateCartUI() {
-  const cartItems = document.getElementById('cartItems');
-  const cartTotal = document.getElementById('cartTotal');
+/**************************************
+ * 3. SISTEMA DE AUTENTICACIÓN
+ **************************************/
+function initAuth() {
+  // Elementos del DOM
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const logoutBtn = document.getElementById('logout-btn');
+  const openLoginBtn = document.getElementById('open-login-btn');
+
+  // Manejadores de eventos
+  if (openLoginBtn) {
+    openLoginBtn.addEventListener('click', () => {
+      document.getElementById('login-modal').classList.add('active');
+    });
+  }
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = loginForm.querySelector('#login-email').value;
+      const password = loginForm.querySelector('#login-password').value;
+      
+      try {
+        // Aquí iría la lógica real de autenticación con Firebase
+        console.log('Iniciando sesión con:', email);
+        document.getElementById('login-modal').classList.remove('active');
+        updateAuthUI({ email });
+      } catch (error) {
+        showError(error.message);
+      }
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      // Lógica de cierre de sesión
+      updateAuthUI(null);
+      showFeedback('Sesión cerrada correctamente', 'success');
+    });
+  }
+}
+
+function updateAuthUI(user) {
+  const guestUI = document.getElementById('guest-buttons');
+  const userUI = document.getElementById('user-info');
+  const userEmail = document.getElementById('user-email');
+
+  if (guestUI) guestUI.style.display = user ? 'none' : 'block';
+  if (userUI) userUI.style.display = user ? 'flex' : 'none';
+  if (userEmail && user) userEmail.textContent = user.email;
+}
+
+/**************************************
+ * 4. SISTEMA DE CARRITO DE COMPRAS
+ **************************************/
+function initCart() {
+  let cart = loadCart();
+  const cartIcon = document.getElementById('cartIcon');
+  const cartModal = document.getElementById('cartModal');
+
+  // Actualizar contador inicial
+  updateCartCounter(cart.length);
+
+  // Eventos del carrito
+  if (cartIcon && cartModal) {
+    cartIcon.addEventListener('click', () => cartModal.classList.toggle('active'));
+    
+    document.querySelector('.close-modal')?.addEventListener('click', () => {
+      cartModal.classList.remove('active');
+    });
+  }
+
+  // Añadir productos al carrito
+  document.querySelectorAll('.add-to-cart').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const product = {
+        id: btn.dataset.id,
+        name: btn.dataset.name,
+        price: parseFloat(btn.dataset.price),
+        image: btn.dataset.image,
+        quantity: 1
+      };
+      cart = addToCart(cart, product);
+      updateCartUI(cart);
+      showFeedback(`${product.name} añadido al carrito`, 'success');
+    });
+  });
+
+  // Botón de pago
+  document.getElementById('checkoutBtn')?.addEventListener('click', () => {
+    if (cart.length > 0) {
+      proceedToCheckout(cart);
+    } else {
+      showError('El carrito está vacío');
+    }
+  });
+}
+
+function loadCart() {
+  const cartData = localStorage.getItem(CART_STORAGE_KEY);
+  return cartData ? JSON.parse(cartData) : [];
+}
+
+function saveCart(cart) {
+  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+}
+
+function addToCart(cart, product) {
+  const existingItem = cart.find(item => item.id === product.id);
   
-  if (cartItems) {
-    cartItems.innerHTML = cart.length > 0 ? '' : `
+  if (existingItem) {
+    existingItem.quantity += 1;
+  } else {
+    cart.push(product);
+  }
+  
+  saveCart(cart);
+  return cart;
+}
+
+function updateCartUI(cart) {
+  updateCartCounter(cart.length);
+  
+  const cartItemsContainer = document.getElementById('cartItems');
+  if (!cartItemsContainer) return;
+
+  if (cart.length === 0) {
+    cartItemsContainer.innerHTML = `
       <div class="empty-cart">
         <i class="fas fa-shopping-cart"></i>
         <p>Tu carrito está vacío</p>
       </div>
     `;
-
-    let total = 0;
-    cart.forEach(item => {
-      const itemElement = document.createElement('div');
-      itemElement.className = 'cart-item';
-      itemElement.innerHTML = `
-        <div class="cart-item-info">
-          <span class="cart-item-name">${item.name}</span>
-          <div class="cart-item-controls">
-            <button class="quantity-btn minus" data-id="${item.id}">-</button>
-            <span class="item-quantity">${item.quantity}</span>
-            <button class="quantity-btn plus" data-id="${item.id}">+</button>
-          </div>
-          <span class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</span>
-        </div>
-        <button class="remove-item" data-id="${item.id}">
-          <i class="fas fa-trash"></i>
-        </button>
-      `;
-      cartItems.appendChild(itemElement);
-      total += item.price * item.quantity;
-    });
-
-    if (cartTotal) cartTotal.textContent = total.toFixed(2);
+    return;
   }
-  updateCartCounter();
+
+  // Generar lista de productos
+  cartItemsContainer.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <img src="${item.image}" alt="${item.name}" width="60">
+      <div class="cart-item-info">
+        <h4>${item.name}</h4>
+        <div>$${item.price.toFixed(2)} x ${item.quantity}</div>
+      </div>
+      <button class="remove-item" data-id="${item.id}">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  `).join('');
+
+  // Actualizar total
+  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  document.getElementById('cartTotal').textContent = total.toFixed(2);
+
+  // Eventos para eliminar items
+  document.querySelectorAll('.remove-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const newCart = cart.filter(item => item.id !== btn.dataset.id);
+      saveCart(newCart);
+      updateCartUI(newCart);
+    });
+  });
 }
 
-/**
- * Actualiza el contador del icono del carrito
- */
-function updateCartCounter() {
+function updateCartCounter(count) {
   const counter = document.getElementById('cartCounter');
   if (counter) {
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    counter.textContent = totalItems;
-    counter.style.display = totalItems > 0 ? 'inline-block' : 'none';
+    counter.textContent = count;
+    counter.style.display = count > 0 ? 'inline-block' : 'none';
   }
 }
 
-/**
- * Guarda el carrito en Firestore (usuario) o localStorage (invitado)
- */
-async function saveCartToFirestore() {
-  try {
-    if (!currentUser) {
-      localStorage.setItem('cart', JSON.stringify(cart));
-      return;
-    }
-    await setDoc(doc(db, 'carts', currentUser.uid), {
-      items: cart,
-      lastUpdated: serverTimestamp()
-    }, { merge: true });
-  } catch (error) {
-    console.error("Error al guardar el carrito:", error);
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }
+function proceedToCheckout(cart) {
+  console.log('Procesando compra:', cart);
+  // Aquí iría la lógica de pago real
+  showFeedback('Compra realizada con éxito', 'success');
+  localStorage.removeItem(CART_STORAGE_KEY);
+  updateCartUI([]);
 }
 
-/**
- * Carga el carrito desde Firestore o localStorage
- */
-async function loadCart() {
-  try {
-    if (sessionStorage.getItem('clearCartOnLoad')) {
-      cart = [];
-      localStorage.removeItem('cart');
-      sessionStorage.removeItem('clearCartOnLoad');
-      
-      if (currentUser) {
-        await setDoc(doc(db, 'carts', currentUser.uid), {
-          items: [],
-          lastUpdated: serverTimestamp()
-        });
-      }
-      updateCartUI();
-      return;
-    }
+/**************************************
+ * 5. FUNCIONALIDAD ESPECÍFICA DE PRODUCTOS
+ **************************************/
+function initProductos() {
+  if (!document.querySelector('.productos-grid')) return;
 
-    const localCart = localStorage.getItem('cart');
-    if (localCart) cart = JSON.parse(localCart);
-    
-    if (currentUser) {
-      const docSnap = await getDoc(doc(db, 'carts', currentUser.uid));
-      if (docSnap.exists()) {
-        cart = docSnap.data().items || [];
-        localStorage.setItem('cart', JSON.stringify(cart));
-      }
-    }
-    
-    updateCartUI();
-  } catch (error) {
-    console.error("Error al cargar el carrito:", error);
-    showFeedback('Error al cargar el carrito', 'error');
-  }
-}
-
-// ==================== OPERACIONES DEL CARRITO ====================
-
-/**
- * Añade un producto al carrito
- */
-export function addToCart(product) {
-  const existingItem = cart.find(item => item.id === product.id);
-  if (existingItem) {
-    existingItem.quantity++;
-  } else {
-    cart.push({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      quantity: 1,
-      image: product.image || ''
+  // Filtros de productos (ejemplo)
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const category = btn.dataset.category;
+      filterProducts(category);
     });
-  }
-  
-  saveCartToFirestore();
-  updateCartUI();
-  showFeedback(`${product.name} añadido al carrito`, 'success');
+  });
 }
 
-/**
- * Elimina un producto del carrito
- */
-function removeFromCart(productId) {
-  cart = cart.filter(item => item.id !== productId);
-  saveCartToFirestore();
-  updateCartUI();
+function filterProducts(category) {
+  console.log('Filtrando productos por:', category);
+  // Implementar lógica de filtrado según sea necesario
 }
 
-/**
- * Actualiza la cantidad de un producto
- */
-function updateQuantity(productId, newQuantity) {
-  const item = cart.find(item => item.id === productId);
-  if (item) {
-    item.quantity = Math.max(1, newQuantity);
-    saveCartToFirestore();
-    updateCartUI();
-  }
-}
-
-// ==================== CHECKOUT ====================
-
-/**
- * Procesa el checkout y redirige a pago.html
- */
-export async function proceedToCheckout() {
-  if (cart.length === 0) {
-    showFeedback('Tu carrito está vacío', 'error');
-    return false;
-  }
-
-  try {
-    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const tax = subtotal * 0.12;
-    const total = subtotal + tax;
-
-    const checkoutData = {
-      items: cart.map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        image: item.image || 'img/default-product.webp'
-      })),
-      subtotal: parseFloat(subtotal.toFixed(2)),
-      tax: parseFloat(tax.toFixed(2)),
-      total: parseFloat(total.toFixed(2)),
-      userId: currentUser?.uid || `guest_${Date.now()}`,
-      userEmail: currentUser?.email || null,
-      isGuest: !currentUser,
-      createdAt: new Date().toISOString()
-    };
-
-    localStorage.setItem('currentCheckout', JSON.stringify(checkoutData));
-    sessionStorage.setItem('checkoutData', JSON.stringify(checkoutData));
-
-    if (currentUser) {
-      await addDoc(collection(db, 'checkouts'), {
-        ...checkoutData,
-        status: 'pending',
-        createdAt: serverTimestamp()
-      });
-    }
-
-    window.location.href = 'pago.html';
-    return true;
-  } catch (error) {
-    console.error('Error en checkout:', error);
-    showFeedback('Error al procesar el pedido', 'error');
-    return false;
-  }
-}
-
-// ==================== UTILIDADES ====================
-
-/**
- * Muestra notificaciones al usuario
- */
+/**************************************
+ * 6. FUNCIONES DE UTILIDAD
+ **************************************/
 function showFeedback(message, type = 'success') {
   const feedback = document.createElement('div');
   feedback.className = `feedback ${type}`;
   feedback.innerHTML = `
-    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-    <span>${message}</span>
+    <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}"></i>
+    ${message}
   `;
   document.body.appendChild(feedback);
-  setTimeout(() => feedback.remove(), 3000);
+  
+  setTimeout(() => {
+    feedback.classList.add('fade-out');
+    setTimeout(() => feedback.remove(), 500);
+  }, 3000);
 }
 
-// ==================== INICIALIZACIÓN ====================
+function showError(message) {
+  showFeedback(message, 'error');
+}
 
-/**
- * Inicializa todo el sistema del carrito
- */
-export function initializeCart() {
-  console.log("Inicializando sistema de carrito...");
-
-  // Configurar observador de autenticación
-  onAuthStateChanged(auth, (user) => {
-    currentUser = user;
-    loadCart();
-  });
-
-  // Manejador de eventos delegado
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('.add-to-cart')) {
-      const button = e.target.closest('.add-to-cart');
-      addToCart({
-        id: button.dataset.id,
-        name: button.dataset.name,
-        price: parseFloat(button.dataset.price),
-        image: button.dataset.image || ''
-      });
-    }
-    
-    if (e.target.closest('.remove-item')) {
-      removeFromCart(e.target.closest('.remove-item').dataset.id);
-    }
-    
-    if (e.target.closest('.quantity-btn')) {
-      const btn = e.target.closest('.quantity-btn');
-      const item = cart.find(item => item.id === btn.dataset.id);
-      if (item) {
-        const newQuantity = btn.classList.contains('plus') 
-          ? item.quantity + 1 
-          : item.quantity - 1;
-        updateQuantity(item.id, newQuantity);
-      }
-    }
-    
-    if (e.target.closest('#checkoutBtn')) {
-      e.preventDefault();
-      proceedToCheckout();
-    }
-  });
-
-  // Configurar modal del carrito
-  const cartModal = document.getElementById('cartModal');
-  if (cartModal) {
-    document.getElementById('cartIcon')?.addEventListener('click', () => {
-      cartModal.classList.add('active');
-      document.body.style.overflow = 'hidden';
-    });
-
-    document.querySelector('.close-modal')?.addEventListener('click', () => {
-      cartModal.classList.remove('active');
-      document.body.style.overflow = '';
-    });
-
-    cartModal.addEventListener('click', (e) => {
-      if (e.target === cartModal) {
-        cartModal.classList.remove('active');
-        document.body.style.overflow = '';
-      }
-    });
+// Para manejar el cierre de modales al hacer clic fuera
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('active');
   }
-}
+});
