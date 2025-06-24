@@ -1,24 +1,19 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { FIREBASE_CONFIG } from "../constants";
 
-// Configuración de Firebase (extraída de constantes.js)
+// Configuración de Firebase usando variables de entorno de Vite
 const firebaseConfig = {
-  VITE_FIREBASE_API_KEY=AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY
-  VITE_FIREBASE_AUTH_DOMAIN=mitienda-c2609.firebaseapp.com
-  VITE_FIREBASE_PROJECT_ID=mitienda-c2609
-  VITE_FIREBASE_STORAGE_BUCKET=mitienda-c2609.appspot.com
-  VITE_FIREBASE_MESSAGING_SENDER_ID=536746062790
-  VITE_FIREBASE_APP_ID=1:536746062790:web:6e545efbc8f037e36538c7
-  VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-/**
- * Inicializa Firebase con verificación de duplicados
- * @returns {FirebaseApp} Instancia de Firebase
- */
 const initializeFirebaseApp = () => {
   try {
     return initializeApp(firebaseConfig);
@@ -37,12 +32,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// Configuración adicional de Firestore
-const firestoreSettings = {
-  experimentalForceLongPolling: import.meta.env.MODE === 'test' // Solo para entornos de prueba
-};
-
-// Configuración de persistencia de autenticación (opcional)
+// Configuración adicional
 const setPersistence = async () => {
   const { browserLocalPersistence } = await import('firebase/auth');
   try {
@@ -54,7 +44,7 @@ const setPersistence = async () => {
 
 setPersistence();
 
-// Configuración de emuladores en desarrollo
+// Emuladores para desarrollo
 const configureEmulators = () => {
   if (import.meta.env.DEV) {
     import('firebase/auth').then(({ connectAuthEmulator }) => {
@@ -75,20 +65,6 @@ const configureEmulators = () => {
 
 configureEmulators();
 
-// Exportaciones tipadas
-/**
- * @typedef {Object} FirebaseServices
- * @property {FirebaseApp} app - Instancia de Firebase App
- * @property {Auth} auth - Servicio de Autenticación
- * @property {Firestore} db - Servicio de Firestore
- * @property {Storage} storage - Servicio de Storage
- */
-
-/**
- * Obtiene los servicios de Firebase inicializados
- * @returns {FirebaseServices} Objeto con los servicios
- */
+// Exportaciones
 export const getFirebaseServices = () => ({ app, auth, db, storage });
-
-// Exportaciones individuales
 export { app, auth, db, storage };
