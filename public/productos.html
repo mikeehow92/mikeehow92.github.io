@@ -16,10 +16,19 @@
       <nav>
         <ul>
           <li><a href="index.html"><i class="fas fa-home"></i> Inicio</a></li>
-          <li><a href="productos.html" class="active"><i class="fas fa-print"></i> Productos</a></li>
-          <li><a href="#"><i class="fas fa-envelope"></i> Contacto</a></li>
+          <li><a href="productos.html" class="active"><i class="fas fa-laptop"></i> Productos</a></li>
+          <li><a href="index.html#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
         </ul>
       </nav>
+      <div class="auth-section">
+        <div id="guest-buttons">
+          <button id="open-login-btn" class="btn btn-small">Iniciar Sesión</button>
+        </div>
+        <div id="user-info" style="display:none;">
+          <span id="user-email"></span>
+          <button id="logout-btn" class="btn btn-small btn-outline">Cerrar Sesión</button>
+        </div>
+      </div>
       <div class="cart-icon" id="cartIcon">
         <i class="fas fa-shopping-cart"></i>
         <span id="cartCounter">0</span>
@@ -28,48 +37,55 @@
   </header>
 
   <main class="container">
-    <h1><i class="fas fa-print"></i> Nuestros Productos</h1>
-    
-    <div class="productos-grid">
-      <div class="producto-card">
-        <div class="producto-imagen">
-          <img src="img/impresora1.webp" alt="Impresora Térmica EPSON">
-        </div>
-        <div class="producto-info">
-          <h3>Impresora EPSON TM-T20III</h3>
-          <div class="precio">$150.00</div>
-          <button class="add-to-cart" 
-                  data-id="prod001"
-                  data-name="Impresora EPSON TM-T20III"
-                  data-price="150.00"
-                  data-image="img/impresora1.webp">
-            <i class="fas fa-cart-plus"></i> Añadir al carrito
-          </button>
-        </div>
-      </div>
+    <section class="section">
+      <h2><i class="fas fa-laptop"></i> Nuestros Productos</h2>
       
-      <div class="producto-card">
-        <div class="producto-imagen">
-          <img src="img/impresora2.webp" alt="Impresora Térmica EPSON">
+      <div class="productos-grid">
+        <div class="producto-card">
+          <div class="producto-imagen">
+            <img src="img/impresora1.webp" alt="Impresora Térmica EPSON">
+          </div>
+          <div class="producto-info">
+            <h3>Impresora EPSON TM-T20III</h3>
+            <p>Impresora térmica de alta velocidad para tickets</p>
+            <div class="precio">$150.00</div>
+            <button class="add-to-cart" 
+                    data-id="prod001"
+                    data-name="Impresora EPSON TM-T20III"
+                    data-price="150.00"
+                    data-image="img/impresora1.webp">
+              <i class="fas fa-cart-plus"></i> Añadir al carrito
+            </button>
+          </div>
         </div>
-        <div class="producto-info">
-          <h3>Impresora EPSON TM-T88III</h3>
-          <div class="precio">$80.00</div>
-          <button class="add-to-cart" 
-                  data-id="prod002"
-                  data-name="Impresora EPSON TM-T88III"
-                  data-price="80.00"
-                  data-image="img/impresora2.webp">
-            <i class="fas fa-cart-plus"></i> Añadir al carrito
-          </button>
+        
+        <div class="producto-card">
+          <div class="producto-imagen">
+            <img src="img/impresora2.webp" alt="Impresora Térmica EPSON">
+          </div>
+          <div class="producto-info">
+            <h3>Impresora EPSON TM-T88III</h3>
+            <p>Impresora compacta para punto de venta</p>
+            <div class="precio">$80.00</div>
+            <button class="add-to-cart" 
+                    data-id="prod002"
+                    data-name="Impresora EPSON TM-T88III"
+                    data-price="80.00"
+                    data-image="img/impresora2.webp">
+              <i class="fas fa-cart-plus"></i> Añadir al carrito
+            </button>
+          </div>
         </div>
+
+        <!-- Puedes añadir más productos siguiendo el mismo patrón -->
       </div>
-    </div>
+    </section>
   </main>
 
+  <!-- Modal del Carrito -->
   <div id="cartModal" class="modal">
     <div class="modal-content">
-      <span class="close-modal">&times;</span>
+      <button class="close-modal">&times;</button>
       <h2><i class="fas fa-shopping-cart"></i> Tu Carrito</h2>
       <div id="cartItems">
         <div class="empty-cart">
@@ -86,38 +102,70 @@
     </div>
   </div>
 
-  <!-- Scripts Corregidos - Versión Definitiva -->
-  <script type="module">
-    // Importar solo lo necesario desde app.js
-    import { initializeCart } from './js/app.js';
-    
-    // Inicialización con manejo de errores
-    document.addEventListener('DOMContentLoaded', () => {
-      try {
-        console.log("Inicializando módulo de carrito...");
-        initializeCart();
-        
-        // Verificación de que los botones están configurados
-        const buttons = document.querySelectorAll('.add-to-cart');
-        console.log(`Botones de producto encontrados: ${buttons.length}`);
-        
-      } catch (error) {
-        console.error("Error crítico al inicializar:", error);
-        // Mostrar feedback al usuario
-        const errorDiv = document.createElement('div');
-        errorDiv.style.position = 'fixed';
-        errorDiv.style.top = '20px';
-        errorDiv.style.left = '50%';
-        errorDiv.style.transform = 'translateX(-50%)';
-        errorDiv.style.backgroundColor = '#ff4444';
-        errorDiv.style.color = 'white';
-        errorDiv.style.padding = '15px';
-        errorDiv.style.borderRadius = '5px';
-        errorDiv.style.zIndex = '10000';
-        errorDiv.textContent = 'Error al cargar la aplicación. Por favor recarga la página.';
-        document.body.appendChild(errorDiv);
-      }
-    });
-  </script>
+  <!-- Modal de Login -->
+  <div id="login-modal" class="modal-overlay">
+    <div class="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+      <div class="modal-header">
+        <h2 id="login-modal-title">Iniciar Sesión</h2>
+        <button class="close-modal" aria-label="Cerrar modal de inicio de sesión">&times;</button>
+      </div>
+      <form id="login-form" class="login-form">
+        <div class="form-group">
+          <label for="login-email">Correo Electrónico</label>
+          <input 
+            type="email" 
+            id="login-email" 
+            required
+            autocomplete="email"
+            placeholder="tucorreo@ejemplo.com"
+          >
+        </div>
+        <div class="form-group">
+          <label for="login-password">Contraseña</label>
+          <input 
+            type="password" 
+            id="login-password" 
+            required
+            autocomplete="current-password"
+            placeholder="••••••••"
+            minlength="8"
+          >
+          <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+        </div>
+        <button type="submit" class="btn-login">Ingresar</button>
+        <div class="form-footer">
+          <p>¿No tienes cuenta? <a href="registro.html" id="switch-to-signup" class="register-link">Regístrate aquí</a></p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <img src="img/logo.png" alt="TecnoExpress">
+          <p>Soluciones tecnológicas innovadoras para el mundo moderno.</p>
+        </div>
+        <div class="footer-links">
+          <h3>Enlaces rápidos</h3>
+          <ul>
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="productos.html">Productos</a></li>
+            <li><a href="index.html#contacto">Contacto</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="copyright">
+        <p>&copy; 2023 TecnoExpress. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script type="module" src="/js/firebase-config.js"></script>
+  <script type="module" src="/js/auth.js"></script>
+  <script type="module" src="/js/cart.js"></script>
+  <script type="module" src="/js/productos.js"></script>
 </body>
 </html>
