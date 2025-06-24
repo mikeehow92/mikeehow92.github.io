@@ -1,8 +1,8 @@
-import { getFirebaseServices } from './firebase/firebase-config';
-import { initAuthUI } from './auth/auth-ui';
-import { initProductsUI } from './products/products-ui';
-import { initCartUI } from './cart/cart-ui';
-import { showFeedback } from './shared/feedback';
+import { getFirebaseServices } from './firebase/firebase-config.js';
+import { initAuthUI } from './auth/auth-ui.js';
+import { initProductsUI } from './products/products-ui.js';
+import { initCartUI } from './cart/cart-ui.js';
+import { showFeedback } from './shared/feedback.js';
 
 /**
  * Inicializa la aplicación
