@@ -35,10 +35,6 @@ const db = getFirestore(app);
 
 // ==================== FUNCIONES DE AUTENTICACIÓN ====================
 
-/**
- * Migra el carrito de localStorage a Firestore cuando un usuario se registra/inicia sesión
- * @param {Object} user - Usuario de Firebase Auth
- */
 export const migrateGuestCart = async (user) => {
   try {
     const guestCart = localStorage.getItem('cart');
@@ -55,23 +51,15 @@ export const migrateGuestCart = async (user) => {
   }
 };
 
-/**
- * Servicio de autenticación encapsulado
- */
 export const AuthService = {
-  // Obtiene el usuario actual
   getCurrentUser: () => auth.currentUser,
 
-  // Inicia sesión
   login: (email, password) => signInWithEmailAndPassword(auth, email, password),
 
-  // Cierra sesión
   logout: () => signOut(auth),
 
-  // Escucha cambios de autenticación
   onAuthStateChanged: (callback) => onAuthStateChanged(auth, callback),
 
-  // Cambia la contraseña (requiere reautenticación)
   changePassword: async (currentPassword, newPassword) => {
     const user = auth.currentUser;
     if (!user) throw new Error("No hay usuario autenticado");
@@ -81,7 +69,6 @@ export const AuthService = {
     return await updatePassword(user, newPassword);
   },
 
-  // Registra un nuevo usuario
   register: async (email, password, userData) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -93,7 +80,7 @@ export const AuthService = {
         email: user.email
       });
 
-      await migrateGuestCart(user); // Migrar carrito si existe
+      await migrateGuestCart(user);
       return user;
     } catch (error) {
       console.error("Error en registro:", error);
@@ -101,7 +88,6 @@ export const AuthService = {
     }
   },
 
-  // Verifica autenticación y devuelve datos del usuario
   checkAuth: () => {
     return new Promise((resolve, reject) => {
       onAuthStateChanged(auth, async (user) => {
@@ -111,7 +97,7 @@ export const AuthService = {
             resolve(userDoc.exists() ? { ...user, profileData: userDoc.data() } : user);
           } catch (error) {
             console.error("Error al obtener perfil:", error);
-            resolve(user); // Devuelve datos básicos si falla Firestore
+            resolve(user);
           }
         } else {
           reject(new Error("Usuario no autenticado"));
@@ -120,7 +106,6 @@ export const AuthService = {
     });
   },
 
-  // Obtiene el perfil del usuario desde Firestore
   getUserProfile: async (userId) => {
     try {
       const userDoc = await getDoc(doc(db, 'users', userId));
@@ -134,43 +119,29 @@ export const AuthService = {
 
 // ==================== MANEJO DE LA INTERFAZ DE AUTENTICACIÓN ====================
 
-/**
- * Inicializa los listeners para los modales de login/registro
- */
 export function initAuthUI() {
-  // Elementos del DOM
   const loginModal = document.getElementById('login-modal');
-  const registerModal = document.getElementById('register-modal');
   const loginForm = document.getElementById('login-form');
-  const registerForm = document.getElementById('register-form');
   const logoutBtn = document.getElementById('logout-btn');
 
-  // Abrir/Cerrar Modales
+  // Abrir modal de login
   if (document.getElementById('open-login-btn')) {
     document.getElementById('open-login-btn').addEventListener('click', () => {
       if (loginModal) loginModal.classList.add('active');
     });
   }
 
-  if (document.getElementById('open-register-btn')) {
-    document.getElementById('open-register-btn').addEventListener('click', () => {
-      if (registerModal) registerModal.classList.add('active');
-    });
-  }
-
-  // Cerrar modales al hacer clic en 'X' o fuera
-  [loginModal, registerModal].forEach(modal => {
-    if (!modal) return;
-    
-    const closeBtn = modal.querySelector('.close-modal');
+  // Cerrar modal
+  if (loginModal) {
+    const closeBtn = loginModal.querySelector('.close-modal');
     if (closeBtn) {
-      closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+      closeBtn.addEventListener('click', () => loginModal.classList.remove('active'));
     }
 
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.classList.remove('active');
+    loginModal.addEventListener('click', (e) => {
+      if (e.target === loginModal) loginModal.classList.remove('active');
     });
-  });
+  }
 
   // Login
   if (loginForm) {
@@ -182,30 +153,6 @@ export function initAuthUI() {
       AuthService.login(email, password)
         .then(() => loginModal?.classList.remove('active'))
         .catch(error => alert(`Error: ${error.message}`));
-    });
-  }
-
-  // Registro
-  if (registerForm) {
-    registerForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = registerForm.querySelector('#register-email')?.value;
-      const password = registerForm.querySelector('#register-password')?.value;
-      const confirmPassword = registerForm.querySelector('#register-confirm-password')?.value;
-      const name = registerForm.querySelector('#register-name')?.value;
-
-      if (password !== confirmPassword) {
-        alert("Las contraseñas no coinciden");
-        return;
-      }
-
-      try {
-        await AuthService.register(email, password, { name, role: 'customer' });
-        registerModal?.classList.remove('active');
-        alert("¡Registro exitoso!");
-      } catch (error) {
-        alert(`Error: ${error.message}`);
-      }
     });
   }
 
@@ -229,7 +176,7 @@ export function initAuthUI() {
 
 // Inicialización automática si hay elementos de auth en la página
 document.addEventListener('DOMContentLoaded', () => {
-  if (document.querySelector('#login-modal, #logout-btn')) {
+  if (document.getElementById('login-modal') || document.getElementById('logout-btn')) {
     initAuthUI();
   }
 });
