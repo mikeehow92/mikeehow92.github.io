@@ -15,7 +15,9 @@ const SELECTORS = {
   USER_EMAIL: '#user-email',
   USER_AVATAR: '#user-avatar',
   GUEST_UI: '#guest-buttons',
-  USER_UI: '#user-info'
+  USER_UI: '#user-info',
+  SWITCH_TO_SIGNUP: '#switch-to-signup',
+  SWITCH_TO_LOGIN: '#switch-to-login'
 };
 
 // Clases CSS para estados
@@ -24,17 +26,13 @@ const CLASSES = {
   HIDDEN: 'hidden'
 };
 
-/**
- * Inicializa la interfaz de autenticación
- */
+// Inicialización de la interfaz de autenticación
 export const initAuthUI = () => {
   setupEventListeners();
   setupAuthStateListener();
 };
 
-/**
- * Configura los listeners de eventos
- */
+// Configuración de listeners de eventos
 const setupEventListeners = () => {
   // Abrir modales
   document.querySelector(SELECTORS.OPEN_LOGIN)?.addEventListener('click', () => {
@@ -53,11 +51,24 @@ const setupEventListeners = () => {
     });
   });
 
+  // Cambiar entre login y registro
+  document.querySelector(SELECTORS.SWITCH_TO_SIGNUP)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggleModal(SELECTORS.LOGIN_MODAL, false);
+    toggleModal(SELECTORS.REGISTER_MODAL, true);
+  });
+
+  document.querySelector(SELECTORS.SWITCH_TO_LOGIN)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggleModal(SELECTORS.REGISTER_MODAL, false);
+    toggleModal(SELECTORS.LOGIN_MODAL, true);
+  });
+
   // Login con email
   document.querySelector(SELECTORS.LOGIN_FORM)?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = e.target.querySelector('#email').value;
-    const password = e.target.querySelector('#password').value;
+    const email = e.target.querySelector('#login-email').value;
+    const password = e.target.querySelector('#login-password').value;
     await handleLogin(email, password);
   });
 
@@ -75,9 +86,7 @@ const setupEventListeners = () => {
   document.querySelector(SELECTORS.LOGOUT_BTN)?.addEventListener('click', handleLogout);
 };
 
-/**
- * Configura el listener de cambios de autenticación
- */
+// Listener de cambios de autenticación
 const setupAuthStateListener = () => {
   AuthService.onAuthStateChanged((user) => {
     updateUI(user);
@@ -87,10 +96,7 @@ const setupAuthStateListener = () => {
   });
 };
 
-/**
- * Actualiza la UI según el estado de autenticación
- * @param {Object|null} user - Objeto de usuario o null
- */
+// Actualización de la UI según estado de autenticación
 const updateUI = (user) => {
   const guestUI = document.querySelector(SELECTORS.GUEST_UI);
   const userUI = document.querySelector(SELECTORS.USER_UI);
@@ -104,18 +110,20 @@ const updateUI = (user) => {
   // Actualizar datos de usuario
   if (user) {
     userEmail.textContent = user.email;
+    
     if (user.photoURL) {
       userAvatar.src = user.photoURL;
       userAvatar.classList.remove(CLASSES.HIDDEN);
+    } else if (user.profile?.photoURL) {
+      userAvatar.src = user.profile.photoURL;
+      userAvatar.classList.remove(CLASSES.HIDDEN);
+    } else {
+      userAvatar.classList.add(CLASSES.HIDDEN);
     }
   }
 };
 
-/**
- * Maneja el login con email/contraseña
- * @param {string} email 
- * @param {string} password 
- */
+// Manejo de login con email/contraseña
 const handleLogin = async (email, password) => {
   try {
     await AuthService.login(email, password);
@@ -126,10 +134,7 @@ const handleLogin = async (email, password) => {
   }
 };
 
-/**
- * Maneja el registro de nuevo usuario
- * @param {Object} formData 
- */
+// Manejo de registro
 const handleRegister = async (formData) => {
   if (formData.password !== formData.confirmPassword) {
     showFeedback('Las contraseñas no coinciden', 'error');
@@ -152,9 +157,7 @@ const handleRegister = async (formData) => {
   }
 };
 
-/**
- * Maneja el login con Google
- */
+// Manejo de login con Google
 const handleGoogleLogin = async () => {
   try {
     await AuthService.loginWithGoogle();
@@ -165,9 +168,7 @@ const handleGoogleLogin = async () => {
   }
 };
 
-/**
- * Maneja el logout
- */
+// Manejo de logout
 const handleLogout = async () => {
   try {
     await AuthService.logout();
@@ -177,24 +178,18 @@ const handleLogout = async () => {
   }
 };
 
-/**
- * Extrae datos del formulario
- * @param {HTMLFormElement} form 
- * @returns {Object}
- */
+// Helper: Extraer datos de formulario
 const getFormData = (form) => {
-  const inputs = form.querySelectorAll('input');
+  const inputs = form.querySelectorAll('input, textarea');
   return Array.from(inputs).reduce((data, input) => {
-    data[input.name] = input.value;
+    if (input.name) {
+      data[input.name] = input.value;
+    }
     return data;
   }, {});
 };
 
-/**
- * Muestra/oculta un modal
- * @param {string} selector 
- * @param {boolean} show 
- */
+// Helper: Mostrar/ocultar modal
 const toggleModal = (selector, show) => {
   const modal = document.querySelector(selector);
   if (!modal) return;
@@ -208,11 +203,7 @@ const toggleModal = (selector, show) => {
   }
 };
 
-/**
- * Muestra/oculta un elemento
- * @param {HTMLElement} element 
- * @param {boolean} show 
- */
+// Helper: Mostrar/ocultar elemento
 const toggleElement = (element, show) => {
   if (!element) return;
   element.style.display = show ? 'flex' : 'none';
