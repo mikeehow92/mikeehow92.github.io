@@ -6,10 +6,8 @@ import { CartUI } from '../cart/cart-ui.js';
 const SELECTORS = {
   LOGIN_MODAL: '#login-modal',
   REGISTER_MODAL: '#register-modal',
-  FORGOT_PASSWORD_MODAL: '#forgot-password-modal',
   LOGIN_FORM: '#login-form',
   REGISTER_FORM: '#register-form',
-  FORGOT_PASSWORD_FORM: '#forgot-password-form',
   LOGOUT_BTN: '#logout-btn',
   OPEN_LOGIN: '#open-login-btn',
   OPEN_REGISTER: '#open-register-btn',
@@ -20,15 +18,12 @@ const SELECTORS = {
   USER_UI: '#user-info',
   CLOSE_MODAL: '.close-modal',
   SWITCH_TO_SIGNUP: '#switch-to-signup',
-  SWITCH_TO_LOGIN: '#switch-to-login',
-  FORGOT_PASSWORD_LINK: '.forgot-password',
-  BACK_TO_LOGIN: '#back-to-login'
+  SWITCH_TO_LOGIN: '#switch-to-login'
 };
 
 const CLASSES = {
   ACTIVE: 'active',
-  HIDDEN: 'hidden',
-  AUTHENTICATED: 'authenticated'
+  HIDDEN: 'hidden'
 };
 
 // Inicialización de la UI de autenticación
@@ -79,45 +74,11 @@ function setupEventListeners() {
     await handleRegister(formData);
   });
 
-  // Recuperación de contraseña
-  document.querySelector(SELECTORS.FORGOT_PASSWORD_LINK)?.addEventListener('click', (e) => {
-    e.preventDefault();
-    closeAllModals();
-    toggleModal(SELECTORS.FORGOT_PASSWORD_MODAL, true);
-  });
-
-  document.querySelector(SELECTORS.BACK_TO_LOGIN)?.addEventListener('click', (e) => {
-    e.preventDefault();
-    closeAllModals();
-    toggleModal(SELECTORS.LOGIN_MODAL, true);
-  });
-
-  document.querySelector(SELECTORS.FORGOT_PASSWORD_FORM)?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = e.target.querySelector('#forgot-email').value;
-    try {
-      await AuthService.sendPasswordResetEmail(email);
-      showFeedback('Se ha enviado un enlace de recuperación a tu correo', 'success');
-      closeAllModals();
-    } catch (error) {
-      showFeedback(error.message, 'error');
-    }
-  });
-
   // Login con Google
   document.querySelector(SELECTORS.GOOGLE_LOGIN)?.addEventListener('click', handleGoogleLogin);
 
   // Logout
   document.querySelector(SELECTORS.LOGOUT_BTN)?.addEventListener('click', handleLogout);
-
-  // Cerrar modal al hacer clic fuera
-  document.querySelectorAll([SELECTORS.LOGIN_MODAL, SELECTORS.REGISTER_MODAL, SELECTORS.FORGOT_PASSWORD_MODAL]).forEach(modal => {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        closeAllModals();
-      }
-    });
-  });
 }
 
 // Listener de cambios de autenticación
@@ -139,14 +100,9 @@ function updateUI(user) {
 
   toggleElement(guestUI, !user);
   toggleElement(userUI, !!user);
-  
-  // Actualizar clase en body para elementos .user-only
-  document.body.classList.toggle(CLASSES.AUTHENTICATED, !!user);
 
   if (user) {
-    // Mostrar nombre o email
-    const displayText = user.displayName || user.email;
-    userEmail.textContent = displayText;
+    userEmail.textContent = user.email;
     updateUserAvatar(userAvatar, user);
   }
 }
@@ -162,31 +118,7 @@ function updateUserAvatar(element, user) {
     element.src = user.profile.photoURL;
     element.classList.remove(CLASSES.HIDDEN);
   } else {
-    // Mostrar iniciales si no hay avatar
-    const name = user.displayName || user.email;
-    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
-    
-    // Crear avatar con iniciales
-    const canvas = document.createElement('canvas');
-    canvas.width = 40;
-    canvas.height = 40;
-    const ctx = canvas.getContext('2d');
-    
-    // Fondo aleatorio basado en el email
-    const colors = ['#FF6B6B', '#48DBFB', '#6BCB77', '#FAA300', '#9C51B6'];
-    const hash = user.email.split('').reduce((acc, char) => char.charCodeAt(0) + acc, 0);
-    const bgColor = colors[hash % colors.length];
-    
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '16px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(initials.substring(0, 2), 20, 20);
-    
-    element.src = canvas.toDataURL();
-    element.classList.remove(CLASSES.HIDDEN);
+    element.classList.add(CLASSES.HIDDEN);
   }
 }
 
@@ -256,7 +188,6 @@ function getFormData(form) {
 function closeAllModals() {
   toggleModal(SELECTORS.LOGIN_MODAL, false);
   toggleModal(SELECTORS.REGISTER_MODAL, false);
-  toggleModal(SELECTORS.FORGOT_PASSWORD_MODAL, false);
 }
 
 function switchToRegister() {
