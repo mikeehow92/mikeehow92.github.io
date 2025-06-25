@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MiTienda503 - Electrodomésticos, Ropa y Zapatos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/auth.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="/auth.css">
     <style>
         :root {
             --primary: #e63946;
@@ -14,7 +19,12 @@
             --white: #ffffff;
             --gray-light: #f1f5f9;
             --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 20px rgba(0,0,0,0.1);
             --transition: all 0.3s ease;
+            --border-radius: 0.8rem;
+            --text-dark: #333;
+            --text-medium: #666;
         }
 
         /* Reset y estilos base */
@@ -74,34 +84,6 @@
 
         nav a:hover {
             color: var(--primary);
-        }
-
-        /* Botón de Inicio de Sesión */
-        .login-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 2rem;
-            cursor: pointer;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: var(--transition);
-        }
-
-        .profile-btn {
-            background-color: #27ae60 !important;
-        }
-
-        .profile-btn:hover {
-            background-color: #219955 !important;
-        }
-
-        .login-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
         }
 
         /* Hero Section */
@@ -445,18 +427,31 @@
                     <li><a href="#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
                 </ul>
             </nav>
-            <button class="login-btn" id="loginBtn">
-                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-            </button>
+            <div class="auth-section">
+                <div id="guest-buttons">
+                    <button class="login-btn btn-auth" id="open-login-btn">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </button>
+                </div>
+                <div id="user-info" style="display: none;">
+                    <img src="https://via.placeholder.com/32" alt="Avatar" class="avatar" id="user-avatar">
+                    <span id="user-email"></span>
+                    <button id="logout-btn" class="btn-auth">
+                        <i class="fas fa-sign-out-alt"></i> Salir
+                    </button>
+                </div>
+            </div>
         </div>
     </header>
 
     <!-- Modal de Inicio de Sesión -->
-    <div class="modal-overlay" id="loginModal">
-        <div class="login-modal">
-            <button class="close-modal" id="closeBtn">&times;</button>
-            <h2>Iniciar Sesión</h2>
-            <form id="loginForm">
+    <div class="login-modal" id="loginModal">
+        <div class="modal-content auth-modal">
+            <button class="close-btn close-modal" id="closeBtn">&times;</button>
+            <div class="modal-header">
+                <h2>Iniciar Sesión</h2>
+            </div>
+            <form id="loginForm" class="auth-form">
                 <div class="form-group">
                     <label for="loginEmail">Correo Electrónico</label>
                     <input type="email" id="loginEmail" required>
@@ -465,11 +460,12 @@
                     <label for="loginPassword">Contraseña</label>
                     <input type="password" id="loginPassword" required>
                 </div>
-                <button type="submit" class="submit-btn">Ingresar</button>
+                <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+                <button type="submit" class="btn-submit">Ingresar</button>
+                <div class="form-footer">
+                    ¿No tienes cuenta? <a href="registro.html" style="color: var(--primary); font-weight: 500;">Regístrate aquí</a>
+                </div>
             </form>
-            <p class="form-footer">
-                ¿No tienes cuenta? <a href="registro.html" class="register-link">Regístrate aquí</a>
-            </p>
         </div>
     </div>
 
@@ -649,11 +645,6 @@
         </div>
     </footer>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-
     <script>
         // Configuración de Firebase
         const firebaseConfig = {
@@ -670,47 +661,21 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // Servicio de autenticación simplificado
-        const AuthService = {
-            async login(email, password) {
-                try {
-                    const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                    return userCredential;
-                } catch (error) {
-                    console.error("Error en login:", error);
-                    throw this.handleAuthError(error);
-                }
-            },
-
-            handleAuthError(error) {
-                const errorMap = {
-                    "auth/invalid-email": "El correo electrónico no es válido",
-                    "auth/user-not-found": "No existe una cuenta con este correo",
-                    "auth/wrong-password": "Contraseña incorrecta",
-                    "auth/email-already-in-use": "Este correo ya está registrado",
-                    "auth/weak-password": "La contraseña debe tener al menos 6 caracteres"
-                };
-
-                return new Error(errorMap[error.code] || "Error en autenticación. Por favor intenta nuevamente.");
-            }
-        };
-
         // Elementos del DOM
-        const loginBtn = document.getElementById('loginBtn');
+        const loginBtn = document.getElementById('open-login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
         const loginModal = document.getElementById('loginModal');
         const closeBtn = document.getElementById('closeBtn');
         const loginForm = document.getElementById('loginForm');
+        const guestButtons = document.getElementById('guest-buttons');
+        const userInfo = document.getElementById('user-info');
+        const userEmail = document.getElementById('user-email');
+        const userAvatar = document.getElementById('user-avatar');
 
-        // Mostrar/ocultar modal
+        // Funcionalidad del modal
         loginBtn.addEventListener('click', () => {
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    window.location.href = 'perfil.html';
-                } else {
-                    loginModal.style.display = 'flex';
-                    document.body.style.overflow = 'hidden';
-                }
-            });
+            loginModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
         });
 
         closeBtn.addEventListener('click', () => {
@@ -718,49 +683,10 @@
             document.body.style.overflow = 'auto';
         });
 
-        // Cerrar modal al hacer clic fuera
         loginModal.addEventListener('click', (e) => {
             if (e.target === loginModal) {
                 loginModal.style.display = 'none';
                 document.body.style.overflow = 'auto';
-            }
-        });
-
-        // Manejar formulario de login
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            try {
-                await AuthService.login(email, password);
-                
-                // Cerrar modal y redirigir
-                loginModal.style.display = 'none';
-                document.body.style.overflow = 'auto';
-                window.location.href = 'perfil.html';
-                
-            } catch (error) {
-                alert(error.message);
-            }
-        });
-
-        // Verificar estado de autenticación al cargar la página
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                // Usuario logueado, cambiar botón a "Mi Perfil"
-                loginBtn.innerHTML = '<i class="fas fa-user"></i> Mi Perfil';
-                loginBtn.classList.add('profile-btn');
-                loginBtn.onclick = () => window.location.href = 'perfil.html';
-            } else {
-                // Usuario no logueado, mantener botón de login
-                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Iniciar Sesión';
-                loginBtn.classList.remove('profile-btn');
-                loginBtn.onclick = () => {
-                    loginModal.style.display = 'flex';
-                    document.body.style.overflow = 'hidden';
-                };
             }
         });
 
@@ -776,6 +702,78 @@
                 });
             });
         });
+
+        // Login con email y contraseña
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                
+                if (!userCredential.user.emailVerified) {
+                    alert('Por favor verifica tu correo electrónico antes de iniciar sesión');
+                    await auth.signOut();
+                    return;
+                }
+                
+                loginModal.style.display = 'none';
+                updateUI(userCredential.user);
+            } catch (error) {
+                handleAuthError(error);
+            }
+        });
+
+        // Logout
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                updateUI(null);
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                alert('Ocurrió un error al cerrar sesión');
+            }
+        });
+
+        // Escuchar cambios de autenticación
+        auth.onAuthStateChanged((user) => {
+            updateUI(user);
+        });
+
+        // Actualizar la interfaz según el estado de autenticación
+        function updateUI(user) {
+            if (user) {
+                guestButtons.style.display = 'none';
+                userInfo.style.display = 'flex';
+                userEmail.textContent = user.email;
+                
+                if (user.photoURL) {
+                    userAvatar.src = user.photoURL;
+                } else {
+                    userAvatar.src = 'https://via.placeholder.com/32';
+                }
+            } else {
+                guestButtons.style.display = 'flex';
+                userInfo.style.display = 'none';
+            }
+        }
+
+        // Manejo de errores
+        function handleAuthError(error) {
+            const errorMessages = {
+                'auth/invalid-email': 'El correo electrónico no es válido',
+                'auth/user-disabled': 'Esta cuenta ha sido deshabilitada',
+                'auth/user-not-found': 'No existe una cuenta con este correo',
+                'auth/wrong-password': 'Contraseña incorrecta',
+                'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde',
+                'auth/network-request-failed': 'Error de conexión. Verifica tu internet'
+            };
+
+            const message = errorMessages[error.code] || 'Error en autenticación. Por favor intenta nuevamente.';
+            alert(message);
+        }
     </script>
 </body>
 </html>
