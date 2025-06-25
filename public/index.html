@@ -14,6 +14,7 @@
             --gray-light: #f1f5f9;
             --shadow: 0 4px 6px rgba(0,0,0,0.1);
             --transition: all 0.3s ease;
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
         }
 
         /* Reset y estilos base */
@@ -75,11 +76,11 @@
             color: var(--primary);
         }
 
-        /* Área de autenticación */
+        /* Sección de Autenticación */
         .auth-section {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1rem;
         }
 
         #guest-buttons {
@@ -87,7 +88,6 @@
             gap: 1rem;
         }
 
-        /* Botones de autenticación */
         .btn-auth {
             padding: 0.6rem 1.2rem;
             border-radius: 2rem;
@@ -102,7 +102,7 @@
 
         #open-login-btn {
             background: var(--primary);
-            color: white;
+            color: var(--white);
         }
 
         #open-login-btn:hover {
@@ -118,38 +118,9 @@
 
         #open-register-btn:hover {
             background-color: rgba(255,255,255,0.15);
-            transform: translateY(-2px);
         }
 
-        #logout-btn {
-            background-color: rgba(255,255,255,0.1);
-            color: var(--white);
-            border: 2px solid var(--white);
-            padding: 0.6rem 1.2rem;
-            border-radius: 2rem;
-            cursor: pointer;
-            transition: var(--transition);
-            font-weight: 500;
-        }
-
-        #logout-btn:hover {
-            background-color: rgba(255,255,255,0.2);
-            transform: translateY(-2px);
-        }
-
-        /* Elementos de usuario */
-        .user-only { 
-            display: none; 
-        }
-
-        .authenticated .user-only { 
-            display: block; 
-        }
-
-        .authenticated .guest-only {
-            display: none;
-        }
-
+        /* Estado logueado */
         #user-info {
             display: none;
             align-items: center;
@@ -164,15 +135,54 @@
             border: 2px solid var(--white);
         }
 
-        /* Modales de autenticación */
+        #user-name {
+            font-size: 1rem;
+            color: var(--white);
+            font-weight: 500;
+        }
+
+        .user-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: var(--white);
+            min-width: 200px;
+            box-shadow: var(--shadow-lg);
+            z-index: 1;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .dropdown-content a {
+            color: var(--secondary);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: var(--transition);
+        }
+
+        .dropdown-content a:hover {
+            background-color: var(--gray-light);
+        }
+
+        .user-dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* Modales de Autenticación */
         .auth-modal {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.5);
-            display: none;
             justify-content: center;
             align-items: center;
             z-index: 1000;
@@ -183,19 +193,31 @@
         }
 
         .modal-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
+            background: var(--white);
+            border-radius: 0.8rem;
             width: 90%;
             max-width: 400px;
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
             animation: modalFadeIn 0.3s ease-out;
-            position: relative;
         }
 
         @keyframes modalFadeIn {
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            background-color: var(--secondary);
+            color: var(--white);
+            text-align: center;
+            position: relative;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            margin: 0;
         }
 
         .close-modal {
@@ -204,24 +226,13 @@
             right: 1rem;
             background: none;
             border: none;
+            color: var(--white);
             font-size: 1.5rem;
             cursor: pointer;
         }
 
-        .modal-header {
-            padding: 1rem 0;
-            margin-bottom: 1.5rem;
-            text-align: center;
-            border-bottom: 1px solid #eee;
-        }
-
-        .modal-header h2 {
-            font-size: 1.8rem;
-            color: var(--secondary);
-        }
-
         .auth-form {
-            padding: 1rem 0;
+            padding: 2rem;
         }
 
         .form-group {
@@ -242,6 +253,11 @@
             font-family: inherit;
         }
 
+        .form-group input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
         .forgot-password {
             display: block;
             text-align: right;
@@ -251,7 +267,7 @@
             text-decoration: none;
         }
 
-        .btn-submit {
+        .submit-btn {
             width: 100%;
             padding: 0.8rem;
             background-color: var(--primary);
@@ -260,38 +276,16 @@
             border-radius: 0.4rem;
             font-weight: 500;
             cursor: pointer;
-            margin-top: 1rem;
             transition: var(--transition);
         }
 
-        .btn-submit:hover {
+        .submit-btn:hover {
             background-color: var(--primary-dark);
-        }
-
-        .btn-google {
-            width: 100%;
-            padding: 0.8rem;
-            background-color: #4285F4;
-            color: var(--white);
-            border: none;
-            border-radius: 0.4rem;
-            font-weight: 500;
-            cursor: pointer;
-            margin-top: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.8rem;
-            transition: var(--transition);
-        }
-
-        .btn-google:hover {
-            background-color: #357ABD;
         }
 
         .form-footer {
             text-align: center;
-            margin-top: 1.5rem;
+            margin-top: 1rem;
             font-size: 0.9rem;
         }
 
@@ -516,46 +510,6 @@
             box-shadow: var(--shadow);
         }
 
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid #ddd;
-            border-radius: 0.4rem;
-            font-family: inherit;
-        }
-
-        .form-group textarea {
-            min-height: 150px;
-            resize: vertical;
-        }
-
-        .submit-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 0.4rem;
-            cursor: pointer;
-            font-weight: 500;
-            transition: var(--transition);
-            width: 100%;
-        }
-
-        .submit-btn:hover {
-            background: var(--primary-dark);
-        }
-
         /* Footer */
         footer {
             background: var(--secondary);
@@ -615,18 +569,24 @@
                 display: none;
             }
 
-            .auth-section {
+            .header-container {
                 flex-direction: column;
                 gap: 1rem;
             }
 
+            .auth-section {
+                width: 100%;
+                justify-content: center;
+            }
+
             #guest-buttons {
                 width: 100%;
-                flex-direction: column;
+                justify-content: center;
             }
 
             .btn-auth {
                 width: 100%;
+                justify-content: center;
             }
 
             .hero {
@@ -654,12 +614,13 @@
                     <li><a href="productos.html"><i class="fas fa-shopping-bag"></i> Productos</a></li>
                     <li><a href="#nosotros"><i class="fas fa-users"></i> Nosotros</a></li>
                     <li><a href="#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
-                    <li class="user-only"><a href="/perfil"><i class="fas fa-user-circle"></i> Mi Perfil</a></li>
-                    <li class="user-only"><a href="/mis-compras"><i class="fas fa-receipt"></i> Mis Compras</a></li>
+                    <!-- Enlaces solo para usuarios logueados -->
+                    <li id="profile-link" style="display:none;"><a href="#perfil"><i class="fas fa-user"></i> Perfil</a></li>
+                    <li id="orders-link" style="display:none;"><a href="#compras"><i class="fas fa-shopping-cart"></i> Mis Compras</a></li>
                 </ul>
             </nav>
-            
             <div class="auth-section">
+                <!-- Estado invitado -->
                 <div id="guest-buttons">
                     <button id="open-login-btn" class="btn-auth">
                         <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
@@ -669,99 +630,110 @@
                     </button>
                 </div>
                 
+                <!-- Estado logueado -->
                 <div id="user-info">
-                    <img id="user-avatar" src="" alt="Avatar" class="avatar">
-                    <span id="user-email"></span>
-                    <button id="logout-btn" class="btn-auth">
-                        <i class="fas fa-sign-out-alt"></i> Salir
-                    </button>
+                    <div class="user-dropdown">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <img id="user-avatar" class="avatar" src="https://via.placeholder.com/40" alt="Avatar">
+                            <span id="user-name"></span>
+                        </div>
+                        <div class="dropdown-content">
+                            <a href="#perfil"><i class="fas fa-user"></i> Mi Perfil</a>
+                            <a href="#compras"><i class="fas fa-shopping-cart"></i> Mis Compras</a>
+                            <a href="#configuracion"><i class="fas fa-cog"></i> Configuración</a>
+                            <button id="logout-btn" style="width: 100%; text-align: left; background: none; border: none; padding: 12px 16px; color: var(--secondary); cursor: pointer;">
+                                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
 
+    <!-- Modales de Autenticación -->
     <!-- Modal de Login -->
-    <div id="login-modal" class="auth-modal">
+    <div class="auth-modal" id="login-modal">
         <div class="modal-content">
-            <button class="close-modal">&times;</button>
             <div class="modal-header">
                 <h2>Iniciar Sesión</h2>
+                <button class="close-modal">&times;</button>
             </div>
-            <form id="login-form" class="auth-form">
-                <div class="form-group">
-                    <label for="login-email">Correo Electrónico</label>
-                    <input type="email" id="login-email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="login-password">Contraseña</label>
-                    <input type="password" id="login-password" name="password" required>
-                    <a href="#forgot-password" class="forgot-password">¿Olvidaste tu contraseña?</a>
-                </div>
-                <button type="submit" class="btn-submit">Ingresar</button>
-                <button type="button" id="google-login-btn" class="btn-google">
-                    <i class="fab fa-google"></i> Continuar con Google
-                </button>
+            <div class="auth-form">
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Correo Electrónico</label>
+                        <input type="email" id="login-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Contraseña</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <a href="#recuperar" id="forgot-password" class="forgot-password">¿Olvidaste tu contraseña?</a>
+                    </div>
+                    <button type="submit" class="submit-btn">Ingresar</button>
+                </form>
                 <div class="form-footer">
-                    ¿No tienes cuenta? <a href="#switch-to-signup" id="switch-to-signup">Regístrate aquí</a>
+                    <p>¿No tienes cuenta? <a href="#" id="switch-to-signup">Regístrate aquí</a></p>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <!-- Modal de Registro -->
-    <div id="register-modal" class="auth-modal">
+    <div class="auth-modal" id="register-modal">
         <div class="modal-content">
-            <button class="close-modal">&times;</button>
             <div class="modal-header">
                 <h2>Crear Cuenta</h2>
+                <button class="close-modal">&times;</button>
             </div>
-            <form id="register-form" class="auth-form">
-                <div class="form-group">
-                    <label for="register-name">Nombre Completo</label>
-                    <input type="text" id="register-name" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label for="register-email">Correo Electrónico</label>
-                    <input type="email" id="register-email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="register-password">Contraseña</label>
-                    <input type="password" id="register-password" name="password" required>
-                </div>
-                <div class="form-group">
-                    <label for="register-confirm-password">Confirmar Contraseña</label>
-                    <input type="password" id="register-confirm-password" name="confirmPassword" required>
-                </div>
-                <div class="form-group">
-                    <label for="register-phone">Teléfono (Opcional)</label>
-                    <input type="tel" id="register-phone" name="phone">
-                </div>
-                <button type="submit" class="btn-submit">Registrarse</button>
+            <div class="auth-form">
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="register-name">Nombre Completo</label>
+                        <input type="text" id="register-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Correo Electrónico</label>
+                        <input type="email" id="register-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Contraseña</label>
+                        <input type="password" id="register-password" name="password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-confirm-password">Confirmar Contraseña</label>
+                        <input type="password" id="register-confirm-password" name="confirmPassword" required minlength="6">
+                    </div>
+                    <button type="submit" class="submit-btn">Registrarse</button>
+                </form>
                 <div class="form-footer">
-                    ¿Ya tienes cuenta? <a href="#switch-to-login" id="switch-to-login">Inicia sesión aquí</a>
+                    <p>¿Ya tienes cuenta? <a href="#" id="switch-to-login">Inicia sesión aquí</a></p>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <!-- Modal de Recuperación de Contraseña -->
-    <div id="forgot-password-modal" class="auth-modal">
+    <div class="auth-modal" id="reset-modal">
         <div class="modal-content">
-            <button class="close-modal">&times;</button>
             <div class="modal-header">
                 <h2>Recuperar Contraseña</h2>
+                <button class="close-modal">&times;</button>
             </div>
-            <form id="forgot-password-form" class="auth-form">
-                <div class="form-group">
-                    <label for="forgot-email">Correo Electrónico</label>
-                    <input type="email" id="forgot-email" name="email" required>
-                    <p class="help-text">Te enviaremos un enlace para restablecer tu contraseña</p>
-                </div>
-                <button type="submit" class="btn-submit">Enviar Enlace</button>
+            <div class="auth-form">
+                <form id="reset-form">
+                    <div class="form-group">
+                        <label for="reset-email">Correo Electrónico</label>
+                        <input type="email" id="reset-email" name="email" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Enviar Instrucciones</button>
+                </form>
                 <div class="form-footer">
-                    <a href="#switch-to-login" id="back-to-login">Volver a Iniciar Sesión</a>
+                    <p><a href="#" id="switch-to-login-from-reset">Volver a Iniciar Sesión</a></p>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -941,25 +913,234 @@
         </div>
     </footer>
 
-    <script type="module">
-        // Importar e inicializar el sistema de autenticación
-        import { initAuthUI } from './auth-ui.js';
-        
-        // Inicializar cuando el DOM esté listo
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
+    
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
+            authDomain: "mitienda-c2609.firebaseapp.com",
+            projectId: "mitienda-c2609",
+            storageBucket: "mitienda-c2609.appspot.com",
+            messagingSenderId: "536746062790",
+            appId: "1:536746062790:web:cd39eb0057aac14c6538c7"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Funcionalidad del modal
+        const setupAuthUI = () => {
+            // Selectores
+            const loginBtn = document.getElementById('open-login-btn');
+            const registerBtn = document.getElementById('open-register-btn');
+            const loginModal = document.getElementById('login-modal');
+            const registerModal = document.getElementById('register-modal');
+            const resetModal = document.getElementById('reset-modal');
+            const closeBtns = document.querySelectorAll('.close-modal');
+            const switchToSignup = document.getElementById('switch-to-signup');
+            const switchToLogin = document.getElementById('switch-to-login');
+            const switchToLoginFromReset = document.getElementById('switch-to-login-from-reset');
+            const forgotPassword = document.getElementById('forgot-password');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const resetForm = document.getElementById('reset-form');
+            const logoutBtn = document.getElementById('logout-btn');
+            const guestUI = document.getElementById('guest-buttons');
+            const userUI = document.getElementById('user-info');
+            const userName = document.getElementById('user-name');
+            const userAvatar = document.getElementById('user-avatar');
+            const profileLink = document.getElementById('profile-link');
+            const ordersLink = document.getElementById('orders-link');
+
+            // Mostrar modal
+            const showModal = (modal) => {
+                document.querySelectorAll('.auth-modal').forEach(m => m.classList.remove('active'));
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            };
+
+            // Ocultar modales
+            const hideModals = () => {
+                document.querySelectorAll('.auth-modal').forEach(m => m.classList.remove('active'));
+                document.body.style.overflow = '';
+            };
+
+            // Cambiar a registro
+            const showRegister = () => {
+                hideModals();
+                showModal(registerModal);
+            };
+
+            // Cambiar a login
+            const showLogin = () => {
+                hideModals();
+                showModal(loginModal);
+            };
+
+            // Cambiar a recuperación
+            const showReset = () => {
+                hideModals();
+                showModal(resetModal);
+            };
+
+            // Manejadores de eventos
+            loginBtn?.addEventListener('click', () => showModal(loginModal));
+            registerBtn?.addEventListener('click', () => showModal(registerModal));
+            closeBtns.forEach(btn => btn.addEventListener('click', hideModals));
+            switchToSignup?.addEventListener('click', (e) => {
+                e.preventDefault();
+                showRegister();
+            });
+            switchToLogin?.addEventListener('click', (e) => {
+                e.preventDefault();
+                showLogin();
+            });
+            switchToLoginFromReset?.addEventListener('click', (e) => {
+                e.preventDefault();
+                showLogin();
+            });
+            forgotPassword?.addEventListener('click', (e) => {
+                e.preventDefault();
+                showReset();
+            });
+
+            // Cerrar modal al hacer clic fuera
+            document.querySelectorAll('.auth-modal').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        hideModals();
+                    }
+                });
+            });
+
+            // Login con email
+            loginForm?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = e.target.email.value;
+                const password = e.target.password.value;
+                
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    hideModals();
+                    showFeedback('Sesión iniciada correctamente', 'success');
+                } catch (error) {
+                    showFeedback(getAuthErrorMessage(error), 'error');
+                }
+            });
+
+            // Registro
+            registerForm?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = e.target.email.value;
+                const password = e.target.password.value;
+                const name = e.target.name.value;
+                
+                if (password !== e.target.confirmPassword.value) {
+                    showFeedback('Las contraseñas no coinciden', 'error');
+                    return;
+                }
+
+                try {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    await userCredential.user.updateProfile({ displayName: name });
+                    await db.collection('users').doc(userCredential.user.uid).set({
+                        name: name,
+                        email: email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    hideModals();
+                    showFeedback('¡Registro exitoso!', 'success');
+                } catch (error) {
+                    showFeedback(getAuthErrorMessage(error), 'error');
+                }
+            });
+
+            // Recuperación de contraseña
+            resetForm?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = e.target.email.value;
+                
+                try {
+                    await auth.sendPasswordResetEmail(email);
+                    hideModals();
+                    showFeedback('Se ha enviado un email con instrucciones para restablecer tu contraseña', 'success');
+                } catch (error) {
+                    showFeedback(getAuthErrorMessage(error), 'error');
+                }
+            });
+
+            // Logout
+            logoutBtn?.addEventListener('click', async () => {
+                try {
+                    await auth.signOut();
+                    showFeedback('Sesión cerrada correctamente', 'success');
+                } catch (error) {
+                    showFeedback('Error al cerrar sesión', 'error');
+                }
+            });
+
+            // Escuchar cambios de autenticación
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // Usuario logueado
+                    guestUI.style.display = 'none';
+                    userUI.style.display = 'flex';
+                    profileLink.style.display = 'block';
+                    ordersLink.style.display = 'block';
+                    
+                    userName.textContent = user.displayName || user.email.split('@')[0];
+                    userAvatar.src = user.photoURL || 'https://via.placeholder.com/40';
+                } else {
+                    // Usuario no logueado
+                    guestUI.style.display = 'flex';
+                    userUI.style.display = 'none';
+                    profileLink.style.display = 'none';
+                    ordersLink.style.display = 'none';
+                }
+            });
+
+            // Mostrar feedback
+            const showFeedback = (message, type) => {
+                // Implementar lógica para mostrar mensajes al usuario
+                console.log(`${type}: ${message}`);
+                alert(`${type}: ${message}`); // Temporal
+            };
+
+            // Manejo de errores de autenticación
+            const getAuthErrorMessage = (error) => {
+                const errorMap = {
+                    'auth/invalid-email': 'El correo electrónico no es válido',
+                    'auth/user-disabled': 'Esta cuenta ha sido deshabilitada',
+                    'auth/user-not-found': 'No existe una cuenta con este correo',
+                    'auth/wrong-password': 'Contraseña incorrecta',
+                    'auth/email-already-in-use': 'Este correo ya está registrado',
+                    'auth/operation-not-allowed': 'Operación no permitida',
+                    'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres',
+                    'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde'
+                };
+                return errorMap[error.code] || 'Ocurrió un error durante la autenticación';
+            };
+        };
+
+        // Inicializar la UI de autenticación cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', () => {
-            initAuthUI();
+            setupAuthUI();
             
-            // Actualizar año en el footer
+            // Año actual en el footer
             document.getElementById('current-year').textContent = new Date().getFullYear();
-            
+
             // Smooth scrolling para enlaces internos
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 anchor.addEventListener('click', function(e) {
                     e.preventDefault();
-                    const target = this.getAttribute('href');
-                    if (target === '#') return;
-                    
-                    document.querySelector(target)?.scrollIntoView({
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
                         behavior: 'smooth'
                     });
                 });
