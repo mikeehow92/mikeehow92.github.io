@@ -1,4 +1,6 @@
-/* auth.css - Estilos específicos para autenticación */
+/* auth.css - Estilos para el sistema de autenticación */
+
+/* ================ BOTONES DE AUTENTICACIÓN ================ */
 .auth-section {
   display: flex;
   align-items: center;
@@ -10,34 +12,100 @@
   gap: 1rem;
 }
 
+.btn-auth {
+  padding: 0.8rem 1.6rem;
+  font-size: 1.4rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Botón Iniciar Sesión */
+#open-login-btn {
+  background-color: var(--primary-color);
+  color: var(--white);
+}
+
+#open-login-btn:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Botón Registrarse */
+#open-register-btn {
+  background-color: transparent;
+  color: var(--white);
+  border: 1px solid var(--white);
+}
+
+#open-register-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Botón Cerrar Sesión */
+#logout-btn {
+  background-color: transparent;
+  color: var(--white);
+  border: 1px solid var(--white);
+  padding: 0.8rem 1.6rem;
+  font-size: 1.4rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#logout-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Estado del usuario */
 #user-info {
   display: none;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
-#user-avatar {
+#user-email {
+  font-size: 1.4rem;
+  color: var(--white);
+  max-width: 15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar {
   width: 3.2rem;
   height: 3.2rem;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid var(--white);
 }
 
-/* Modales de autenticación */
+/* ================ MODALES ================ */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0,0,0,0.7);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
   opacity: 0;
   visibility: hidden;
-  transition: var(--transition);
+  transition: all 0.3s ease;
 }
 
 .modal-overlay.active {
@@ -45,133 +113,174 @@
   visibility: visible;
 }
 
-.login-modal {
+.auth-modal {
   background: var(--white);
-  padding: 3rem;
-  border-radius: 1rem;
+  border-radius: 0.8rem;
   width: 100%;
-  max-width: 40rem;
+  max-width: 42rem;
   box-shadow: var(--shadow-lg);
+  overflow: hidden;
 }
 
 .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  padding: 2rem;
+  background-color: var(--secondary-color);
+  color: var(--white);
+  position: relative;
 }
 
 .modal-header h2 {
-  color: var(--secondary-color);
   font-size: 2.2rem;
+  text-align: center;
 }
 
 .close-modal {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
   background: none;
   border: none;
-  font-size: 2.5rem;
+  color: var(--white);
+  font-size: 2rem;
   cursor: pointer;
-  color: var(--text-medium);
+  transition: all 0.3s ease;
 }
 
-.login-form .form-group {
+.close-modal:hover {
+  transform: rotate(90deg);
+}
+
+.auth-form {
+  padding: 3rem;
+}
+
+.form-group {
   margin-bottom: 2rem;
 }
 
-.login-form label {
+.form-group label {
   display: block;
   margin-bottom: 0.8rem;
+  font-size: 1.4rem;
   color: var(--text-dark);
   font-weight: 500;
-  font-size: 1.4rem;
 }
 
-.login-form input {
+.form-group input {
   width: 100%;
   padding: 1.2rem 1.5rem;
+  font-size: 1.4rem;
   border: 1px solid #ddd;
-  border-radius: 0.5rem;
-  font-size: 1.6rem;
+  border-radius: 0.4rem;
+  transition: all 0.3s ease;
 }
 
-.login-form input:focus {
-  outline: none;
+.form-group input:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 0.3rem rgba(52,152,219,0.2);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  outline: none;
 }
 
 .forgot-password {
   display: block;
   text-align: right;
-  margin-top: 0.8rem;
+  margin-top: 0.5rem;
+  font-size: 1.2rem;
   color: var(--primary-color);
-  font-size: 1.3rem;
+  text-decoration: none;
 }
 
-.btn-login {
+.btn-submit {
   width: 100%;
   padding: 1.2rem;
   background-color: var(--primary-color);
   color: var(--white);
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 0.4rem;
   font-size: 1.6rem;
+  font-weight: 500;
   cursor: pointer;
   margin-top: 1rem;
-  transition: var(--transition);
+  transition: all 0.3s ease;
 }
 
-.btn-login:hover {
+.btn-submit:hover {
   background-color: var(--primary-dark);
+  transform: translateY(-1px);
 }
 
 .btn-google {
   width: 100%;
   padding: 1.2rem;
-  background-color: #db4437;
+  background-color: #4285F4;
   color: var(--white);
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 0.4rem;
   font-size: 1.6rem;
+  font-weight: 500;
   cursor: pointer;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  transition: var(--transition);
+  transition: all 0.3s ease;
 }
 
 .btn-google:hover {
-  background-color: #c23321;
+  background-color: #357ABD;
+  transform: translateY(-1px);
 }
 
 .form-footer {
   text-align: center;
   margin-top: 2rem;
-  color: var(--text-medium);
   font-size: 1.4rem;
+  color: var(--text-medium);
 }
 
-.register-link {
+.form-footer a {
   color: var(--primary-color);
   font-weight: 500;
   text-decoration: none;
 }
 
-/* Responsive */
-@media (max-width: 576px) {
+/* ================ RESPONSIVE ================ */
+@media (max-width: 768px) {
   .auth-section {
     flex-direction: column;
     gap: 1rem;
+    margin-top: 1rem;
   }
   
-  .login-modal {
-    padding: 2rem;
+  #guest-buttons {
+    width: 100%;
+  }
+  
+  .btn-auth {
+    width: 100%;
+    padding: 1rem;
+  }
+
+  .auth-modal {
     margin: 0 1.5rem;
+  }
+
+  .auth-form {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-header {
+    padding: 1.5rem;
   }
 
   .modal-header h2 {
     font-size: 1.8rem;
+  }
+
+  .auth-form {
+    padding: 1.5rem;
   }
 }
