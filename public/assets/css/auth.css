@@ -2,23 +2,23 @@
 .auth-section {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 1.5rem;
 }
 
 #guest-buttons {
   display: flex;
-  gap: 10px;
+  gap: 1rem;
 }
 
 #user-info {
   display: none;
   align-items: center;
-  gap: 15px;
+  gap: 1.5rem;
 }
 
 #user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 3.2rem;
+  height: 3.2rem;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -30,23 +30,27 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0,0,0,0.5);
-  display: none;
-  justify-content: center;
+  background-color: rgba(0,0,0,0.7);
+  display: flex;
   align-items: center;
+  justify-content: center;
   z-index: 2000;
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--transition);
 }
 
 .modal-overlay.active {
-  display: flex;
+  opacity: 1;
+  visibility: visible;
 }
 
 .login-modal {
   background: var(--white);
-  padding: 30px;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 400px;
+  padding: 3rem;
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 40rem;
   box-shadow: var(--shadow-lg);
 }
 
@@ -54,65 +58,66 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 2rem;
 }
 
 .modal-header h2 {
   color: var(--secondary-color);
-  font-size: 1.8rem;
+  font-size: 2.2rem;
 }
 
 .close-modal {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 2.5rem;
   cursor: pointer;
   color: var(--text-medium);
 }
 
 .login-form .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 2rem;
 }
 
 .login-form label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 0.8rem;
   color: var(--text-dark);
   font-weight: 500;
+  font-size: 1.4rem;
 }
 
 .login-form input {
   width: 100%;
-  padding: 12px 15px;
+  padding: 1.2rem 1.5rem;
   border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1rem;
+  border-radius: 0.5rem;
+  font-size: 1.6rem;
 }
 
 .login-form input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
+  box-shadow: 0 0 0 0.3rem rgba(52,152,219,0.2);
 }
 
 .forgot-password {
   display: block;
   text-align: right;
-  margin-top: 8px;
+  margin-top: 0.8rem;
   color: var(--primary-color);
-  font-size: 0.9rem;
+  font-size: 1.3rem;
 }
 
 .btn-login {
   width: 100%;
-  padding: 12px;
+  padding: 1.2rem;
   background-color: var(--primary-color);
   color: var(--white);
   border: none;
-  border-radius: 5px;
-  font-size: 1rem;
+  border-radius: 0.5rem;
+  font-size: 1.6rem;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 1rem;
   transition: var(--transition);
 }
 
@@ -122,18 +127,18 @@
 
 .btn-google {
   width: 100%;
-  padding: 12px;
+  padding: 1.2rem;
   background-color: #db4437;
   color: var(--white);
   border: none;
-  border-radius: 5px;
-  font-size: 1rem;
+  border-radius: 0.5rem;
+  font-size: 1.6rem;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 1rem;
   transition: var(--transition);
 }
 
@@ -143,8 +148,9 @@
 
 .form-footer {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 2rem;
   color: var(--text-medium);
+  font-size: 1.4rem;
 }
 
 .register-link {
@@ -157,10 +163,15 @@
 @media (max-width: 576px) {
   .auth-section {
     flex-direction: column;
-    gap: 10px;
+    gap: 1rem;
   }
   
   .login-modal {
-    padding: 20px;
+    padding: 2rem;
+    margin: 0 1.5rem;
+  }
+
+  .modal-header h2 {
+    font-size: 1.8rem;
   }
 }
