@@ -6,19 +6,25 @@ import { CartUI } from '../cart/cart-ui.js';
 const SELECTORS = {
   LOGIN_MODAL: '#login-modal',
   REGISTER_MODAL: '#register-modal',
+  RESET_MODAL: '#reset-modal',
   LOGIN_FORM: '#login-form',
   REGISTER_FORM: '#register-form',
+  RESET_FORM: '#reset-form',
   LOGOUT_BTN: '#logout-btn',
   OPEN_LOGIN: '#open-login-btn',
   OPEN_REGISTER: '#open-register-btn',
-  GOOGLE_LOGIN: '#google-login-btn',
+  FORGOT_PASSWORD: '#forgot-password',
+  USER_NAME: '#user-name',
   USER_EMAIL: '#user-email',
   USER_AVATAR: '#user-avatar',
   GUEST_UI: '#guest-buttons',
   USER_UI: '#user-info',
   CLOSE_MODAL: '.close-modal',
   SWITCH_TO_SIGNUP: '#switch-to-signup',
-  SWITCH_TO_LOGIN: '#switch-to-login'
+  SWITCH_TO_LOGIN: '#switch-to-login',
+  SWITCH_TO_LOGIN_FROM_RESET: '#switch-to-login-from-reset',
+  PROFILE_LINK: '#profile-link',
+  ORDERS_LINK: '#orders-link'
 };
 
 const CLASSES = {
@@ -59,6 +65,17 @@ function setupEventListeners() {
     switchToLogin();
   });
 
+  document.querySelector(SELECTORS.SWITCH_TO_LOGIN_FROM_RESET)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    switchToLogin();
+  });
+
+  // Recuperación de contraseña
+  document.querySelector(SELECTORS.FORGOT_PASSWORD)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    switchToResetPassword();
+  });
+
   // Login con email
   document.querySelector(SELECTORS.LOGIN_FORM)?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -74,8 +91,12 @@ function setupEventListeners() {
     await handleRegister(formData);
   });
 
-  // Login con Google
-  document.querySelector(SELECTORS.GOOGLE_LOGIN)?.addEventListener('click', handleGoogleLogin);
+  // Recuperación de contraseña
+  document.querySelector(SELECTORS.RESET_FORM)?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = e.target.querySelector('#reset-email').value;
+    await handlePasswordReset(email);
+  });
 
   // Logout
   document.querySelector(SELECTORS.LOGOUT_BTN)?.addEventListener('click', handleLogout);
@@ -95,14 +116,18 @@ function setupAuthStateListener() {
 function updateUI(user) {
   const guestUI = document.querySelector(SELECTORS.GUEST_UI);
   const userUI = document.querySelector(SELECTORS.USER_UI);
-  const userEmail = document.querySelector(SELECTORS.USER_EMAIL);
+  const userName = document.querySelector(SELECTORS.USER_NAME);
   const userAvatar = document.querySelector(SELECTORS.USER_AVATAR);
+  const profileLink = document.querySelector(SELECTORS.PROFILE_LINK);
+  const ordersLink = document.querySelector(SELECTORS.ORDERS_LINK);
 
   toggleElement(guestUI, !user);
   toggleElement(userUI, !!user);
+  toggleElement(profileLink, !!user);
+  toggleElement(ordersLink, !!user);
 
   if (user) {
-    userEmail.textContent = user.email;
+    userName.textContent = user.displayName || user.email.split('@')[0];
     updateUserAvatar(userAvatar, user);
   }
 }
@@ -118,7 +143,13 @@ function updateUserAvatar(element, user) {
     element.src = user.profile.photoURL;
     element.classList.remove(CLASSES.HIDDEN);
   } else {
-    element.classList.add(CLASSES.HIDDEN);
+    // Usar placeholder o iniciales del nombre
+    const nameInitials = user.displayName 
+      ? user.displayName.split(' ').map(n => n[0]).join('')
+      : user.email[0].toUpperCase();
+    
+    element.src = `https://ui-avatars.com/api/?name=${nameInitials}&background=${encodeURIComponent('#e63946')}&color=fff`;
+    element.classList.remove(CLASSES.HIDDEN);
   }
 }
 
@@ -155,11 +186,11 @@ async function handleRegister(formData) {
   }
 }
 
-async function handleGoogleLogin() {
+async function handlePasswordReset(email) {
   try {
-    await AuthService.loginWithGoogle();
+    await AuthService.sendPasswordResetEmail(email);
     closeAllModals();
-    showFeedback('Sesión con Google iniciada', 'success');
+    showFeedback('Se ha enviado un email con instrucciones para restablecer tu contraseña', 'success');
   } catch (error) {
     showFeedback(error.message, 'error');
   }
@@ -188,6 +219,7 @@ function getFormData(form) {
 function closeAllModals() {
   toggleModal(SELECTORS.LOGIN_MODAL, false);
   toggleModal(SELECTORS.REGISTER_MODAL, false);
+  toggleModal(SELECTORS.RESET_MODAL, false);
 }
 
 function switchToRegister() {
@@ -197,7 +229,13 @@ function switchToRegister() {
 
 function switchToLogin() {
   toggleModal(SELECTORS.REGISTER_MODAL, false);
+  toggleModal(SELECTORS.RESET_MODAL, false);
   toggleModal(SELECTORS.LOGIN_MODAL, true);
+}
+
+function switchToResetPassword() {
+  toggleModal(SELECTORS.LOGIN_MODAL, false);
+  toggleModal(SELECTORS.RESET_MODAL, true);
 }
 
 function toggleModal(selector, show) {
