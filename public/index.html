@@ -6,8 +6,10 @@
   <title>TecnoExpress - Soluciones Tecnológicas</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="stylesheet" href="/assets/css/auth.css">
 </head>
 <body>
+  <!-- Header -->
   <header class="header">
     <div class="container header-container">
       <div class="logo">
@@ -29,7 +31,7 @@
         </div>
         
         <div id="user-info" class="hidden">
-          <img id="user-avatar" src="" alt="Avatar" class="hidden">
+          <img id="user-avatar" src="" alt="Avatar" class="avatar">
           <span id="user-email"></span>
           <button id="logout-btn" class="btn btn-small">Cerrar Sesión</button>
         </div>
@@ -37,6 +39,7 @@
     </div>
   </header>
 
+  <!-- Hero Section -->
   <section class="hero">
     <video autoplay muted loop playsinline class="hero-video">
       <source src="/assets/videos/hero.mp4" type="video/mp4">
@@ -50,6 +53,7 @@
     </div>
   </section>
 
+  <!-- About Section -->
   <section class="combined-section">
     <div class="banner-column">
       <div class="slider-container">
@@ -70,15 +74,17 @@
     </div>
   </section>
 
+  <!-- Products Section -->
   <section id="productos" class="section alt-bg">
     <div class="container">
       <h2 class="section-title"><i class="fas fa-laptop-code"></i> Nuestros Productos</h2>
       <div id="products-container" class="productos-grid">
-        <!-- Los productos se cargarán dinámicamente aquí -->
+        <!-- Productos se cargarán dinámicamente aquí -->
       </div>
     </div>
   </section>
 
+  <!-- Contact Section -->
   <section id="contacto" class="section">
     <div class="container">
       <h2 class="section-title"><i class="fas fa-phone-alt"></i> Contacto</h2>
@@ -113,6 +119,7 @@
     </div>
   </section>
 
+  <!-- Footer -->
   <footer class="footer">
     <div class="container">
       <div class="footer-content">
@@ -137,137 +144,110 @@
     </div>
   </footer>
 
-  <!-- Modal de Login -->
+  <!-- Login Modal -->
   <div id="login-modal" class="modal-overlay">
     <div class="login-modal">
-      <button class="close-modal">&times;</button>
-      <h2>Iniciar Sesión</h2>
-      
-      <form id="login-form">
-        <div class="form-group">
-          <label>Correo Electrónico</label>
-          <input type="email" id="login-email" required>
-        </div>
-        
-        <div class="form-group">
-          <label>Contraseña</label>
-          <input type="password" id="login-password" required>
-        </div>
-        
-        <button type="submit" class="btn-login">Ingresar</button>
-      </form>
-      
-      <button id="google-login-btn" class="btn btn-google">
-        <i class="fab fa-google"></i> Continuar con Google
-      </button>
-      
-      <div class="form-footer">
-        <p>¿No tienes cuenta? <a href="#" id="switch-to-signup" class="register-link">Regístrate aquí</a></p>
+      <div class="modal-header">
+        <h2>Iniciar Sesión</h2>
+        <button class="close-modal">&times;</button>
       </div>
+      <form id="login-form" class="login-form">
+        <div class="form-group">
+          <label for="login-email">Correo Electrónico</label>
+          <input type="email" id="login-email" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="login-password">Contraseña</label>
+          <input type="password" id="login-password" required autocomplete="current-password">
+          <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+        </div>
+        <button type="submit" class="btn-login">Ingresar</button>
+        <button type="button" id="google-login-btn" class="btn-google">
+          <i class="fab fa-google"></i> Continuar con Google
+        </button>
+        <div class="form-footer">
+          <p>¿No tienes cuenta? <a href="#" id="switch-to-signup" class="register-link">Regístrate aquí</a></p>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- Modal de Registro -->
+  <!-- Register Modal -->
   <div id="register-modal" class="modal-overlay">
     <div class="login-modal">
-      <button class="close-modal">&times;</button>
-      <h2>Registrarse</h2>
-      
-      <form id="register-form">
-        <div class="form-group">
-          <label>Nombre Completo</label>
-          <input type="text" id="register-name" required>
-        </div>
-        
-        <div class="form-group">
-          <label>Correo Electrónico</label>
-          <input type="email" id="register-email" required>
-        </div>
-        
-        <div class="form-group">
-          <label>Contraseña</label>
-          <input type="password" id="register-password" required>
-        </div>
-        
-        <div class="form-group">
-          <label>Confirmar Contraseña</label>
-          <input type="password" id="register-confirm-password" required>
-        </div>
-        
-        <button type="submit" class="btn-login">Registrarse</button>
-      </form>
-      
-      <div class="form-footer">
-        <p>¿Ya tienes cuenta? <a href="#" id="switch-to-login" class="register-link">Inicia sesión aquí</a></p>
+      <div class="modal-header">
+        <h2>Registrarse</h2>
+        <button class="close-modal">&times;</button>
       </div>
+      <form id="register-form" class="login-form">
+        <div class="form-group">
+          <label for="register-name">Nombre Completo</label>
+          <input type="text" id="register-name" name="name" required>
+        </div>
+        <div class="form-group">
+          <label for="register-email">Correo Electrónico</label>
+          <input type="email" id="register-email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label for="register-password">Contraseña</label>
+          <input type="password" id="register-password" name="password" required>
+        </div>
+        <div class="form-group">
+          <label for="register-confirm-password">Confirmar Contraseña</label>
+          <input type="password" id="register-confirm-password" name="confirmPassword" required>
+        </div>
+        <button type="submit" class="btn-login">Registrarse</button>
+        <div class="form-footer">
+          <p>¿Ya tienes cuenta? <a href="#" id="switch-to-login" class="register-link">Inicia sesión aquí</a></p>
+        </div>
+      </form>
     </div>
   </div>
 
   <!-- Scripts -->
   <script type="module">
-    // Función para cargar módulos dinámicamente
-    async function loadModules() {
-      try {
-        // Importar módulos necesarios
-        const { initAuthUI } = await import('/src/auth/auth-ui.js');
-        const { initCart } = await import('/src/cart/cart-ui.js');
-        const { initProducts } = await import('/src/products/products-ui.js');
+    // Importar módulos de autenticación
+    import { initAuthUI } from '/src/auth/auth-ui.js';
+    
+    // Inicialización cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', () => {
+      // Inicializar autenticación
+      initAuthUI();
+      
+      // Actualizar año en el footer
+      document.getElementById('current-year').textContent = new Date().getFullYear();
+      
+      // Inicializar carrusel
+      const initSlider = () => {
+        const slides = document.querySelectorAll('.slide');
+        if (slides.length === 0) return;
         
-        // Inicialización cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', () => {
-          // Inicializar módulos
-          initAuthUI();
-          initProducts();
-          initCart();
-          
-          // Actualizar año en el footer
-          document.getElementById('current-year').textContent = new Date().getFullYear();
-          
-          // Inicializar carrusel
-          initSlider();
-        });
+        let currentSlide = 0;
+        const showSlide = (index) => {
+          slides.forEach(slide => slide.classList.remove('active'));
+          slides[index].classList.add('active');
+        };
         
-        // Función para el carrusel
-        function initSlider() {
-          const slides = document.querySelectorAll('.slide');
-          if (!slides.length) return;
-          
-          let currentSlide = 0;
-          let interval;
-          
-          function showSlide(index) {
-            slides.forEach(slide => slide.classList.remove('active'));
-            slides[index].classList.add('active');
-          }
-          
-          function startSlider() {
-            interval = setInterval(() => {
-              currentSlide = (currentSlide + 1) % slides.length;
-              showSlide(currentSlide);
-            }, 5000);
-          }
-          
-          function stopSlider() {
-            clearInterval(interval);
-          }
-          
-          const slider = document.querySelector('.banner-column');
-          if (slider) {
-            slider.addEventListener('mouseenter', stopSlider);
-            slider.addEventListener('mouseleave', startSlider);
-          }
-          
-          showSlide(0);
-          startSlider();
+        const nextSlide = () => {
+          currentSlide = (currentSlide + 1) % slides.length;
+          showSlide(currentSlide);
+        };
+        
+        let slideInterval = setInterval(nextSlide, 5000);
+        
+        const sliderContainer = document.querySelector('.banner-column');
+        if (sliderContainer) {
+          sliderContainer.addEventListener('mouseenter', () => clearInterval(slideInterval));
+          sliderContainer.addEventListener('mouseleave', () => {
+            slideInterval = setInterval(nextSlide, 5000);
+          });
         }
         
-      } catch (error) {
-        console.error('Error al cargar módulos:', error);
-      }
-    }
-    
-    // Iniciar carga de módulos
-    loadModules();
+        showSlide(0);
+      };
+      
+      initSlider();
+    });
   </script>
 </body>
 </html>
