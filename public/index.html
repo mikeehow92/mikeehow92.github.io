@@ -6,21 +6,19 @@
   <title>TecnoExpress - Soluciones Tecnológicas</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="/assets/css/styles.css">
-  <link rel="stylesheet" href="/assets/css/auth.css">
 </head>
 <body>
-
-  <header>
+  <header class="header">
     <div class="container header-container">
       <div class="logo">
         <a href="#"><img src="/assets/images/logo.png" alt="TecnoExpress"></a>
       </div>
       
       <nav>
-        <ul>
-          <li><a href="#nosotros"><i class="fas fa-users"></i> Nosotros</a></li>
-          <li><a href="#productos"><i class="fas fa-cogs"></i> Productos</a></li>
-          <li><a href="#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
+        <ul class="nav-list">
+          <li><a href="#nosotros" class="nav-link"><i class="fas fa-users"></i> Nosotros</a></li>
+          <li><a href="#productos" class="nav-link"><i class="fas fa-cogs"></i> Productos</a></li>
+          <li><a href="#contacto" class="nav-link"><i class="fas fa-envelope"></i> Contacto</a></li>
         </ul>
       </nav>
       
@@ -30,7 +28,7 @@
           <button id="open-register-btn" class="btn btn-small">Registrarse</button>
         </div>
         
-        <div id="user-info" style="display:none;">
+        <div id="user-info" class="hidden">
           <img id="user-avatar" src="" alt="Avatar" class="hidden">
           <span id="user-email"></span>
           <button id="logout-btn" class="btn btn-small">Cerrar Sesión</button>
@@ -38,7 +36,6 @@
       </div>
     </div>
   </header>
-
 
   <section class="hero">
     <video autoplay muted loop playsinline class="hero-video">
@@ -52,7 +49,6 @@
       <a href="#contacto" class="btn">Saber más</a>
     </div>
   </section>
-
 
   <section class="combined-section">
     <div class="banner-column">
@@ -74,20 +70,18 @@
     </div>
   </section>
 
-
   <section id="productos" class="section alt-bg">
     <div class="container">
-      <h2><i class="fas fa-laptop-code"></i> Nuestros Productos</h2>
-      <div id="products-container" class="services-grid">
+      <h2 class="section-title"><i class="fas fa-laptop-code"></i> Nuestros Productos</h2>
+      <div id="products-container" class="productos-grid">
         <!-- Los productos se cargarán dinámicamente aquí -->
       </div>
     </div>
   </section>
 
-
   <section id="contacto" class="section">
     <div class="container">
-      <h2><i class="fas fa-phone-alt"></i> Contacto</h2>
+      <h2 class="section-title"><i class="fas fa-phone-alt"></i> Contacto</h2>
       
       <div class="contact-content">
         <div class="contact-info">
@@ -119,8 +113,7 @@
     </div>
   </section>
 
-
-  <footer>
+  <footer class="footer">
     <div class="container">
       <div class="footer-content">
         <div class="footer-logo">
@@ -144,10 +137,9 @@
     </div>
   </footer>
 
-
-  <!-- Modales -->
+  <!-- Modal de Login -->
   <div id="login-modal" class="modal-overlay">
-    <div class="modal-content">
+    <div class="login-modal">
       <button class="close-modal">&times;</button>
       <h2>Iniciar Sesión</h2>
       
@@ -162,18 +154,22 @@
           <input type="password" id="login-password" required>
         </div>
         
-        <button type="submit" class="btn">Ingresar</button>
+        <button type="submit" class="btn-login">Ingresar</button>
       </form>
       
       <button id="google-login-btn" class="btn btn-google">
         <i class="fab fa-google"></i> Continuar con Google
       </button>
+      
+      <div class="form-footer">
+        <p>¿No tienes cuenta? <a href="#" id="switch-to-signup" class="register-link">Regístrate aquí</a></p>
+      </div>
     </div>
   </div>
 
-
+  <!-- Modal de Registro -->
   <div id="register-modal" class="modal-overlay">
-    <div class="modal-content">
+    <div class="login-modal">
       <button class="close-modal">&times;</button>
       <h2>Registrarse</h2>
       
@@ -193,11 +189,19 @@
           <input type="password" id="register-password" required>
         </div>
         
-        <button type="submit" class="btn">Registrarse</button>
+        <div class="form-group">
+          <label>Confirmar Contraseña</label>
+          <input type="password" id="register-confirm-password" required>
+        </div>
+        
+        <button type="submit" class="btn-login">Registrarse</button>
       </form>
+      
+      <div class="form-footer">
+        <p>¿Ya tienes cuenta? <a href="#" id="switch-to-login" class="register-link">Inicia sesión aquí</a></p>
+      </div>
     </div>
   </div>
-
 
   <!-- Scripts -->
   <script type="module">
@@ -205,7 +209,6 @@
     async function loadModules() {
       try {
         // Importar módulos necesarios
-        const { app, auth } = await import('/src/firebase-config.js');
         const { initAuthUI } = await import('/src/auth/auth-ui.js');
         const { initCart } = await import('/src/cart/cart-ui.js');
         const { initProducts } = await import('/src/products/products-ui.js');
@@ -266,6 +269,5 @@
     // Iniciar carga de módulos
     loadModules();
   </script>
-
 </body>
 </html>
