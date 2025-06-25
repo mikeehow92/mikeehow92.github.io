@@ -3,20 +3,536 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Productos - TecnoExpress</title>
+  <title>Productos - MiTienda503</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/assets/css/styles.css">
+  <style>
+    :root {
+      --primary: #e63946;
+      --primary-dark: #c1121f;
+      --secondary: #1d3557;
+      --white: #ffffff;
+      --gray-light: #f1f5f9;
+      --shadow: 0 4px 6px rgba(0,0,0,0.1);
+      --transition: all 0.3s ease;
+    }
+
+    /* Reset y estilos base */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: var(--gray-light);
+    }
+
+    /* Header */
+    .header {
+      background-color: var(--secondary);
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo img {
+      height: 60px;
+      transition: var(--transition);
+    }
+
+    /* Navegación */
+    .nav-list {
+      display: flex;
+      list-style: none;
+      gap: 1.5rem;
+    }
+
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+    }
+
+    .nav-link:hover {
+      color: var(--primary);
+    }
+
+    .nav-link.active {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Botones */
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 2rem;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+    }
+
+    .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .btn-small {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Icono del carrito */
+    .cart-icon {
+      position: relative;
+      cursor: pointer;
+      color: white;
+      font-size: 1.2rem;
+      margin-left: 1rem;
+    }
+
+    .cart-icon:hover {
+      color: var(--primary);
+    }
+
+    #cartCounter {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+
+    /* Sección principal */
+    main {
+      padding: 3rem 0;
+    }
+
+    .section {
+      margin-bottom: 3rem;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 3rem;
+      font-size: 2.2rem;
+      color: var(--secondary);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .section-title::after {
+      content: '';
+      display: block;
+      width: 80px;
+      height: 4px;
+      background: var(--primary);
+      margin: 1rem auto 0;
+    }
+
+    /* Grid de productos */
+    .productos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 2rem;
+    }
+
+    .producto-card {
+      background: white;
+      border-radius: 0.8rem;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
+
+    .producto-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    .producto-imagen {
+      height: 200px;
+      overflow: hidden;
+    }
+
+    .producto-imagen img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: var(--transition);
+    }
+
+    .producto-card:hover .producto-imagen img {
+      transform: scale(1.05);
+    }
+
+    .producto-info {
+      padding: 1.5rem;
+    }
+
+    .producto-info h3 {
+      margin-bottom: 0.5rem;
+      color: var(--secondary);
+    }
+
+    .precio {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin: 1rem 0;
+    }
+
+    .add-to-cart {
+      width: 100%;
+      padding: 0.8rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 0.4rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .add-to-cart:hover {
+      background: var(--primary-dark);
+    }
+
+    /* Modales */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: var(--shadow);
+      animation: modalFadeIn 0.3s ease-out;
+      position: relative;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+    }
+
+    /* Carrito */
+    #cartItems {
+      max-height: 400px;
+      overflow-y: auto;
+      margin: 1rem 0;
+    }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .cart-item-img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 0.4rem;
+      margin-right: 1rem;
+    }
+
+    .cart-item-info {
+      flex: 1;
+    }
+
+    .cart-item-title {
+      font-weight: 500;
+      margin-bottom: 0.3rem;
+    }
+
+    .cart-item-price {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .cart-item-remove {
+      background: none;
+      border: none;
+      color: #ff4d4d;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    .cart-total {
+      text-align: right;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 1rem 0;
+      padding-top: 1rem;
+      border-top: 1px solid #eee;
+    }
+
+    .checkout-btn {
+      width: 100%;
+      padding: 1rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 0.4rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .checkout-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .empty-cart {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+    }
+
+    .empty-cart i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: #ddd;
+    }
+
+    /* Login modal */
+    .login-modal {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: var(--shadow);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.8rem;
+      border: 1px solid #ddd;
+      border-radius: 0.4rem;
+      font-family: inherit;
+    }
+
+    .forgot-password {
+      display: block;
+      text-align: right;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      color: var(--primary);
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 0.8rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 0.4rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-login:hover {
+      background: var(--primary-dark);
+    }
+
+    .form-footer {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .register-link {
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    /* Footer */
+    .footer {
+      background: var(--secondary);
+      color: white;
+      padding: 3rem 0;
+    }
+
+    .footer-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .footer-logo img {
+      height: 60px;
+      margin-bottom: 1rem;
+    }
+
+    .footer-links h3 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: var(--primary);
+    }
+
+    .footer-links ul {
+      list-style: none;
+    }
+
+    .footer-links li {
+      margin-bottom: 0.5rem;
+    }
+
+    .footer-links a {
+      color: white;
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+
+    .copyright {
+      text-align: center;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.9rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header-container {
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .nav-list {
+        display: none;
+      }
+
+      .auth-section {
+        order: 3;
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+      }
+    }
+  </style>
 </head>
 <body>
   <header class="header">
     <div class="container header-container">
       <div class="logo">
-        <a href="index.html"><img src="assets/imagenes/logo.png" alt="TecnoExpress"></a>
+        <a href="index.html"><img src="https://via.placeholder.com/180x60?text=MiTienda503" alt="MiTienda503"></a>
       </div>
       <nav>
         <ul class="nav-list">
           <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Inicio</a></li>
-          <li><a href="productos.html" class="nav-link active"><i class="fas fa-laptop"></i> Productos</a></li>
+          <li><a href="productos.html" class="nav-link active"><i class="fas fa-shopping-bag"></i> Productos</a></li>
           <li><a href="index.html#contacto" class="nav-link"><i class="fas fa-envelope"></i> Contacto</a></li>
         </ul>
       </nav>
@@ -38,78 +554,156 @@
 
   <main class="container">
     <section class="section">
-      <h2 class="section-title"><i class="fas fa-laptop"></i> Nuestros Productos</h2>
+      <h2 class="section-title"><i class="fas fa-shopping-bag"></i> Nuestros Productos</h2>
       
       <div class="productos-grid">
+        <!-- Electrodomésticos -->
         <div class="producto-card">
           <div class="producto-imagen">
-            <img src="assets/imagenes/impresora1.webp" alt="Impresora Térmica EPSON">
+            <img src="https://images.unsplash.com/photo-1592155931584-901ac15763e3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Licuadora profesional">
           </div>
           <div class="producto-info">
-            <h3>Impresora EPSON TM-T20III</h3>
-            <p>Impresora térmica de alta velocidad para tickets</p>
-            <div class="precio">$150.00</div>
+            <h3>Licuadora Profesional</h3>
+            <p>Potente motor de 1000W con 6 velocidades</p>
+            <div class="precio">$89.99</div>
             <button class="add-to-cart" 
                     data-id="prod001"
-                    data-name="Impresora EPSON TM-T20III"
-                    data-price="150.00"
-                    data-image="assets/imagenes/impresora1.webp">
+                    data-name="Licuadora Profesional"
+                    data-price="89.99"
+                    data-image="https://images.unsplash.com/photo-1592155931584-901ac15763e3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
               <i class="fas fa-cart-plus"></i> Añadir al carrito
             </button>
           </div>
         </div>
         
+        <!-- Ropa -->
         <div class="producto-card">
           <div class="producto-imagen">
-            <img src="assets/imagenes/impresora2.webp" alt="Impresora Térmica EPSON">
+            <img src="https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Jeans para hombre">
           </div>
           <div class="producto-info">
-            <h3>Impresora EPSON TM-T88III</h3>
-            <p>Impresora compacta para punto de venta</p>
-            <div class="precio">$80.00</div>
+            <h3>Jeans Clásicos</h3>
+            <p>Jeans para hombre, corte recto, varios colores</p>
+            <div class="precio">$39.99</div>
             <button class="add-to-cart" 
                     data-id="prod002"
-                    data-name="Impresora EPSON TM-T88III"
-                    data-price="80.00"
-                    data-image="assets/imagenes/impresora2.webp">
+                    data-name="Jeans Clásicos"
+                    data-price="39.99"
+                    data-image="https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
               <i class="fas fa-cart-plus"></i> Añadir al carrito
             </button>
           </div>
         </div>
 
-        <!-- Producto adicional de ejemplo -->
+        <!-- Zapatos -->
         <div class="producto-card">
           <div class="producto-imagen">
-            <img src="assets/imagenes/impresora3.webp" alt="Impresora Térmica EPSON">
+            <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Zapatos deportivos">
           </div>
           <div class="producto-info">
-            <h3>Impresora EPSON TM-U220</h3>
-            <p>Impresora de recibos con alimentación por papel</p>
-            <div class="precio">$120.00</div>
+            <h3>Zapatos Deportivos</h3>
+            <p>Cómodos y ligeros para todo tipo de actividades</p>
+            <div class="precio">$59.99</div>
             <button class="add-to-cart" 
                     data-id="prod003"
-                    data-name="Impresora EPSON TM-U220"
-                    data-price="120.00"
-                    data-image="assets/imagenes/impresora3.webp">
+                    data-name="Zapatos Deportivos"
+                    data-price="59.99"
+                    data-image="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
               <i class="fas fa-cart-plus"></i> Añadir al carrito
             </button>
           </div>
         </div>
 
-        <!-- Producto adicional de ejemplo -->
+        <!-- Electrodoméstico -->
         <div class="producto-card">
           <div class="producto-imagen">
-            <img src="assets/imagenes/impresora4.webp" alt="Impresora Térmica EPSON">
+            <img src="https://images.unsplash.com/photo-1586449480533-9c92c564b8b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Tostadora moderna">
           </div>
           <div class="producto-info">
-            <h3>Impresora EPSON TM-m30II</h3>
-            <p>Impresora móvil con conectividad Bluetooth</p>
-            <div class="precio">$200.00</div>
+            <h3>Tostadora Moderna</h3>
+            <p>Doble ranura con ajuste de temperatura</p>
+            <div class="precio">$45.99</div>
             <button class="add-to-cart" 
                     data-id="prod004"
-                    data-name="Impresora EPSON TM-m30II"
-                    data-price="200.00"
-                    data-image="assets/imagenes/impresora4.webp">
+                    data-name="Tostadora Moderna"
+                    data-price="45.99"
+                    data-image="https://images.unsplash.com/photo-1586449480533-9c92c564b8b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
+              <i class="fas fa-cart-plus"></i> Añadir al carrito
+            </button>
+          </div>
+        </div>
+        
+        <!-- Ropa -->
+        <div class="producto-card">
+          <div class="producto-imagen">
+            <img src="https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Vestido de verano">
+          </div>
+          <div class="producto-info">
+            <h3>Vestido de Verano</h3>
+            <p>Ligero y fresco, ideal para días calurosos</p>
+            <div class="precio">$34.99</div>
+            <button class="add-to-cart" 
+                    data-id="prod005"
+                    data-name="Vestido de Verano"
+                    data-price="34.99"
+                    data-image="https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
+              <i class="fas fa-cart-plus"></i> Añadir al carrito
+            </button>
+          </div>
+        </div>
+        
+        <!-- Zapatos -->
+        <div class="producto-card">
+          <div class="producto-imagen">
+            <img src="https://images.unsplash.com/photo-1560769629-975ec94e6a86?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Zapatos formales">
+          </div>
+          <div class="producto-info">
+            <h3>Zapatos Formales</h3>
+            <p>Elegantes y cómodos para ocasiones especiales</p>
+            <div class="precio">$79.99</div>
+            <button class="add-to-cart" 
+                    data-id="prod006"
+                    data-name="Zapatos Formales"
+                    data-price="79.99"
+                    data-image="https://images.unsplash.com/photo-1560769629-975ec94e6a86?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
+              <i class="fas fa-cart-plus"></i> Añadir al carrito
+            </button>
+          </div>
+        </div>
+        
+        <!-- Electrodoméstico -->
+        <div class="producto-card">
+          <div class="producto-imagen">
+            <img src="https://images.unsplash.com/photo-1589128777073-263566ae5e4d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Cafetera moderna">
+          </div>
+          <div class="producto-info">
+            <h3>Cafetera Moderna</h3>
+            <p>Prepara el café perfecto en minutos</p>
+            <div class="precio">$65.99</div>
+            <button class="add-to-cart" 
+                    data-id="prod007"
+                    data-name="Cafetera Moderna"
+                    data-price="65.99"
+                    data-image="https://images.unsplash.com/photo-1589128777073-263566ae5e4d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
+              <i class="fas fa-cart-plus"></i> Añadir al carrito
+            </button>
+          </div>
+        </div>
+        
+        <!-- Ropa -->
+        <div class="producto-card">
+          <div class="producto-imagen">
+            <img src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Camisa casual">
+          </div>
+          <div class="producto-info">
+            <h3>Camisa Casual</h3>
+            <p>Estilo moderno y cómodo para el día a día</p>
+            <div class="precio">$29.99</div>
+            <button class="add-to-cart" 
+                    data-id="prod008"
+                    data-name="Camisa Casual"
+                    data-price="29.99"
+                    data-image="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
               <i class="fas fa-cart-plus"></i> Añadir al carrito
             </button>
           </div>
@@ -139,7 +733,7 @@
   </div>
 
   <!-- Modal de Login -->
-  <div id="login-modal" class="modal-overlay">
+  <div id="login-modal" class="modal">
     <div class="login-modal">
       <div class="modal-header">
         <h2>Iniciar Sesión</h2>
@@ -180,8 +774,8 @@
     <div class="container">
       <div class="footer-content">
         <div class="footer-logo">
-          <img src="assets/imagenes/logo.png" alt="TecnoExpress">
-          <p>Soluciones tecnológicas innovadoras para el mundo moderno.</p>
+          <img src="https://via.placeholder.com/180x60?text=MiTienda503" alt="MiTienda503">
+          <p>Todo lo que necesitas para tu hogar y estilo personal en un solo lugar.</p>
         </div>
         <div class="footer-links">
           <h3>Enlaces rápidos</h3>
@@ -191,17 +785,139 @@
             <li><a href="index.html#contacto">Contacto</a></li>
           </ul>
         </div>
+        <div class="footer-links">
+          <h3>Categorías</h3>
+          <ul>
+            <li><a href="#">Electrodomésticos</a></li>
+            <li><a href="#">Ropa para Hombre</a></li>
+            <li><a href="#">Ropa para Mujer</a></li>
+            <li><a href="#">Zapatos</a></li>
+          </ul>
+        </div>
       </div>
       <div class="copyright">
-        <p>&copy; 2023 TecnoExpress. Todos los derechos reservados.</p>
+        <p>&copy; <span id="current-year"></span> MiTienda503. Todos los derechos reservados.</p>
       </div>
     </div>
   </footer>
 
   <!-- Scripts -->
-  <script type="module" src="/js/firebase-config.js"></script>
-  <script type="module" src="/js/auth.js"></script>
-  <script type="module" src="/js/cart.js"></script>
-  <script type="module" src="/js/productos.js"></script>
+  <script>
+    // Funcionalidad básica del carrito
+    document.addEventListener('DOMContentLoaded', function() {
+      const cart = [];
+      const cartCounter = document.getElementById('cartCounter');
+      const cartItems = document.getElementById('cartItems');
+      const cartTotal = document.getElementById('cartTotal');
+      const cartModal = document.getElementById('cartModal');
+      const loginModal = document.getElementById('login-modal');
+      const openLoginBtn = document.getElementById('open-login-btn');
+      const cartIcon = document.getElementById('cartIcon');
+      const closeButtons = document.querySelectorAll('.close-modal');
+      
+      // Año actual en el footer
+      document.getElementById('current-year').textContent = new Date().getFullYear();
+      
+      // Abrir modales
+      cartIcon.addEventListener('click', () => {
+        cartModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      });
+      
+      openLoginBtn.addEventListener('click', () => {
+        loginModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      });
+      
+      // Cerrar modales
+      closeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          cartModal.style.display = 'none';
+          loginModal.style.display = 'none';
+          document.body.style.overflow = 'auto';
+        });
+      });
+      
+      // Cerrar al hacer clic fuera
+      [cartModal, loginModal].forEach(modal => {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+          }
+        });
+      });
+      
+      // Añadir al carrito
+      document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', () => {
+          const product = {
+            id: button.dataset.id,
+            name: button.dataset.name,
+            price: parseFloat(button.dataset.price),
+            image: button.dataset.image
+          };
+          
+          cart.push(product);
+          updateCart();
+          
+          // Mostrar feedback visual
+          button.innerHTML = '<i class="fas fa-check"></i> Añadido';
+          button.style.backgroundColor = '#4CAF50';
+          setTimeout(() => {
+            button.innerHTML = '<i class="fas fa-cart-plus"></i> Añadir al carrito';
+            button.style.backgroundColor = '';
+          }, 1000);
+        });
+      });
+      
+      // Actualizar carrito
+      function updateCart() {
+        cartCounter.textContent = cart.length;
+        
+        if (cart.length === 0) {
+          cartItems.innerHTML = `
+            <div class="empty-cart">
+              <i class="fas fa-shopping-cart"></i>
+              <p>Tu carrito está vacío</p>
+            </div>
+          `;
+          cartTotal.textContent = '0.00';
+          return;
+        }
+        
+        let itemsHTML = '';
+        let total = 0;
+        
+        cart.forEach((item, index) => {
+          total += item.price;
+          itemsHTML += `
+            <div class="cart-item">
+              <img src="${item.image}" alt="${item.name}" class="cart-item-img">
+              <div class="cart-item-info">
+                <div class="cart-item-title">${item.name}</div>
+                <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+              </div>
+              <button class="cart-item-remove" data-index="${index}">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          `;
+        });
+        
+        cartItems.innerHTML = itemsHTML;
+        cartTotal.textContent = total.toFixed(2);
+        
+        // Eliminar items
+        document.querySelectorAll('.cart-item-remove').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const index = parseInt(btn.dataset.index);
+            cart.splice(index, 1);
+            updateCart();
+          });
+        });
+      }
+    });
+  </script>
 </body>
 </html>
