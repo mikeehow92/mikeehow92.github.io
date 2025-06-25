@@ -5,739 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TecnoExpress - Soluciones Tecnológicas</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link rel="stylesheet" href="/css/auth.css">
-  <link rel="stylesheet" href="/css/styles.css">
-  <style>
-    /* Reset y estilos base */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      background-color: #f9f9f9;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
-    /* Header con nuevo color */
-    header {
-      background-color: #1a365d;
-      padding: 15px 0;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    .header-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .logo img {
-      height: 50px;
-      transition: transform 0.3s ease;
-    }
-
-    .logo img:hover {
-      transform: scale(1.05);
-    }
-
-    nav ul {
-      display: flex;
-      list-style: none;
-      gap: 25px;
-    }
-
-    nav ul li a {
-      color: white;
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 1.1rem;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    nav ul li a:hover {
-      color: #ffcc00;
-    }
-
-    nav ul li a i {
-      font-size: 0.9rem;
-    }
-
-    /* Auth Section */
-    .auth-section {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    #user-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    #user-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .btn-small {
-      padding: 8px 16px;
-      font-size: 0.9rem;
-    }
-
-    /* Hero Section con Video */
-    .hero {
-      position: relative;
-      height: 100vh;
-      max-height: 800px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      color: white;
-      overflow: hidden;
-      margin-bottom: 40px;
-    }
-
-    .hero-video {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 0;
-    }
-
-    .hero::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5));
-      z-index: 1;
-    }
-
-    .hero-content {
-      position: relative;
-      z-index: 2;
-      max-width: 800px;
-      padding: 0 20px;
-    }
-
-    .hero h1 {
-      font-size: 2.8rem;
-      margin-bottom: 20px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    }
-
-    .hero p {
-      font-size: 1.3rem;
-      margin-bottom: 30px;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    }
-
-    /* Sección combinada: Carrusel y Nosotros lado a lado */
-    .combined-section {
-      display: flex;
-      gap: 30px;
-      margin: 40px auto;
-      max-width: 1200px;
-      padding: 0 20px;
-    }
-
-    /* Carrusel lado izquierdo */
-    .banner-column {
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      height: 500px;
-    }
-
-    .slider-container {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-
-    .slide {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      transition: opacity 1.5s ease-in-out;
-    }
-
-    .slide.active {
-      opacity: 1;
-    }
-
-    .slide-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    /* Nosotros lado derecho */
-    .about-column {
-      flex: 1;
-      background-color: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .about-column h2 {
-      color: #2c3e50;
-      margin-bottom: 25px;
-      font-size: 2.2rem;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .about-column h2 i {
-      color: #3498db;
-    }
-
-    .about-column p {
-      margin-bottom: 20px;
-      font-size: 1.1rem;
-      line-height: 1.8;
-      color: #555;
-    }
-
-    .about-column .btn {
-      align-self: flex-start;
-      margin-top: 15px;
-    }
-
-    /* Secciones */
-    .section {
-      padding: 80px 0;
-    }
-
-    .section h2 {
-      text-align: center;
-      margin-bottom: 50px;
-      font-size: 2.3rem;
-      color: #2c3e50;
-      position: relative;
-    }
-
-    .section h2::after {
-      content: '';
-      display: block;
-      width: 80px;
-      height: 4px;
-      background-color: #3498db;
-      margin: 15px auto 0;
-    }
-
-    .section h2 i {
-      margin-right: 15px;
-      color: #3498db;
-    }
-
-    .alt-bg {
-      background-color: #f0f0f0;
-    }
-
-    /* Servicios */
-    .services-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 30px;
-      margin-top: 40px;
-    }
-
-    .service-card {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      text-align: center;
-      transition: all 0.3s ease;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    }
-
-    .service-card:hover {
-      transform: translateY(-10px);
-      box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-    }
-
-    .service-icon {
-      width: 70px;
-      height: 70px;
-      margin: 0 auto 20px;
-      background-color: #3498db;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 1.8rem;
-    }
-
-    .service-card h3 {
-      color: #2c3e50;
-      margin-bottom: 15px;
-      font-size: 1.4rem;
-    }
-
-    .service-card p {
-      color: #666;
-      font-size: 1rem;
-      line-height: 1.6;
-    }
-
-    /* Contacto */
-    .contact-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-    }
-
-    .contact-info {
-      background-color: #2c3e50;
-      color: white;
-      padding: 40px;
-      border-radius: 10px;
-    }
-
-    .contact-info h3 {
-      margin-bottom: 25px;
-      font-size: 1.5rem;
-      position: relative;
-      padding-bottom: 10px;
-    }
-
-    .contact-info h3::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 50px;
-      height: 3px;
-      background-color: #3498db;
-    }
-
-    .contact-info p {
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1.1rem;
-    }
-
-    .contact-info i {
-      width: 25px;
-      text-align: center;
-      color: #3498db;
-    }
-
-    .social-links {
-      display: flex;
-      gap: 15px;
-      margin-top: 30px;
-    }
-
-    .social-links a {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: rgba(255,255,255,0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      transition: all 0.3s ease;
-    }
-
-    .social-links a:hover {
-      background-color: #3498db;
-      transform: translateY(-3px);
-    }
-
-    .contact-form {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .form-group input,
-    .form-group textarea {
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-size: 1rem;
-      transition: all 0.3s ease;
-    }
-
-    .form-group input:focus,
-    .form-group textarea:focus {
-      border-color: #3498db;
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
-    }
-
-    .form-group textarea {
-      min-height: 150px;
-      resize: vertical;
-    }
-
-    /* Footer */
-    footer {
-      background-color: #2c3e50;
-      color: white;
-      padding: 60px 0 20px;
-    }
-
-    .footer-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      margin-bottom: 40px;
-    }
-
-    .footer-logo img {
-      height: 50px;
-      margin-bottom: 20px;
-    }
-
-    .footer-logo p {
-      color: #ecf0f1;
-      line-height: 1.6;
-      opacity: 0.8;
-    }
-
-    .footer-links h3 {
-      margin-bottom: 20px;
-      font-size: 1.3rem;
-      position: relative;
-      padding-bottom: 10px;
-    }
-
-    .footer-links h3::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 40px;
-      height: 3px;
-      background-color: #3498db;
-    }
-
-    .footer-links ul {
-      list-style: none;
-    }
-
-    .footer-links ul li {
-      margin-bottom: 10px;
-    }
-
-    .footer-links ul li a {
-      color: #ecf0f1;
-      text-decoration: none;
-      transition: color 0.3s ease;
-      opacity: 0.8;
-    }
-
-    .footer-links ul li a:hover {
-      color: #3498db;
-      opacity: 1;
-    }
-
-    .copyright {
-      text-align: center;
-      padding-top: 20px;
-      border-top: 1px solid rgba(255,255,255,0.1);
-      font-size: 0.9rem;
-      opacity: 0.7;
-    }
-
-    /* Botones */
-    .btn {
-      display: inline-block;
-      background-color: #3498db;
-      color: white;
-      padding: 12px 30px;
-      border: none;
-      border-radius: 50px;
-      font-size: 1rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      text-align: center;
-    }
-
-    .btn:hover {
-      background-color: #2980b9;
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-
-    .btn-google {
-      background-color: #db4437;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-      margin: 10px 0;
-    }
-
-    .btn-google:hover {
-      background-color: #c23321;
-    }
-
-    /* Modales */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .login-modal {
-      background-color: white;
-      border-radius: 10px;
-      width: 100%;
-      max-width: 400px;
-      padding: 30px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .modal-header h2 {
-      color: #2c3e50;
-      font-size: 1.8rem;
-    }
-
-    .close-modal {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #7f8c8d;
-    }
-
-    .login-form .form-group {
-      margin-bottom: 20px;
-    }
-
-    .login-form label {
-      display: block;
-      margin-bottom: 8px;
-      color: #2c3e50;
-      font-weight: 500;
-    }
-
-    .login-form input {
-      width: 100%;
-      padding: 12px 15px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-size: 1rem;
-    }
-
-    .forgot-password {
-      display: block;
-      text-align: right;
-      margin-top: 8px;
-      color: #3498db;
-      font-size: 0.9rem;
-      text-decoration: none;
-    }
-
-    .btn-login {
-      width: 100%;
-      padding: 12px;
-      background-color: #3498db;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 1rem;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    .form-footer {
-      text-align: center;
-      margin-top: 20px;
-      color: #7f8c8d;
-    }
-
-    .register-link {
-      color: #3498db;
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    /* Responsive */
-    @media (max-width: 992px) {
-      .hero h1 {
-        font-size: 2.5rem;
-      }
-      
-      .combined-section {
-        flex-direction: column;
-      }
-      
-      .banner-column, .about-column {
-        height: 400px;
-      }
-      
-      .banner-text h2 {
-        font-size: 2rem;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .header-container {
-        flex-direction: column;
-        gap: 15px;
-      }
-      
-      nav ul {
-        gap: 15px;
-      }
-      
-      .hero {
-        height: 70vh;
-      }
-      
-      .hero h1 {
-        font-size: 2rem;
-      }
-      
-      .hero p {
-        font-size: 1.1rem;
-      }
-      
-      .banner-column, .about-column {
-        height: 350px;
-      }
-      
-      .section {
-        padding: 60px 0;
-      }
-      
-      .section h2 {
-        font-size: 2rem;
-      }
-      
-      .footer-content {
-        grid-template-columns: 1fr;
-      }
-      
-      .contact-content {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 576px) {
-      .hero {
-        height: 60vh;
-      }
-      
-      .hero h1 {
-        font-size: 1.8rem;
-      }
-      
-      .banner-column, .about-column {
-        height: 250px;
-      }
-      
-      .about-column {
-        padding: 20px;
-      }
-      
-      .services-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .login-modal {
-        padding: 20px;
-        margin: 0 15px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="stylesheet" href="/assets/css/auth.css">
 </head>
 <body>
+
   <header>
     <div class="container header-container">
       <div class="logo">
-        <a href="#">
-          <img src="assets/imagenes/logo.png" alt="TecnoExpress">
-        </a>
+        <a href="#"><img src="/assets/images/logo.png" alt="TecnoExpress"></a>
       </div>
+      
       <nav>
         <ul>
           <li><a href="#nosotros"><i class="fas fa-users"></i> Nosotros</a></li>
-          <li><a href="productos.html"><i class="fas fa-cogs"></i> Productos</a></li>
+          <li><a href="#productos"><i class="fas fa-cogs"></i> Productos</a></li>
           <li><a href="#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
         </ul>
       </nav>
+      
       <div class="auth-section">
         <div id="guest-buttons">
           <button id="open-login-btn" class="btn btn-small">Iniciar Sesión</button>
           <button id="open-register-btn" class="btn btn-small">Registrarse</button>
         </div>
+        
         <div id="user-info" style="display:none;">
           <img id="user-avatar" src="" alt="Avatar" class="hidden">
           <span id="user-email"></span>
@@ -747,10 +39,11 @@
     </div>
   </header>
 
+
   <section class="hero">
     <video autoplay muted loop playsinline class="hero-video">
-      <source src="assets/imagenes/hero.mp4" type="video/mp4">
-      <img src="img/hero-fallback.jpg" alt="Fondo tecnológico">
+      <source src="/assets/videos/hero.mp4" type="video/mp4">
+      <img src="/assets/images/hero-fallback.jpg" alt="Fondo tecnológico">
     </video>
     
     <div class="hero-content">
@@ -760,79 +53,65 @@
     </div>
   </section>
 
+
   <section class="combined-section">
     <div class="banner-column">
       <div class="slider-container">
         <div class="slide active">
-          <img src="assets/imagenes/banner1.webp" alt="Ofertas especiales en tecnología" class="slide-img">
+          <img src="/assets/images/banner1.webp" alt="Ofertas especiales en tecnología" class="slide-img">
         </div>
         <div class="slide">
-          <img src="assets/imagenes/banner2.webp" alt="Últimos dispositivos tecnológicos" class="slide-img">
+          <img src="/assets/images/banner2.webp" alt="Últimos dispositivos tecnológicos" class="slide-img">
         </div>
       </div>
     </div>
     
     <div class="about-column" id="nosotros">
       <h2><i class="fas fa-building"></i> Nosotros</h2>
-      <p>Somos TecnoExpress, una empresa líder en soluciones tecnológicas con más de 10 años de experiencia en el mercado. Nuestro equipo de expertos está comprometido con brindar la mejor atención y soluciones a medida.</p>
-      <p>Nos especializamos en integrar tecnología de vanguardia con soluciones accesibles para todos los presupuestos, ayudando a nuestros clientes a alcanzar sus objetivos empresariales y personales.</p>
-      <a href="#Productos" class="btn">Nuestros Productos</a>
+      <p>Somos TecnoExpress, una empresa líder en soluciones tecnológicas con más de 10 años de experiencia en el mercado.</p>
+      <p>Nuestro equipo de expertos está comprometido con brindar la mejor atención y soluciones a medida.</p>
+      <a href="#productos" class="btn">Nuestros Productos</a>
     </div>
   </section>
 
-  <section id="Productos" class="section alt-bg">
+
+  <section id="productos" class="section alt-bg">
     <div class="container">
       <h2><i class="fas fa-laptop-code"></i> Nuestros Productos</h2>
-      <div class="services-grid">
-        <div class="service-card">
-          <div class="service-icon">
-            <i class="fas fa-laptop"></i>
-          </div>
-          <h3>Venta de Tecnología</h3>
-          <p>Las mejores marcas y equipos al mejor precio del mercado con garantía extendida.</p>
-        </div>
-        <div class="service-card">
-          <div class="service-icon">
-            <i class="fas fa-tools"></i>
-          </div>
-          <h3>Soporte Técnico</h3>
-          <p>Asistencia especializada 24/7 para resolver cualquier problema con tus dispositivos.</p>
-        </div>
-        <div class="service-card">
-          <div class="service-icon">
-            <i class="fas fa-user-tie"></i>
-          </div>
-          <h3>Asesoría Personalizada</h3>
-          <p>Soluciones a medida adaptadas a tus necesidades específicas y presupuesto.</p>
-        </div>
+      <div id="products-container" class="services-grid">
+        <!-- Los productos se cargarán dinámicamente aquí -->
       </div>
     </div>
   </section>
 
+
   <section id="contacto" class="section">
     <div class="container">
       <h2><i class="fas fa-phone-alt"></i> Contacto</h2>
+      
       <div class="contact-content">
         <div class="contact-info">
           <h3>Información de contacto</h3>
           <p><i class="fas fa-map-marker-alt"></i> Av. Tecnológica 123, Ciudad</p>
           <p><i class="fas fa-phone"></i> (123) 456-7890</p>
           <p><i class="fas fa-envelope"></i> info@tecnoexpress.com</p>
+          
           <div class="social-links">
             <a href="#"><i class="fab fa-facebook-f"></i></a>
             <a href="#"><i class="fab fa-twitter"></i></a>
             <a href="#"><i class="fab fa-instagram"></i></a>
           </div>
         </div>
-        <form class="contact-form">
+        
+        <form class="contact-form" id="contact-form">
           <div class="form-group">
-            <input type="text" placeholder="Nombre completo" required>
+            <input type="text" id="contact-name" placeholder="Nombre completo" required>
           </div>
           <div class="form-group">
-            <input type="email" placeholder="Correo electrónico" required>
+            <input type="email" id="contact-email" placeholder="Correo electrónico" required>
           </div>
           <div class="form-group">
-            <textarea placeholder="Tu mensaje" required></textarea>
+            <textarea id="contact-message" placeholder="Tu mensaje" required></textarea>
           </div>
           <button type="submit" class="btn">Enviar Mensaje</button>
         </form>
@@ -840,174 +119,153 @@
     </div>
   </section>
 
+
   <footer>
     <div class="container">
       <div class="footer-content">
         <div class="footer-logo">
-          <img src="assets/imagenes/logo.png" alt="TecnoExpress">
+          <img src="/assets/images/logo.png" alt="TecnoExpress">
           <p>Soluciones tecnológicas innovadoras para el mundo moderno.</p>
         </div>
+        
         <div class="footer-links">
           <h3>Enlaces rápidos</h3>
           <ul>
             <li><a href="#nosotros">Nosotros</a></li>
-            <li><a href="#Productos">Productos</a></li>
+            <li><a href="#productos">Productos</a></li>
             <li><a href="#contacto">Contacto</a></li>
           </ul>
         </div>
       </div>
+      
       <div class="copyright">
-        <p>&copy; 2023 TecnoExpress. Todos los derechos reservados.</p>
+        <p>&copy; <span id="current-year"></span> TecnoExpress. Todos los derechos reservados.</p>
       </div>
     </div>
   </footer>
 
-  <!-- Modal de Login -->
+
+  <!-- Modales -->
   <div id="login-modal" class="modal-overlay">
-    <div class="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
-      <div class="modal-header">
-        <h2 id="login-modal-title">Iniciar Sesión</h2>
-        <button class="close-modal" aria-label="Cerrar modal de inicio de sesión">&times;</button>
-      </div>
-      <form id="login-form" class="login-form">
+    <div class="modal-content">
+      <button class="close-modal">&times;</button>
+      <h2>Iniciar Sesión</h2>
+      
+      <form id="login-form">
         <div class="form-group">
-          <label for="login-email">Correo Electrónico</label>
-          <input 
-            type="email" 
-            id="login-email" 
-            required
-            autocomplete="email"
-            placeholder="tucorreo@ejemplo.com"
-          >
+          <label>Correo Electrónico</label>
+          <input type="email" id="login-email" required>
         </div>
+        
         <div class="form-group">
-          <label for="login-password">Contraseña</label>
-          <input 
-            type="password" 
-            id="login-password" 
-            required
-            autocomplete="current-password"
-            placeholder="••••••••"
-            minlength="8"
-          >
-          <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+          <label>Contraseña</label>
+          <input type="password" id="login-password" required>
         </div>
-        <button type="submit" class="btn btn-login">Ingresar</button>
-        <button type="button" id="google-login-btn" class="btn btn-google">
-          <i class="fab fa-google"></i> Continuar con Google
-        </button>
-        <div class="form-footer">
-          <p>¿No tienes cuenta? <a href="#" id="switch-to-signup" class="register-link">Regístrate aquí</a></p>
+        
+        <button type="submit" class="btn">Ingresar</button>
+      </form>
+      
+      <button id="google-login-btn" class="btn btn-google">
+        <i class="fab fa-google"></i> Continuar con Google
+      </button>
+    </div>
+  </div>
+
+
+  <div id="register-modal" class="modal-overlay">
+    <div class="modal-content">
+      <button class="close-modal">&times;</button>
+      <h2>Registrarse</h2>
+      
+      <form id="register-form">
+        <div class="form-group">
+          <label>Nombre Completo</label>
+          <input type="text" id="register-name" required>
         </div>
+        
+        <div class="form-group">
+          <label>Correo Electrónico</label>
+          <input type="email" id="register-email" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="register-password" required>
+        </div>
+        
+        <button type="submit" class="btn">Registrarse</button>
       </form>
     </div>
   </div>
 
-  <!-- Modal de Registro -->
-  <div id="register-modal" class="modal-overlay">
-    <div class="login-modal" role="dialog" aria-modal="true" aria-labelledby="register-modal-title">
-      <div class="modal-header">
-        <h2 id="register-modal-title">Registrarse</h2>
-        <button class="close-modal" aria-label="Cerrar modal de registro">&times;</button>
-      </div>
-      <form id="register-form" class="login-form">
-        <div class="form-group">
-          <label for="register-name">Nombre Completo</label>
-          <input 
-            type="text" 
-            id="register-name" 
-            name="name"
-            required
-            placeholder="Tu nombre completo"
-          >
-        </div>
-        <div class="form-group">
-          <label for="register-email">Correo Electrónico</label>
-          <input 
-            type="email" 
-            id="register-email" 
-            name="email"
-            required
-            autocomplete="email"
-            placeholder="tucorreo@ejemplo.com"
-          >
-        </div>
-        <div class="form-group">
-          <label for="register-phone">Teléfono</label>
-          <input 
-            type="tel" 
-            id="register-phone" 
-            name="phone"
-            placeholder="Número de teléfono"
-          >
-        </div>
-        <div class="form-group">
-          <label for="register-password">Contraseña</label>
-          <input 
-            type="password" 
-            id="register-password" 
-            name="password"
-            required
-            autocomplete="new-password"
-            placeholder="••••••••"
-            minlength="8"
-          >
-        </div>
-        <div class="form-group">
-          <label for="register-confirm-password">Confirmar Contraseña</label>
-          <input 
-            type="password" 
-            id="register-confirm-password" 
-            name="confirmPassword"
-            required
-            autocomplete="new-password"
-            placeholder="••••••••"
-            minlength="8"
-          >
-        </div>
-        <button type="submit" class="btn btn-login">Registrarse</button>
-        <div class="form-footer">
-          <p>¿Ya tienes cuenta? <a href="#" id="switch-to-login" class="register-link">Inicia sesión aquí</a></p>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <!-- Scripts -->
-  <script>
-    // Carrusel automático
-    document.addEventListener('DOMContentLoaded', function() {
-      const slides = document.querySelectorAll('.slide');
-      let currentSlide = 0;
-      let slideInterval;
-      
-      function showSlide(index) {
-        slides.forEach(slide => slide.classList.remove('active'));
-        slides[index].classList.add('active');
+  <script type="module">
+    // Función para cargar módulos dinámicamente
+    async function loadModules() {
+      try {
+        // Importar módulos necesarios
+        const { app, auth } = await import('/src/firebase-config.js');
+        const { initAuthUI } = await import('/src/auth/auth-ui.js');
+        const { initCart } = await import('/src/cart/cart-ui.js');
+        const { initProducts } = await import('/src/products/products-ui.js');
+        
+        // Inicialización cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+          // Inicializar módulos
+          initAuthUI();
+          initProducts();
+          initCart();
+          
+          // Actualizar año en el footer
+          document.getElementById('current-year').textContent = new Date().getFullYear();
+          
+          // Inicializar carrusel
+          initSlider();
+        });
+        
+        // Función para el carrusel
+        function initSlider() {
+          const slides = document.querySelectorAll('.slide');
+          if (!slides.length) return;
+          
+          let currentSlide = 0;
+          let interval;
+          
+          function showSlide(index) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[index].classList.add('active');
+          }
+          
+          function startSlider() {
+            interval = setInterval(() => {
+              currentSlide = (currentSlide + 1) % slides.length;
+              showSlide(currentSlide);
+            }, 5000);
+          }
+          
+          function stopSlider() {
+            clearInterval(interval);
+          }
+          
+          const slider = document.querySelector('.banner-column');
+          if (slider) {
+            slider.addEventListener('mouseenter', stopSlider);
+            slider.addEventListener('mouseleave', startSlider);
+          }
+          
+          showSlide(0);
+          startSlider();
+        }
+        
+      } catch (error) {
+        console.error('Error al cargar módulos:', error);
       }
-      
-      function nextSlide() {
-        currentSlide = (currentSlide + 1) % slides.length;
-        showSlide(currentSlide);
-      }
-      
-      function startSlider() {
-        slideInterval = setInterval(nextSlide, 5000);
-      }
-      
-      function stopSlider() {
-        clearInterval(slideInterval);
-      }
-      
-      document.querySelector('.banner-column').addEventListener('mouseenter', stopSlider);
-      document.querySelector('.banner-column').addEventListener('mouseleave', startSlider);
-      
-      showSlide(0);
-      startSlider();
-    });
+    }
+    
+    // Iniciar carga de módulos
+    loadModules();
   </script>
 
-  <!-- Firebase y scripts de autenticación -->
-<script type="module" src="./src/main.js"></script>
 </body>
 </html>
