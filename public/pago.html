@@ -3,43 +3,101 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pago - TecnoExpress</title>
+  <title>Pago - MiTienda503</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="css/styles.css">
   <style>
+    :root {
+      --primary: #e63946;
+      --primary-dark: #c1121f;
+      --secondary: #1d3557;
+      --white: #ffffff;
+      --gray-light: #f1f5f9;
+    }
+
+    /* Estilos base */
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: var(--gray-light);
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    /* Header */
+    .header {
+      background-color: var(--secondary);
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo img {
+      height: 60px;
+    }
+
+    /* Main content */
+    main {
+      padding: 3rem 0;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: var(--secondary);
+      font-size: 2.2rem;
+    }
+
+    /* Checkout grid */
     .checkout-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 30px;
       margin-top: 30px;
     }
-    
+
     .order-summary, .payment-form {
       background: white;
       border-radius: 10px;
       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
       padding: 30px;
     }
-    
+
     .order-summary h2, .payment-form h2 {
       font-size: 1.5rem;
-      color: #2c3e50;
+      color: var(--secondary);
       margin-bottom: 20px;
       padding-bottom: 10px;
       border-bottom: 2px solid #f0f0f0;
     }
-    
+
+    /* Order items */
     .order-item {
       display: flex;
       justify-content: space-between;
       padding: 10px 0;
       border-bottom: 1px solid #eee;
     }
-    
+
     .item-quantity {
       margin: 0 10px;
     }
-    
+
     .order-total {
       font-weight: bold;
       font-size: 1.2rem;
@@ -48,19 +106,20 @@
       border-top: 2px solid #f0f0f0;
       text-align: right;
     }
-    
+
+    /* Form styles */
     .form-group {
       margin-bottom: 20px;
       position: relative;
     }
-    
+
     .form-group label {
       display: block;
       margin-bottom: 8px;
       font-weight: 500;
-      color: #2c3e50;
+      color: var(--secondary);
     }
-    
+
     .form-group input, .form-group select {
       width: 100%;
       padding: 12px;
@@ -68,21 +127,22 @@
       border-radius: 5px;
       font-size: 1rem;
     }
-    
+
     .form-group input:focus, .form-group select:focus {
       outline: none;
-      border-color: #3498db;
-      box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.2);
     }
-    
+
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
     }
-    
+
+    /* Submit button */
     .submit-payment {
-      background-color: #27ae60;
+      background-color: var(--primary);
       color: white;
       border: none;
       padding: 15px 30px;
@@ -92,54 +152,23 @@
       width: 100%;
       transition: all 0.3s ease;
       margin-top: 20px;
-    }
-    
-    .submit-payment:hover {
-      background-color: #219955;
-      transform: translateY(-2px);
-    }
-    
-    .error {
-      color: #e74c3c;
-      text-align: center;
-      padding: 20px;
-    }
-    
-    .error i {
-      font-size: 2rem;
-      margin-bottom: 10px;
-      display: block;
-    }
-    
-    .section-title {
-      font-size: 1.2rem;
-      color: #2c3e50;
-      margin: 25px 0 15px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    .guest-field {
-      display: none;
-    }
-    
-    .card-icon-container {
       display: flex;
       align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .submit-payment:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    /* Error states */
+    .error-message {
+      color: #e74c3c;
+      font-size: 0.8rem;
       margin-top: 5px;
-    }
-
-    .card-icon {
-      margin-right: 10px;
-      font-size: 1.5rem;
-      color: #555;
-    }
-
-    #cardNumber {
-      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="12" viewBox="0 0 20 12"><path fill="%23999" d="M4 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm1 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm1 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM3 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm9-1a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm1 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg>');
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      background-size: 20px;
+      display: none;
     }
 
     input:invalid, select:invalid {
@@ -150,32 +179,22 @@
       border-color: #2ecc71;
     }
 
-    .error-message {
-      color: #e74c3c;
-      font-size: 0.8rem;
-      margin-top: 5px;
-      display: none;
-    }
-
+    /* Loading state */
     .loading {
       display: inline-block;
       width: 20px;
       height: 20px;
       border: 3px solid rgba(0,0,0,.3);
       border-radius: 50%;
-      border-top-color: #3498db;
+      border-top-color: var(--primary);
       animation: spin 1s ease-in-out infinite;
     }
-    
+
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    
-    .loading-items {
-      text-align: center;
-      padding: 20px;
-    }
 
+    /* Feedback modal */
     .feedback-overlay {
       position: fixed;
       top: 0;
@@ -213,8 +232,8 @@
     
     .success { color: #27ae60; }
     .error { color: #e74c3c; }
-    .warning { color: #f39c12; }
 
+    /* Responsive */
     @media (max-width: 768px) {
       .checkout-grid {
         grid-template-columns: 1fr;
@@ -228,21 +247,15 @@
   </style>
 </head>
 <body>
-  <header>
+  <!-- Header -->
+  <header class="header">
     <div class="container header-container">
       <div class="logo">
-        <a href="index.html"><img src="img/logo.png" alt="TecnoExpress"></a>
+        <a href="index.html"><img src="https://via.placeholder.com/180x60?text=MiTienda503" alt="MiTienda503"></a>
       </div>
-      <nav>
-        <ul>
-          <li><a href="index.html"><i class="fas fa-home"></i> Inicio</a></li>
-          <li><a href="productos.html"><i class="fas fa-print"></i> Productos</a></li>
-          <li><a href="#"><i class="fas fa-envelope"></i> Contacto</a></li>
-        </ul>
-      </nav>
-      <div class="cart-icon" id="cartIcon">
+      <div class="cart-icon">
         <i class="fas fa-shopping-cart"></i>
-        <span id="cartCounter">0</span>
+        <span id="cart-counter">0</span>
       </div>
     </div>
   </header>
@@ -251,6 +264,7 @@
     <h1><i class="fas fa-credit-card"></i> Finalizar Compra</h1>
     
     <div class="checkout-grid">
+      <!-- Resumen del pedido -->
       <div class="order-summary">
         <h2>Resumen de tu Pedido</h2>
         <div id="orderItems">
@@ -263,15 +277,15 @@
         </div>
       </div>
       
+      <!-- Formulario de pago -->
       <div class="payment-form">
-        <h2>Información de Envío y Pago</h2>
+        <h2>Información de Pago</h2>
         <form id="paymentForm">
-          <div class="section-title">Información de Contacto</div>
-          
-          <div id="guestNameField" class="form-group guest-field">
+          <!-- Información de contacto -->
+          <div class="form-group">
             <label for="customerName">Nombre Completo</label>
-            <input type="text" id="customerName">
-            <div class="error-message">Por favor ingrese su nombre completo</div>
+            <input type="text" id="customerName" required>
+            <div class="error-message">Por favor ingrese su nombre</div>
           </div>
           
           <div class="form-group">
@@ -279,77 +293,71 @@
             <input type="email" id="customerEmail" required>
             <div class="error-message">Por favor ingrese un correo válido</div>
           </div>
+          
           <div class="form-group">
             <label for="customerPhone">Teléfono</label>
             <input type="tel" id="customerPhone" required>
             <div class="error-message">Por favor ingrese un teléfono válido</div>
           </div>
           
-          <div class="section-title">Dirección de Envío</div>
+          <!-- Información de envío -->
           <div class="form-group">
             <label for="shippingAddress">Dirección</label>
-            <input type="text" id="shippingAddress" placeholder="Calle y número" required>
+            <input type="text" id="shippingAddress" required>
             <div class="error-message">Por favor ingrese su dirección</div>
-          </div>
-          
-          <div class="form-group">
-            <label for="shippingAddress2">Detalles adicionales (opcional)</label>
-            <input type="text" id="shippingAddress2" placeholder="Apartamento, suite, etc.">
           </div>
           
           <div class="form-row">
             <div class="form-group">
               <label for="departamento">Departamento</label>
-              <select id="departamento" name="departamento" required>
-                <option value="">Seleccione un departamento</option>
+              <select id="departamento" required>
+                <option value="">Seleccione...</option>
+                <option value="San Salvador">San Salvador</option>
+                <option value="Santa Ana">Santa Ana</option>
+                <option value="San Miguel">San Miguel</option>
               </select>
-              <div class="error-message">Por favor seleccione un departamento</div>
             </div>
             
             <div class="form-group">
               <label for="municipio">Municipio</label>
-              <select id="municipio" name="municipio" required disabled>
-                <option value="">Primero seleccione un departamento</option>
+              <select id="municipio" required>
+                <option value="">Seleccione...</option>
               </select>
-              <div class="error-message">Por favor seleccione un municipio</div>
             </div>
           </div>
-            
-          <div class="section-title">Método de Pago</div>
+          
+          <!-- Información de pago -->
           <div class="form-group">
             <label for="cardName">Nombre en la Tarjeta</label>
             <input type="text" id="cardName" required>
-            <div class="error-message">Por favor ingrese el nombre en la tarjeta</div>
           </div>
           
           <div class="form-group">
             <label for="cardNumber">Número de Tarjeta</label>
-            <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" required pattern="[0-9\s]{13,19}">
-            <div class="error-message">Por favor ingrese un número de tarjeta válido</div>
+            <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" required>
           </div>
           
           <div class="form-row">
             <div class="form-group">
               <label for="expiryDate">Fecha de Expiración</label>
-              <input type="text" id="expiryDate" placeholder="MM/AA" required pattern="(0[1-9]|1[0-2])\/?([0-9]{2})">
-              <div class="error-message">Formato MM/AA</div>
+              <input type="text" id="expiryDate" placeholder="MM/AA" required>
             </div>
             
             <div class="form-group">
               <label for="cvv">CVV</label>
-              <input type="text" id="cvv" placeholder="123" required pattern="\d{3,4}">
-              <div class="error-message">Código de seguridad inválido</div>
+              <input type="text" id="cvv" placeholder="123" required>
             </div>
           </div>
           
           <button type="submit" class="submit-payment">
-            <i class="fas fa-lock"></i> Pagar $<span id="paymentTotal">0.00</span>
+            <i class="fas fa-lock"></i> Confirmar Pago $<span id="paymentTotal">0.00</span>
           </button>
         </form>
       </div>
     </div>
   </main>
 
+  <!-- Modal de feedback -->
   <div class="feedback-overlay" id="feedbackModal">
     <div class="feedback-content">
       <div class="feedback-icon" id="feedbackIcon">
@@ -361,138 +369,28 @@
     </div>
   </div>
 
-  <script type="module">
-    // Importar desde la configuración centralizada de Firebase
-    import { app, db, auth } from '/js/firebase-config.js';
-    import { 
-      collection, addDoc, serverTimestamp, 
-      doc, setDoc, updateDoc 
-    } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
-    import { getApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
-    import { AuthService } from '/js/auth.js';
-
-    // Datos de departamentos y municipios de El Salvador
-    const departamentos = {
-      "Ahuachapán": ["Ahuachapán", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Guaymango", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
-      "Cabañas": ["Sensuntepeque", "Cinquera", "Dolores", "Guacotecti", "Ilobasco", "Jutiapa", "San Isidro", "Tejutepeque", "Victoria"],
-      "Chalatenango": ["Chalatenango", "Agua Caliente", "Arcatao", "Azacualpa", "Cancasque", "Citalá", "Comalapa", "Concepción Quezaltepeque", "Dulce Nombre de María", "El Carrizal", "El Paraíso", "La Laguna", "La Palma", "La Reina", "Las Vueltas", "Nombre de Jesús", "Nueva Concepción", "Nueva Trinidad", "Ojos de Agua", "Potonico", "San Antonio de la Cruz", "San Antonio Los Ranchos", "San Fernando", "San Francisco Lempa", "San Francisco Morazán", "San Ignacio", "San Isidro Labrador", "San José Cancasque", "San José Las Flores", "San Luis del Carmen", "San Miguel de Mercedes", "San Rafael", "Santa Rita", "Tejutla"],
-      "Cuscatlán": ["Cojutepeque", "Candelaria", "El Carmen", "El Rosario", "Monte San Juan", "Oratorio de Concepción", "San Bartolomé Perulapía", "San Cristóbal", "San José Guayabal", "San Pedro Perulapán", "San Rafael Cedros", "San Ramón", "Santa Cruz Analquito", "Santa Cruz Michapa", "Suchitoto", "Tenancingo"],
-      "La Libertad": ["Santa Tecla", "Antiguo Cuscatlán", "Chiltiupán", "Ciudad Arce", "Colón", "Comasagua", "Huizúcar", "Jayaque", "Jicalapa", "La Libertad", "Nuevo Cuscatlán", "Opico", "Quezaltepeque", "Sacacoyo", "San José Villanueva", "San Juan Opico", "San Matías", "San Pablo Tacachico", "Talnique", "Tamanique", "Teotepeque", "Tepecoyo", "Zaragoza"],
-      "La Paz": ["Zacatecoluca", "Cuyultitán", "El Rosario", "Jerusalén", "Mercedes La Ceiba", "Olocuilta", "Paraíso de Osorio", "San Antonio Masahuat", "San Emigdio", "San Francisco Chinameca", "San Juan Nonualco", "San Juan Talpa", "San Juan Tepezontes", "San Luis La Herradura", "San Luis Talpa", "San Miguel Tepezontes", "San Pedro Masahuat", "San Pedro Nonualco", "San Rafael Obrajuelo", "Santa María Ostuma", "Santiago Nonualco", "Tapalhuaca"],
-      "La Unión": ["La Unión", "Anamorós", "Bolívar", "Concepción de Oriente", "Conchagua", "El Carmen", "El Sauce", "Intipucá", "Lislique", "Meanguera del Golfo", "Nueva Esparta", "Pasaquina", "Polorós", "San Alejo", "San José", "Santa Rosa de Lima", "Yayantique", "Yucuaiquín"],
-      "Morazán": ["San Francisco Gotera", "Arambala", "Cacaopera", "Chilanga", "Corinto", "Delicias de Concepción", "El Divisadero", "El Rosario", "Gualococti", "Guatajiagua", "Joateca", "Jocoaitique", "Jocoro", "Lolotiquillo", "Meanguera", "Osicala", "Perquín", "San Carlos", "San Fernando", "San Isidro", "San Simón", "Sensembra", "Sociedad", "Torola", "Yamabal", "Yoloaiquín"],
-      "San Miguel": ["San Miguel", "Carolina", "Chapeltique", "Chinameca", "Chirilagua", "Ciudad Barrios", "Comacarán", "El Tránsito", "Lolotique", "Moncagua", "Nueva Guadalupe", "Nuevo Edén de San Juan", "Quelepa", "San Antonio", "San Gerardo", "San Jorge", "San Luis de la Reina", "San Rafael Oriente", "Sesori", "Uluazapa"],
-      "San Salvador": ["San Salvador", "Aguilares", "Apopa", "Ayutuxtepeque", "Cuscatancingo", "Delgado", "El Paisnal", "Guazapa", "Ilopango", "Mejicanos", "Nejapa", "Panchimalco", "Rosario de Mora", "San Marcos", "San Martín", "Santiago Texacuangos", "Santo Tomás", "Soyapango", "Tonacatepeque"],
-      "San Vicente": ["San Vicente", "Apastepeque", "Guadalupe", "San Cayetano Istepeque", "San Esteban Catarina", "San Ildefonso", "San Lorenzo", "San Sebastián", "Santa Clara", "Santo Domingo", "Tecoluca", "Tepetitán", "Verapaz"],
-      "Santa Ana": ["Santa Ana", "Candelaria de la Frontera", "Chalchuapa", "Coatepeque", "El Congo", "El Porvenir", "Masahuat", "Metapán", "San Antonio Pajonal", "San Sebastián Salitrillo", "Santa Rosa Guachipilín", "Santiago de la Frontera", "Texistepeque"],
-      "Sonsonate": ["Sonsonate", "Acajutla", "Armenia", "Caluco", "Cuisnahuat", "Izalco", "Juayúa", "Nahuizalco", "Nahulingo", "Salcoatitán", "San Antonio del Monte", "San Julián", "Santa Catarina Masahuat", "Santa Isabel Ishuatán", "Santo Domingo de Guzmán", "Sonzacate"],
-      "Usulután": ["Usulután", "Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán"]
-    };
-
+  <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        // Cargar departamentos y municipios primero
-        loadDepartamentos();
-        
-        // Verificar datos de checkout
-        const checkoutData = await loadCheckoutData();
-        if (!checkoutData) {
-          showErrorAndRedirect('No se encontraron productos en el carrito');
-          return;
-        }
-
-        // Mostrar productos en el resumen
-        displayOrderItems(checkoutData.items);
-        updateOrderTotals(checkoutData.total);
-        updateCartCounter(checkoutData.items);
-        
-        // Verificar autenticación
-        const user = await AuthService.checkAuth().catch(() => null);
-        
-        // Configurar campos según autenticación
-        if (!user) {
-          document.getElementById('guestNameField').classList.remove('guest-field');
-          document.getElementById('customerName').required = true;
-        } else {
-          // Prellenar datos del usuario
-          document.getElementById('customerEmail').value = user.email;
-          document.getElementById('customerEmail').readOnly = true;
-          
-          try {
-            const userProfile = await AuthService.getUserProfile(user.uid);
-            if (userProfile) {
-              if (userProfile.phone) {
-                document.getElementById('customerPhone').value = userProfile.phone;
-              }
-              if (userProfile.address) {
-                document.getElementById('shippingAddress').value = userProfile.address;
-              }
-            }
-          } catch (error) {
-            console.error("Error al obtener perfil:", error);
-          }
-        }
-
-        // Configurar envío del formulario
-        setupFormSubmission(user, checkoutData);
-
-      } catch (error) {
-        console.error("Error:", error);
-        showErrorAndRedirect('Error al cargar la página de pago: ' + error.message);
-      }
-    });
-
-    function loadDepartamentos() {
-      const deptoSelect = document.getElementById('departamento');
-      const muniSelect = document.getElementById('municipio');
-      
-      // Limpiar y cargar departamentos
-      deptoSelect.innerHTML = '<option value="">Seleccione un departamento</option>';
-      Object.keys(departamentos).forEach(depto => {
-        const option = document.createElement('option');
-        option.value = depto;
-        option.textContent = depto;
-        deptoSelect.appendChild(option);
-      });
-      
-      // Manejar cambio de departamento
-      deptoSelect.addEventListener('change', function() {
-        muniSelect.innerHTML = '<option value="">Seleccione un municipio</option>';
-        muniSelect.disabled = !this.value;
-        
-        if (this.value) {
-          departamentos[this.value].forEach(muni => {
-            const option = document.createElement('option');
-            option.value = muni;
-            option.textContent = muni;
-            muniSelect.appendChild(option);
-          });
-        }
-      });
-    }
-
-    async function loadCheckoutData() {
-      // Intentar múltiples fuentes de datos
-      const checkoutData = 
-        JSON.parse(localStorage.getItem('currentCheckout')) || 
-        JSON.parse(sessionStorage.getItem('checkoutData')) ||
-        JSON.parse(localStorage.getItem('lastCheckoutBackup'));
+      // Cargar datos del carrito
+      const checkoutData = JSON.parse(localStorage.getItem('currentCheckout'));
       
       if (!checkoutData || !checkoutData.items || checkoutData.items.length === 0) {
-        showEmptyCartMessage();
-        return null;
-      }
-      
-      return checkoutData;
-    }
-
-    function displayOrderItems(items) {
-      const orderItemsContainer = document.getElementById('orderItems');
-      
-      if (!items || items.length === 0) {
-        orderItemsContainer.innerHTML = '<p class="error">No hay productos en el carrito</p>';
+        showErrorAndRedirect('No se encontraron productos en el carrito');
         return;
       }
+
+      // Mostrar productos en el resumen
+      displayOrderItems(checkoutData.items);
+      updateOrderTotals(checkoutData.total);
+      updateCartCounter(checkoutData.items);
+
+      // Configurar formulario
+      setupFormValidation(checkoutData);
+    });
+
+    // Mostrar items del pedido
+    function displayOrderItems(items) {
+      const orderItemsContainer = document.getElementById('orderItems');
       
       let html = '';
       items.forEach(item => {
@@ -508,194 +406,106 @@
       orderItemsContainer.innerHTML = html;
     }
 
+    // Actualizar totales
     function updateOrderTotals(total) {
       document.getElementById('orderTotal').textContent = total.toFixed(2);
       document.getElementById('paymentTotal').textContent = total.toFixed(2);
     }
 
+    // Actualizar contador del carrito
     function updateCartCounter(items) {
       const counter = document.getElementById('cartCounter');
       if (counter) {
         const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
         counter.textContent = totalItems;
-        counter.style.display = totalItems > 0 ? 'inline-block' : 'none';
       }
     }
 
-    function setupFormSubmission(user, checkoutData) {
-      document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+    // Configurar validación del formulario
+    function setupFormValidation(checkoutData) {
+      const form = document.getElementById('paymentForm');
+      
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        // Validar campos
+        if (!validateForm()) {
+          return;
+        }
+
+        // Mostrar estado de carga
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="loading"></span> Procesando...';
+        submitBtn.disabled = true;
+
         try {
-          // Mostrar carga
-          const submitBtn = e.target.querySelector('button[type="submit"]');
-          const originalText = submitBtn.innerHTML;
-          submitBtn.innerHTML = '<span class="loading"></span> Procesando...';
-          submitBtn.disabled = true;
+          // Simular procesamiento de pago
+          await processPayment(checkoutData);
           
-          // Validar y obtener datos del formulario
-          const formData = validateFormData(user);
+          // Mostrar feedback positivo
+          showFeedback('¡Pago completado!', `Pedido #${generateOrderId()} procesado`, 'success');
           
-          // Crear y guardar la orden
-          const orderId = await processOrder(user, checkoutData, formData);
-          
-          // Mostrar feedback
-          showFeedback('¡Pago completado!', `Pedido #${orderId.substring(0, 8)} procesado`, 'success');
-          
-          // Limpiar y redirigir después de 3 segundos
+          // Limpiar carrito y redirigir después de 3 segundos
           setTimeout(() => {
-            clearCartAndRedirect(user, formData.customerEmail, orderId);
+            localStorage.removeItem('currentCheckout');
+            window.location.href = 'confirmacion.html';
           }, 3000);
           
         } catch (error) {
-          console.error("Error al procesar pago:", error);
+          // Mostrar error
           showFeedback('Error en el pago', error.message, 'error');
-          
-          // Restaurar botón
-          const submitBtn = document.querySelector('#paymentForm button[type="submit"]');
           submitBtn.innerHTML = originalText;
           submitBtn.disabled = false;
         }
       });
     }
 
-    function validateFormData(user) {
-      // Obtener datos básicos
-      const customerName = !user ? document.getElementById('customerName').value.trim() : null;
-      const customerEmail = document.getElementById('customerEmail').value.trim();
-      const customerPhone = document.getElementById('customerPhone').value.trim();
-      
-      // Validar datos de contacto
-      if (!customerEmail || !customerPhone || (!user && !customerName)) {
-        throw new Error('Por favor complete todos los campos de contacto');
-      }
-      
-      // Validar email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(customerEmail)) {
-        throw new Error('Por favor ingrese un correo electrónico válido');
-      }
-      
-      // Obtener y validar datos de envío
-      const shippingAddress1 = document.getElementById('shippingAddress').value.trim();
-      const departamento = document.getElementById('departamento').value;
-      const municipio = document.getElementById('municipio').value;
-      
-      if (!shippingAddress1 || !departamento || !municipio) {
-        throw new Error('Por favor complete todos los campos de dirección');
-      }
-      
-      // Obtener y validar datos de pago
-      const cardName = document.getElementById('cardName').value.trim();
-      const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
-      const expiryDate = document.getElementById('expiryDate').value.trim();
-      const cvv = document.getElementById('cvv').value.trim();
-      
-      if (!cardName || !cardNumber || !expiryDate || !cvv) {
-        throw new Error('Por favor complete todos los campos de pago');
-      }
-      
-      // Validar tarjeta (simplificado)
-      if (cardNumber.length < 13 || cardNumber.length > 19) {
-        throw new Error('El número de tarjeta debe tener entre 13 y 19 dígitos');
-      }
-      
-      // Validar fecha de expiración
-      const [month, year] = expiryDate.split('/');
-      if (!month || !year || month.length !== 2 || year.length !== 2) {
-        throw new Error('Formato de fecha de expiración inválido (use MM/AA)');
-      }
-      
-      return {
-        customerName,
-        customerEmail,
-        customerPhone,
-        shippingAddress1,
-        shippingAddress2: document.getElementById('shippingAddress2').value.trim(),
-        departamento,
-        municipio,
-        cardName,
-        cardNumber,
-        expiryDate,
-        cvv
-      };
-    }
+    // Validar formulario
+    function validateForm() {
+      let isValid = true;
+      const requiredFields = [
+        'customerName', 'customerEmail', 'customerPhone', 
+        'shippingAddress', 'departamento', 'municipio',
+        'cardName', 'cardNumber', 'expiryDate', 'cvv'
+      ];
 
-    async function processOrder(user, checkoutData, formData) {
-      // Crear dirección completa
-      const fullAddress = `${formData.shippingAddress1}${
-        formData.shippingAddress2 ? ', ' + formData.shippingAddress2 : ''
-      }, ${formData.municipio}, ${formData.departamento}`;
-      
-      // Crear objeto de orden
-      const orderData = {
-        userId: user ? user.uid : `guest_${Date.now()}`,
-        items: checkoutData.items,
-        subtotal: checkoutData.subtotal || checkoutData.total * 0.88,
-        tax: checkoutData.tax || checkoutData.total * 0.12,
-        total: checkoutData.total,
-        customerInfo: {
-          email: formData.customerEmail,
-          phone: formData.customerPhone,
-          ...(!user && { name: formData.customerName })
-        },
-        shippingInfo: {
-          address: fullAddress,
-          departamento: formData.departamento,
-          municipio: formData.municipio
-        },
-        paymentInfo: {
-          method: 'Tarjeta de crédito',
-          cardLastFour: formData.cardNumber.slice(-4),
-          cardType: detectCardType(formData.cardNumber)
-        },
-        status: 'Procesando',
-        date: serverTimestamp()
-      };
-      
-      // Guardar la orden en Firestore
-      const orderRef = await addDoc(collection(db, 'orders'), orderData);
-      
-      // Actualizar perfil de usuario si está registrado
-      if (user) {
-        try {
-          await updateDoc(doc(db, 'users', user.uid), {
-            phone: orderData.customerInfo.phone,
-            address: orderData.shippingInfo.address,
-            lastUpdated: serverTimestamp()
-          });
-          
-          // Limpiar carrito en Firestore
-          await setDoc(doc(db, 'carts', user.uid), {
-            items: [],
-            lastUpdated: serverTimestamp()
-          });
-        } catch (error) {
-          console.error("Error al actualizar perfil:", error);
+      requiredFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        const errorMsg = field.parentElement.querySelector('.error-message');
+        
+        if (!field.value.trim()) {
+          if (errorMsg) errorMsg.style.display = 'block';
+          isValid = false;
+        } else {
+          if (errorMsg) errorMsg.style.display = 'none';
         }
-      }
-      
-      return orderRef.id;
+      });
+
+      return isValid;
     }
 
-    function detectCardType(cardNumber) {
-      const firstDigit = cardNumber.charAt(0);
-      if (firstDigit === '4') return 'Visa';
-      if (firstDigit === '5') return 'Mastercard';
-      if (firstDigit === '3') return 'American Express';
-      return 'Otra';
+    // Procesar pago (simulado)
+    function processPayment(checkoutData) {
+      return new Promise((resolve, reject) => {
+        // Simular demora de red
+        setTimeout(() => {
+          // Simular éxito 90% de las veces
+          if (Math.random() > 0.1) {
+            resolve();
+          } else {
+            reject(new Error('Error al procesar el pago. Intente nuevamente.'));
+          }
+        }, 1500);
+      });
     }
 
-    async function clearCartAndRedirect(user, email, orderId) {
-      sessionStorage.setItem('clearCartOnLoad', 'true');
-      localStorage.removeItem('cart');
-      localStorage.removeItem('currentCheckout');
-      localStorage.removeItem('lastCheckoutBackup');
-      sessionStorage.removeItem('checkoutData');
-      
-      window.location.href = user ? 'perfil.html#compras' : 'index.html';
+    // Generar ID de pedido aleatorio
+    function generateOrderId() {
+      return Math.random().toString(36).substring(2, 10).toUpperCase();
     }
 
+    // Mostrar feedback
     function showFeedback(title, message, type = 'success') {
       const modal = document.getElementById('feedbackModal');
       const icon = document.getElementById('feedbackIcon');
@@ -704,8 +514,7 @@
       
       // Configurar contenido
       icon.innerHTML = `<i class="fas fa-${
-        type === 'success' ? 'check-circle' : 
-        type === 'error' ? 'times-circle' : 'exclamation-circle'
+        type === 'success' ? 'check-circle' : 'times-circle'
       } ${type}"></i>`;
       
       feedbackTitle.textContent = title;
@@ -720,19 +529,12 @@
       };
     }
 
-    function showEmptyCartMessage() {
-      document.getElementById('orderItems').innerHTML = `
-        <div class="error">
-          <i class="fas fa-exclamation-triangle"></i>
-          <p>No se encontraron productos. Redirigiendo...</p>
-        </div>
-      `;
-      setTimeout(() => window.location.href = 'productos.html', 2000);
-    }
-
+    // Mostrar error y redirigir
     function showErrorAndRedirect(message) {
       showFeedback('Error', message, 'error');
-      setTimeout(() => window.location.href = 'productos.html', 3000);
+      setTimeout(() => {
+        window.location.href = 'productos.html';
+      }, 3000);
     }
   </script>
 </body>
