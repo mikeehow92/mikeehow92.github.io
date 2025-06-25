@@ -40,7 +40,7 @@ const setupEventListeners = () => {
   // Delegación de eventos para botones dinámicos
   document.querySelector(SELECTORS.CART_ITEMS)?.addEventListener('click', handleCartActions);
   
-  // Checkout
+  // Checkout - modificado para redirigir a pago.html
   document.querySelector(SELECTORS.CHECKOUT_BTN)?.addEventListener('click', handleCheckout);
 };
 
@@ -124,30 +124,30 @@ const handleCartActions = async (e) => {
 };
 
 /**
- * Maneja el proceso de checkout
+ * Maneja el proceso de checkout - MODIFICADO PARA REDIRIGIR A PAGO.HTML
  */
 const handleCheckout = async () => {
   const user = AuthService.getCurrentUser();
-  if (!user) {
-    showFeedback('Inicia sesión para continuar', 'error');
-    return;
-  }
-
   const cart = await CartService.getCart();
+
   if (cart.length === 0) {
     showFeedback('El carrito está vacío', 'error');
     return;
   }
 
-  try {
-    // Lógica de checkout aquí (puede integrarse con un servicio de pago)
-    await CartService.clearCart();
-    showFeedback('Compra realizada con éxito', 'success');
-    closeCart();
-    await renderCart();
-  } catch (error) {
-    showFeedback('Error en el checkout', 'error');
-  }
+  // Preparar datos para el checkout
+  const checkoutData = {
+    items: cart,
+    total: CartService.getTotal(cart),
+    subtotal: CartService.getTotal(cart) * 0.88, // Ejemplo con IVA del 12%
+    tax: CartService.getTotal(cart) * 0.12
+  };
+
+  // Guardar en localStorage para usar en pago.html
+  localStorage.setItem('currentCheckout', JSON.stringify(checkoutData));
+  
+  // Redirigir a la página de pago
+  window.location.href = 'pago.html';
 };
 
 /**
