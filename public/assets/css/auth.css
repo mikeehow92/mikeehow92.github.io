@@ -1,0 +1,166 @@
+/* auth.css - Estilos específicos para autenticación */
+.auth-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+#guest-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+#user-info {
+  display: none;
+  align-items: center;
+  gap: 15px;
+}
+
+#user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Modales de autenticación */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.login-modal {
+  background: var(--white);
+  padding: 30px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  color: var(--secondary-color);
+  font-size: 1.8rem;
+}
+
+.close-modal {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-medium);
+}
+
+.login-form .form-group {
+  margin-bottom: 20px;
+}
+
+.login-form label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
+}
+
+.forgot-password {
+  display: block;
+  text-align: right;
+  margin-top: 8px;
+  color: var(--primary-color);
+  font-size: 0.9rem;
+}
+
+.btn-login {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: var(--transition);
+}
+
+.btn-login:hover {
+  background-color: var(--primary-dark);
+}
+
+.btn-google {
+  width: 100%;
+  padding: 12px;
+  background-color: #db4437;
+  color: var(--white);
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: var(--transition);
+}
+
+.btn-google:hover {
+  background-color: #c23321;
+}
+
+.form-footer {
+  text-align: center;
+  margin-top: 20px;
+  color: var(--text-medium);
+}
+
+.register-link {
+  color: var(--primary-color);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .auth-section {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .login-modal {
+    padding: 20px;
+  }
+}
