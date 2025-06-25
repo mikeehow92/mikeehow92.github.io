@@ -4,24 +4,27 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  updateProfile,
   updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
   GoogleAuthProvider,
-  signInWithPopup,
-  updateProfile
+  signInWithPopup
 } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { app } from "../firebase-config";
-import { CartService } from "../cart/cart-service";
+import { app } from "../firebase-config.js";
+import { CartService } from "../cart/cart-service.js";
 
 // Inicialización de servicios
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Configuración adicional del proveedor Google (opcional)
-googleProvider.setCustomParameters({ prompt: 'select_account' });
+// Configuración adicional del proveedor Google
+googleProvider.setCustomParameters({ 
+  prompt: 'select_account',
+  login_hint: 'email'
+});
 
 export const AuthService = {
   // ==================== AUTENTICACIÓN BÁSICA ====================
@@ -31,15 +34,15 @@ export const AuthService = {
    * @param {string} password 
    * @returns {Promise<UserCredential>}
    */
-  login: async (email, password) => {
+  async login(email, password) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      await migrateGuestData(userCredential.user.uid);
       
       // Actualizar lastLogin en Firestore
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        lastLogin: serverTimestamp()
-      }, { merge: true });
+      await this._updateUserLoginData(userCredential.user.uid);
+      
+      // Migrar datos de invitado
+      await migrateGuestData(userCredential.user.uid);
       
       return userCredential;
     } catch (error) {
@@ -52,7 +55,7 @@ export const AuthService = {
    * Cierra la sesión actual
    * @returns {Promise<void>}
    */
-  logout: async () => {
+  async logout() {
     try {
       await signOut(auth);
     } catch (error) {
@@ -69,7 +72,7 @@ export const AuthService = {
    * @param {Object} userData 
    * @returns {Promise<UserCredential>}
    */
-  register: async (email, password, userData) => {
+  async register(email, password, userData) {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
@@ -81,16 +84,11 @@ export const AuthService = {
       }
       
       // Crear documento en Firestore
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        ...userData,
-        email: userCredential.user.email,
-        createdAt: serverTimestamp(),
-        lastLogin: serverTimestamp(),
-        role: "customer", // Rol por defecto
-        photoURL: userCredential.user.photoURL || null
-      });
+      await this._createUserProfile(userCredential.user, userData);
 
+      // Migrar datos de invitado
       await migrateGuestData(userCredential.user.uid);
+      
       return userCredential;
     } catch (error) {
       console.error("Error en registro:", error);
@@ -103,28 +101,24 @@ export const AuthService = {
    * Inicia sesión con Google
    * @returns {Promise<UserCredential>}
    */
-  loginWithGoogle: async () => {
+  async loginWithGoogle() {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       
       // Verifica si es un nuevo usuario
       if (result._tokenResponse?.isNewUser) {
-        await setDoc(doc(db, "users", result.user.uid), {
+        await this._createUserProfile(result.user, {
           name: result.user.displayName,
-          email: result.user.email,
-          photoURL: result.user.photoURL,
-          createdAt: serverTimestamp(),
-          lastLogin: serverTimestamp(),
-          role: "customer"
+          photoURL: result.user.photoURL
         });
       } else {
         // Actualizar lastLogin para usuarios existentes
-        await setDoc(doc(db, "users", result.user.uid), {
-          lastLogin: serverTimestamp()
-        }, { merge: true });
+        await this._updateUserLoginData(result.user.uid);
       }
 
+      // Migrar datos de invitado
       await migrateGuestData(result.user.uid);
+      
       return result;
     } catch (error) {
       console.error("Error en Google Sign-In:", error);
@@ -137,7 +131,7 @@ export const AuthService = {
    * Obtiene el usuario actual
    * @returns {User|null}
    */
-  getCurrentUser: () => {
+  getCurrentUser() {
     return auth.currentUser;
   },
 
@@ -146,19 +140,20 @@ export const AuthService = {
    * @param {(user: User|null) => void} callback 
    * @returns {() => void} Función para desuscribirse
    */
-  onAuthStateChanged: (callback) => {
+  onAuthStateChanged(callback) {
     return onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
           // Obtener datos adicionales de Firestore
-          const userProfile = await getDoc(doc(db, "users", user.uid));
+          const userProfile = await this.getUserProfile(user.uid);
+          
           callback({
             uid: user.uid,
             email: user.email,
             displayName: user.displayName,
             photoURL: user.photoURL,
             emailVerified: user.emailVerified,
-            profile: userProfile.exists() ? userProfile.data() : null
+            profile: userProfile
           });
         } catch (error) {
           console.error("Error cargando perfil:", error);
@@ -183,7 +178,7 @@ export const AuthService = {
    * @param {string} newPassword 
    * @returns {Promise<void>}
    */
-  changePassword: async (currentPassword, newPassword) => {
+  async changePassword(currentPassword, newPassword) {
     const user = auth.currentUser;
     if (!user || !user.email) throw new Error("Usuario no autenticado");
 
@@ -203,7 +198,7 @@ export const AuthService = {
    * @param {string} userId 
    * @returns {Promise<Object|null>}
    */
-  getUserProfile: async (userId) => {
+  async getUserProfile(userId) {
     try {
       const userDoc = await getDoc(doc(db, "users", userId));
       return userDoc.exists() ? userDoc.data() : null;
@@ -219,7 +214,7 @@ export const AuthService = {
    * @param {Object} profileData 
    * @returns {Promise<void>}
    */
-  updateUserProfile: async (userId, profileData) => {
+  async updateUserProfile(userId, profileData) {
     try {
       await setDoc(doc(db, "users", userId), profileData, { merge: true });
       
@@ -238,6 +233,33 @@ export const AuthService = {
       console.error("Error actualizando perfil:", error);
       throw error;
     }
+  },
+
+  // ==================== MÉTODOS PRIVADOS ====================
+  /**
+   * Crea el perfil del usuario en Firestore
+   * @private
+   */
+  async _createUserProfile(user, additionalData = {}) {
+    await setDoc(doc(db, "users", user.uid), {
+      name: user.displayName || additionalData.name,
+      email: user.email,
+      photoURL: user.photoURL || additionalData.photoURL || null,
+      createdAt: serverTimestamp(),
+      lastLogin: serverTimestamp(),
+      role: "customer",
+      ...additionalData
+    });
+  },
+
+  /**
+   * Actualiza los datos de login del usuario
+   * @private
+   */
+  async _updateUserLoginData(userId) {
+    await setDoc(doc(db, "users", userId), {
+      lastLogin: serverTimestamp()
+    }, { merge: true });
   }
 };
 
@@ -246,31 +268,38 @@ export const AuthService = {
  * Migra datos de invitado al autenticarse
  * @param {string} userId 
  */
-const migrateGuestData = async (userId) => {
+async function migrateGuestData(userId) {
   try {
     await CartService.migrateGuestCart(userId);
     // Aquí puedes añadir más migraciones (ej: favoritos, historial)
   } catch (error) {
     console.error("Error migrando datos:", error);
   }
-};
+}
 
 /**
  * Maneja errores de autenticación
  * @param {Error} error 
  * @returns {Error}
  */
-const handleAuthError = (error) => {
+function handleAuthError(error) {
   const errorMap = {
+    // Errores comunes de Firebase Auth
+    "auth/invalid-email": "El correo electrónico no es válido",
+    "auth/user-disabled": "Esta cuenta ha sido deshabilitada",
+    "auth/user-not-found": "No existe una cuenta con este correo",
     "auth/wrong-password": "Contraseña incorrecta",
-    "auth/user-not-found": "Usuario no encontrado",
-    "auth/email-already-in-use": "El email ya está registrado",
+    "auth/email-already-in-use": "Este correo ya está registrado",
+    "auth/operation-not-allowed": "Operación no permitida",
     "auth/weak-password": "La contraseña debe tener al menos 6 caracteres",
-    "auth/too-many-requests": "Demasiados intentos. Por favor, inténtalo más tarde",
+    "auth/too-many-requests": "Demasiados intentos. Intenta más tarde",
     "auth/account-exists-with-different-credential": "Ya existe una cuenta con este email",
-    "auth/popup-closed-by-user": "El popup de autenticación fue cerrado",
-    "auth/network-request-failed": "Error de conexión. Verifica tu conexión a internet"
+    "auth/popup-closed-by-user": "La ventana de autenticación fue cerrada",
+    "auth/network-request-failed": "Error de conexión. Verifica tu internet",
+    
+    // Errores personalizados
+    "auth/requires-recent-login": "Debes iniciar sesión nuevamente para realizar esta acción"
   };
 
-  return new Error(errorMap[error.code] || "Error en autenticación");
-};
+  return new Error(errorMap[error.code] || "Error en autenticación. Por favor intenta nuevamente.");
+}
