@@ -732,19 +732,24 @@
       updateCart();
     });
     
-    // Checkout
+    // Checkout - Modificado para redirigir a pago.html con los datos
     checkoutBtn.addEventListener('click', () => {
       if (cart.length === 0) {
         alert('Tu carrito está vacío');
         return;
       }
       
-      alert(`Compra realizada por $${cartTotal.textContent}`);
-      cart.length = 0;
-      updateCart();
-      cartContainer.classList.remove('active');
-      cartOverlay.classList.remove('active');
-      document.body.style.overflow = 'auto';
+      // Guardar los datos del carrito para usar en pago.html
+      const checkoutData = {
+        items: cart,
+        total: cart.reduce((total, item) => total + (item.price * item.quantity), 0)
+      };
+      
+      // Guardar en localStorage
+      localStorage.setItem('currentCheckout', JSON.stringify(checkoutData));
+      
+      // Redirigir a la página de pago
+      window.location.href = 'pago.html';
     });
   </script>
 </body>
