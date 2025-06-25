@@ -50,7 +50,7 @@
         }
 
         .logo img {
-            height: 60px; /* Logo más grande */
+            height: 60px;
             transition: var(--transition);
         }
 
@@ -75,28 +75,97 @@
             color: var(--primary);
         }
 
-        /* Botón de Inicio de Sesión */
-        .login-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
+        /* Área de autenticación */
+        .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        #guest-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* Botones de autenticación */
+        .btn-auth {
             padding: 0.6rem 1.2rem;
             border-radius: 2rem;
             cursor: pointer;
+            transition: var(--transition);
+            border: none;
             font-weight: 500;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            transition: var(--transition);
         }
 
-        .login-btn:hover {
+        #open-login-btn {
+            background: var(--primary);
+            color: white;
+        }
+
+        #open-login-btn:hover {
             background: var(--primary-dark);
             transform: translateY(-2px);
         }
 
-        /* Modal de Inicio de Sesión */
-        .login-modal {
+        #open-register-btn {
+            background-color: transparent;
+            color: var(--white);
+            border: 2px solid var(--white);
+        }
+
+        #open-register-btn:hover {
+            background-color: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+        }
+
+        #logout-btn {
+            background-color: rgba(255,255,255,0.1);
+            color: var(--white);
+            border: 2px solid var(--white);
+            padding: 0.6rem 1.2rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        #logout-btn:hover {
+            background-color: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Elementos de usuario */
+        .user-only { 
+            display: none; 
+        }
+
+        .authenticated .user-only { 
+            display: block; 
+        }
+
+        .authenticated .guest-only {
+            display: none;
+        }
+
+        #user-info {
+            display: none;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--white);
+        }
+
+        /* Modales de autenticación */
+        .auth-modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -107,6 +176,10 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+        }
+
+        .auth-modal.active {
+            display: flex;
         }
 
         .modal-content {
@@ -125,7 +198,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .close-btn {
+        .close-modal {
             position: absolute;
             top: 1rem;
             right: 1rem;
@@ -133,6 +206,99 @@
             border: none;
             font-size: 1.5rem;
             cursor: pointer;
+        }
+
+        .modal-header {
+            padding: 1rem 0;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .modal-header h2 {
+            font-size: 1.8rem;
+            color: var(--secondary);
+        }
+
+        .auth-form {
+            padding: 1rem 0;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 0.4rem;
+            font-family: inherit;
+        }
+
+        .forgot-password {
+            display: block;
+            text-align: right;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 0.4rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: var(--transition);
+        }
+
+        .btn-submit:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-google {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: #4285F4;
+            color: var(--white);
+            border: none;
+            border-radius: 0.4rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            transition: var(--transition);
+        }
+
+        .btn-google:hover {
+            background-color: #357ABD;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-footer a {
+            color: var(--primary);
+            font-weight: 500;
+            text-decoration: none;
         }
 
         /* Hero Section */
@@ -408,7 +574,7 @@
         }
 
         .footer-logo img {
-            height: 60px; /* Logo más grande en el footer */
+            height: 60px;
             margin-bottom: 1rem;
         }
 
@@ -449,6 +615,20 @@
                 display: none;
             }
 
+            .auth-section {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            #guest-buttons {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .btn-auth {
+                width: 100%;
+            }
+
             .hero {
                 height: 60vh;
                 min-height: 400px;
@@ -474,31 +654,114 @@
                     <li><a href="productos.html"><i class="fas fa-shopping-bag"></i> Productos</a></li>
                     <li><a href="#nosotros"><i class="fas fa-users"></i> Nosotros</a></li>
                     <li><a href="#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
+                    <li class="user-only"><a href="/perfil"><i class="fas fa-user-circle"></i> Mi Perfil</a></li>
+                    <li class="user-only"><a href="/mis-compras"><i class="fas fa-receipt"></i> Mis Compras</a></li>
                 </ul>
             </nav>
-            <button class="login-btn" id="loginBtn">
-                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-            </button>
+            
+            <div class="auth-section">
+                <div id="guest-buttons">
+                    <button id="open-login-btn" class="btn-auth">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </button>
+                    <button id="open-register-btn" class="btn-auth">
+                        <i class="fas fa-user-plus"></i> Registrarse
+                    </button>
+                </div>
+                
+                <div id="user-info">
+                    <img id="user-avatar" src="" alt="Avatar" class="avatar">
+                    <span id="user-email"></span>
+                    <button id="logout-btn" class="btn-auth">
+                        <i class="fas fa-sign-out-alt"></i> Salir
+                    </button>
+                </div>
+            </div>
         </div>
     </header>
 
-    <!-- Modal de Inicio de Sesión -->
-    <div class="login-modal" id="loginModal">
+    <!-- Modal de Login -->
+    <div id="login-modal" class="auth-modal">
         <div class="modal-content">
-            <button class="close-btn" id="closeBtn">&times;</button>
-            <h2>Iniciar Sesión</h2>
-            <form>
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2>Iniciar Sesión</h2>
+            </div>
+            <form id="login-form" class="auth-form">
                 <div class="form-group">
-                    <label for="email">Correo Electrónico</label>
-                    <input type="email" id="email" required>
+                    <label for="login-email">Correo Electrónico</label>
+                    <input type="email" id="login-email" name="email" required>
                 </div>
                 <div class="form-group">
-                    <label for="password">Contraseña</label>
-                    <input type="password" id="password" required>
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" name="password" required>
+                    <a href="#forgot-password" class="forgot-password">¿Olvidaste tu contraseña?</a>
                 </div>
-                <button type="submit" class="submit-btn">Ingresar</button>
+                <button type="submit" class="btn-submit">Ingresar</button>
+                <button type="button" id="google-login-btn" class="btn-google">
+                    <i class="fab fa-google"></i> Continuar con Google
+                </button>
+                <div class="form-footer">
+                    ¿No tienes cuenta? <a href="#switch-to-signup" id="switch-to-signup">Regístrate aquí</a>
+                </div>
             </form>
-            <p style="text-align: center; margin-top: 1.5rem;">¿No tienes cuenta? <a href="registro.html" style="color: var(--primary); font-weight: 500;">Regístrate aquí</a></p>
+        </div>
+    </div>
+
+    <!-- Modal de Registro -->
+    <div id="register-modal" class="auth-modal">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2>Crear Cuenta</h2>
+            </div>
+            <form id="register-form" class="auth-form">
+                <div class="form-group">
+                    <label for="register-name">Nombre Completo</label>
+                    <input type="text" id="register-name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Correo Electrónico</label>
+                    <input type="email" id="register-email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Contraseña</label>
+                    <input type="password" id="register-password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-confirm-password">Confirmar Contraseña</label>
+                    <input type="password" id="register-confirm-password" name="confirmPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-phone">Teléfono (Opcional)</label>
+                    <input type="tel" id="register-phone" name="phone">
+                </div>
+                <button type="submit" class="btn-submit">Registrarse</button>
+                <div class="form-footer">
+                    ¿Ya tienes cuenta? <a href="#switch-to-login" id="switch-to-login">Inicia sesión aquí</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Recuperación de Contraseña -->
+    <div id="forgot-password-modal" class="auth-modal">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2>Recuperar Contraseña</h2>
+            </div>
+            <form id="forgot-password-form" class="auth-form">
+                <div class="form-group">
+                    <label for="forgot-email">Correo Electrónico</label>
+                    <input type="email" id="forgot-email" name="email" required>
+                    <p class="help-text">Te enviaremos un enlace para restablecer tu contraseña</p>
+                </div>
+                <button type="submit" class="btn-submit">Enviar Enlace</button>
+                <div class="form-footer">
+                    <a href="#switch-to-login" id="back-to-login">Volver a Iniciar Sesión</a>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -678,39 +941,27 @@
         </div>
     </footer>
 
-    <script>
-        // Funcionalidad del modal
-        const loginBtn = document.getElementById('loginBtn');
-        const loginModal = document.getElementById('loginModal');
-        const closeBtn = document.getElementById('closeBtn');
-
-        loginBtn.addEventListener('click', () => {
-            loginModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        });
-
-        closeBtn.addEventListener('click', () => {
-            loginModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        });
-
-        // Cerrar modal al hacer clic fuera
-        loginModal.addEventListener('click', (e) => {
-            if (e.target === loginModal) {
-                loginModal.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            }
-        });
-
-        // Año actual en el footer
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-
-        // Smooth scrolling para enlaces internos
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
+    <script type="module">
+        // Importar e inicializar el sistema de autenticación
+        import { initAuthUI } from './auth-ui.js';
+        
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            initAuthUI();
+            
+            // Actualizar año en el footer
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+            
+            // Smooth scrolling para enlaces internos
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = this.getAttribute('href');
+                    if (target === '#') return;
+                    
+                    document.querySelector(target)?.scrollIntoView({
+                        behavior: 'smooth'
+                    });
                 });
             });
         });
