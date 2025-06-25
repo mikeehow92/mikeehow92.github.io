@@ -5,6 +5,7 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
+  sendPasswordResetEmail,
   updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
@@ -126,6 +127,22 @@ export const AuthService = {
     }
   },
 
+  // ==================== RECUPERACIÓN DE CONTRASEÑA ====================
+  /**
+   * Envía email de recuperación de contraseña
+   * @param {string} email 
+   * @returns {Promise<void>}
+   */
+  async sendPasswordResetEmail(email) {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return true;
+    } catch (error) {
+      console.error("Error en recuperación de contraseña:", error);
+      throw handleAuthError(error);
+    }
+  },
+
   // ==================== GESTIÓN DE SESIÓN ====================
   /**
    * Obtiene el usuario actual
@@ -192,7 +209,7 @@ export const AuthService = {
     }
   },
 
-  // ==================== UTILIDADES ====================
+  // ==================== GESTIÓN DE PERFIL ====================
   /**
    * Obtiene el perfil del usuario desde Firestore
    * @param {string} userId 
@@ -296,6 +313,11 @@ function handleAuthError(error) {
     "auth/account-exists-with-different-credential": "Ya existe una cuenta con este email",
     "auth/popup-closed-by-user": "La ventana de autenticación fue cerrada",
     "auth/network-request-failed": "Error de conexión. Verifica tu internet",
+    "auth/missing-email": "Debes ingresar un correo electrónico",
+    
+    // Recuperación de contraseña
+    "auth/missing-continue-uri": "Error en la configuración del sistema",
+    "auth/unauthorized-continue-uri": "Dominio no autorizado",
     
     // Errores personalizados
     "auth/requires-recent-login": "Debes iniciar sesión nuevamente para realizar esta acción"
