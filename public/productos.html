@@ -421,7 +421,7 @@
   <header class="header">
     <div class="container header-container">
       <div class="logo">
-        <a href="index.html"><img src="https://via.placeholder.com/180x60?text=MiTienda503" alt="MiTienda503"></a>
+        <a href="index.html"><img src="/assets/imagenes/logo.png" alt="MiTienda503"></a>
       </div>
       <nav>
         <ul class="nav-list">
@@ -430,9 +430,91 @@
           <li><a href="contacto.html" class="nav-link"><i class="fas fa-envelope"></i> Contacto</a></li>
         </ul>
       </nav>
-      <button class="btn btn-small" id="login-btn">
-        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-      </button>
+                    <!-- Enlaces solo para usuarios logueados -->
+                    <li id="profile-link" style="display:none;"><a href="perfil.html"><i class="fas fa-user"></i> Perfil</a></li>
+                    <li id="orders-link" style="display:none;"><a href="perfil.html#compras"><i class="fas fa-shopping-cart"></i> Mis Compras</a></li>
+                </ul>
+            </nav>
+            <div class="auth-section">
+                <!-- Estado invitado -->
+                <div id="guest-buttons">
+                    <button id="open-login-btn" class="btn-auth">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </button>
+                </div>
+                
+                <!-- Estado logueado -->
+                <div id="user-info">
+                    <div class="user-dropdown">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <img id="user-avatar" class="avatar" src="https://via.placeholder.com/40" alt="Avatar">
+                            <span id="user-name"></span>
+                        </div>
+                        <div class="dropdown-content">
+                            <a href="perfil.html"><i class="fas fa-user"></i> Mi Perfil</a>
+                            <a href="perfil.html#compras"><i class="fas fa-shopping-cart"></i> Mis Compras</a>
+                            <a href="#configuracion"><i class="fas fa-cog"></i> Configuración</a>
+                            <button id="logout-btn" style="width: 100%; text-align: left; background: none; border: none; padding: 12px 16px; color: var(--secondary); cursor: pointer;">
+                                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Modal de Login -->
+    <div class="auth-modal" id="login-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Iniciar Sesión</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="auth-form">
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Correo Electrónico</label>
+                        <input type="email" id="login-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Contraseña</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <a href="#recuperar" id="forgot-password" class="forgot-password">¿Olvidaste tu contraseña?</a>
+                    </div>
+                    <button type="submit" class="submit-btn">Ingresar</button>
+                </form>
+                <div class="form-footer">
+                    <p>¿No tienes cuenta? <a href="registro.html" id="switch-to-signup">Regístrate aquí</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Recuperación de Contraseña -->
+    <div class="auth-modal" id="reset-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Recuperar Contraseña</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="auth-form">
+                <form id="reset-form">
+                    <div class="form-group">
+                        <label for="reset-email">Correo Electrónico</label>
+                        <input type="email" id="reset-email" name="email" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Enviar Instrucciones</button>
+                </form>
+                <div class="form-footer">
+                    <p><a href="#" id="switch-to-login-from-reset">Volver a Iniciar Sesión</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
       <div class="cart-icon" id="cart-toggle">
         <i class="fas fa-shopping-cart"></i>
         <span id="cart-count" class="hidden">0</span>
