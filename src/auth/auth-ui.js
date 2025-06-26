@@ -2,19 +2,18 @@ import { AuthService } from './auth.js';
 import { showFeedback } from '../shared/feedback.js';
 import { CartUI } from '../cart/cart-ui.js';
 
-// Constantes para selectores y clases
+// Selectors and classes
 const SELECTORS = {
   LOGIN_MODAL: '#login-modal',
   LOGIN_FORM: '#login-form',
   LOGOUT_BTN: '#logout-btn',
-  OPEN_LOGIN: '#open-login-btn',
+  OPEN_LOGIN: '#loginBtn', // Changed to match your HTML button ID
   FORGOT_PASSWORD: '#forgot-password',
   USER_NAME: '#user-name',
-  USER_EMAIL: '#user-email',
   USER_AVATAR: '#user-avatar',
   GUEST_UI: '#guest-buttons',
   USER_UI: '#user-info',
-  CLOSE_MODAL: '.close-modal',
+  CLOSE_MODAL: '.close-btn',
   PROFILE_LINK: '#profile-link',
   ORDERS_LINK: '#orders-link'
 };
@@ -24,35 +23,33 @@ const CLASSES = {
   HIDDEN: 'hidden'
 };
 
-// Inicialización de la UI de autenticación
+// Initialize auth UI
 export function initAuthUI() {
   setupEventListeners();
   setupAuthStateListener();
 }
 
-// Configuración de event listeners
+// Set up event listeners
 function setupEventListeners() {
-  // Abrir modal de login
+  // Open login modal
   document.querySelector(SELECTORS.OPEN_LOGIN)?.addEventListener('click', () => {
     toggleModal(SELECTORS.LOGIN_MODAL, true);
   });
 
-  // Cerrar modales
-  document.querySelectorAll(SELECTORS.CLOSE_MODAL).forEach(btn => {
-    btn.addEventListener('click', closeAllModals);
-  });
+  // Close modal
+  document.querySelector(SELECTORS.CLOSE_MODAL)?.addEventListener('click', closeAllModals);
 
-  // Recuperación de contraseña
+  // Forgot password
   document.querySelector(SELECTORS.FORGOT_PASSWORD)?.addEventListener('click', (e) => {
     e.preventDefault();
-    showFeedback('Por favor contacte al soporte técnico para recuperar su contraseña', 'info');
+    showFeedback('Contact support to reset your password', 'info');
   });
 
-  // Login con email
+  // Login form submission
   document.querySelector(SELECTORS.LOGIN_FORM)?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = e.target.querySelector('#login-email').value;
-    const password = e.target.querySelector('#login-password').value;
+    const email = e.target.querySelector('#email').value;
+    const password = e.target.querySelector('#password').value;
     await handleLogin(email, password);
   });
 
@@ -60,7 +57,7 @@ function setupEventListeners() {
   document.querySelector(SELECTORS.LOGOUT_BTN)?.addEventListener('click', handleLogout);
 }
 
-// Listener de cambios de autenticación
+// Auth state listener
 function setupAuthStateListener() {
   AuthService.onAuthStateChanged((user) => {
     updateUI(user);
@@ -70,7 +67,7 @@ function setupAuthStateListener() {
   });
 }
 
-// Actualización de la UI según estado de autenticación
+// Update UI based on auth state
 function updateUI(user) {
   const guestUI = document.querySelector(SELECTORS.GUEST_UI);
   const userUI = document.querySelector(SELECTORS.USER_UI);
@@ -90,52 +87,49 @@ function updateUI(user) {
   }
 }
 
-// Actualizar avatar del usuario
+// Update user avatar
 function updateUserAvatar(element, user) {
   if (!element) return;
   
   if (user.photoURL) {
     element.src = user.photoURL;
     element.classList.remove(CLASSES.HIDDEN);
-  } else if (user.profile?.photoURL) {
-    element.src = user.profile.photoURL;
-    element.classList.remove(CLASSES.HIDDEN);
   } else {
-    // Usar placeholder o iniciales del nombre
     const nameInitials = user.displayName 
       ? user.displayName.split(' ').map(n => n[0]).join('')
       : user.email[0].toUpperCase();
-    
-    element.src = `https://ui-avatars.com/api/?name=${nameInitials}&background=${encodeURIComponent('#e63946')}&color=fff`;
+    element.src = `https://ui-avatars.com/api/?name=${nameInitials}&background=e63946&color=fff`;
     element.classList.remove(CLASSES.HIDDEN);
   }
 }
 
-// Manejadores de autenticación
+// Handle login
 async function handleLogin(email, password) {
   try {
     await AuthService.login(email, password);
     closeAllModals();
-    showFeedback('Sesión iniciada correctamente', 'success');
+    showFeedback('Login successful', 'success');
   } catch (error) {
     showFeedback(error.message, 'error');
   }
 }
 
+// Handle logout
 async function handleLogout() {
   try {
     await AuthService.logout();
-    showFeedback('Sesión cerrada correctamente', 'success');
+    showFeedback('Logged out successfully', 'success');
   } catch (error) {
-    showFeedback('Error al cerrar sesión', 'error');
+    showFeedback('Error logging out', 'error');
   }
 }
 
-// Helpers
+// Close all modals
 function closeAllModals() {
   toggleModal(SELECTORS.LOGIN_MODAL, false);
 }
 
+// Toggle modal visibility
 function toggleModal(selector, show) {
   const modal = document.querySelector(selector);
   if (!modal) return;
@@ -149,6 +143,7 @@ function toggleModal(selector, show) {
   }
 }
 
+// Toggle element visibility
 function toggleElement(element, show) {
   if (!element) return;
   element.style.display = show ? 'flex' : 'none';
