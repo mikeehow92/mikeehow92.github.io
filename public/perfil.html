@@ -3,10 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Perfil - TecnoExpress</title>
+  <title>Mi Perfil - MiTienda503</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="css/styles.css">
   <style>
+    :root {
+      --primary: #e63946;
+      --primary-dark: #c1121f;
+      --secondary: #1d3557;
+      --white: #ffffff;
+      --gray-light: #f1f5f9;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      background-color: var(--gray-light);
+      margin: 0;
+      padding: 0;
+    }
+
     .profile-container {
       max-width: 1200px;
       margin: 40px auto;
@@ -28,7 +43,7 @@
       width: 120px;
       height: 120px;
       border-radius: 50%;
-      background-color: #3498db;
+      background-color: var(--primary);
       color: white;
       display: flex;
       align-items: center;
@@ -41,11 +56,12 @@
       text-align: center;
       font-size: 1.5rem;
       margin-bottom: 30px;
-      color: #2c3e50;
+      color: var(--secondary);
     }
 
     .profile-menu {
       list-style: none;
+      padding: 0;
     }
 
     .profile-menu li {
@@ -65,7 +81,7 @@
 
     .profile-menu a:hover, .profile-menu a.active {
       background-color: #f0f7ff;
-      color: #3498db;
+      color: var(--primary);
     }
 
     .profile-content {
@@ -85,17 +101,13 @@
 
     .section-title {
       font-size: 1.8rem;
-      color: #2c3e50;
+      color: var(--secondary);
       margin-bottom: 25px;
       padding-bottom: 10px;
       border-bottom: 2px solid #f0f0f0;
       display: flex;
       align-items: center;
       gap: 15px;
-    }
-
-    .section-title i {
-      color: #3498db;
     }
 
     .info-grid {
@@ -125,7 +137,7 @@
     }
 
     .edit-btn {
-      background-color: #3498db;
+      background-color: var(--primary);
       color: white;
       border: none;
       padding: 10px 20px;
@@ -140,214 +152,11 @@
     }
 
     .edit-btn:hover {
-      background-color: #2980b9;
+      background-color: var(--primary-dark);
       transform: translateY(-2px);
     }
 
-    .save-btn {
-      background-color: #27ae60;
-    }
-
-    .save-btn:hover {
-      background-color: #219955;
-    }
-
-    .cancel-btn {
-      background-color: #e74c3c;
-      margin-left: 10px;
-    }
-
-    .cancel-btn:hover {
-      background-color: #c0392b;
-    }
-
-    .edit-form .form-group {
-      margin-bottom: 15px;
-    }
-
-    .edit-form label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 500;
-      color: #7f8c8d;
-    }
-
-    .edit-form input, .edit-form select {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-size: 1rem;
-    }
-
-    .edit-form input:focus, .edit-form select:focus {
-      outline: none;
-      border-color: #3498db;
-      box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
-    }
-
-    .order-card {
-      border: 1px solid #eee;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-      transition: all 0.3s ease;
-    }
-
-    .order-card:hover {
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-
-    .order-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #eee;
-    }
-
-    .order-id {
-      font-weight: bold;
-      color: #2c3e50;
-    }
-
-    .order-date {
-      color: #7f8c8d;
-      font-size: 0.9rem;
-    }
-
-    .order-status {
-      padding: 5px 10px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-
-    .status-completed {
-      background-color: #d4edda;
-      color: #155724;
-    }
-
-    .status-pending {
-      background-color: #fff3cd;
-      color: #856404;
-    }
-
-    .status-cancelled {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-
-    .order-items {
-      margin-bottom: 15px;
-    }
-
-    .order-item {
-      display: flex;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #f5f5f5;
-    }
-
-    .order-item:last-child {
-      border-bottom: none;
-    }
-
-    .item-img {
-      width: 60px;
-      height: 60px;
-      object-fit: cover;
-      border-radius: 5px;
-      margin-right: 15px;
-    }
-
-    .item-details {
-      flex: 1;
-    }
-
-    .item-name {
-      font-weight: 500;
-      margin-bottom: 5px;
-    }
-
-    .item-price {
-      color: #3498db;
-      font-weight: bold;
-    }
-
-    .order-total {
-      text-align: right;
-      font-weight: bold;
-      font-size: 1.1rem;
-      margin-top: 10px;
-    }
-
-    /* Estilos para el footer */
-    footer {
-      background-color: #2c3e50;
-      color: white;
-      padding: 40px 0 20px;
-      margin-top: 50px;
-    }
-
-    footer .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
-    .footer-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      margin-bottom: 30px;
-    }
-
-    .footer-logo img {
-      max-width: 150px;
-      height: auto;
-      margin-bottom: 15px;
-    }
-
-    .footer-logo p {
-      color: #bdc3c7;
-      line-height: 1.6;
-    }
-
-    .footer-links h3 {
-      color: white;
-      margin-bottom: 20px;
-      font-size: 1.2rem;
-    }
-
-    .footer-links ul {
-      list-style: none;
-    }
-
-    .footer-links li {
-      margin-bottom: 10px;
-    }
-
-    .footer-links a {
-      color: #bdc3c7;
-      text-decoration: none;
-      transition: color 0.3s ease;
-    }
-
-    .footer-links a:hover {
-      color: #3498db;
-    }
-
-    .copyright {
-      text-align: center;
-      padding-top: 20px;
-      border-top: 1px solid #34495e;
-      color: #bdc3c7;
-      font-size: 0.9rem;
-    }
-
-    @media (max-width: 992px) {
+    @media (max-width: 768px) {
       .profile-container {
         grid-template-columns: 1fr;
       }
@@ -356,70 +165,20 @@
         grid-template-columns: 1fr;
       }
     }
-
-    @media (max-width: 768px) {
-      .footer-content {
-        grid-template-columns: 1fr;
-      }
-      
-      .footer-logo, .footer-links {
-        text-align: center;
-      }
-    }
-
-    @media (max-width: 576px) {
-      .order-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-      }
-      
-      .order-item {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      
-      .item-img {
-        margin-bottom: 10px;
-      }
-    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="container header-container">
-      <div class="logo">
-        <a href="index.html"><img src="img/logo.png" alt="TecnoExpress"></a>
-      </div>
-      <nav>
-        <ul>
-          <li><a href="index.html"><i class="fas fa-home"></i> Inicio</a></li>
-          <li><a href="productos.html"><i class="fas fa-print"></i> Productos</a></li>
-          <li><a href="#"><i class="fas fa-envelope"></i> Contacto</a></li>
-          <li id="profile-nav-item" style="display: none;"><a href="perfil.html"><i class="fas fa-user"></i> Mi Perfil</a></li>
-        </ul>
-      </nav>
-      <div class="user-section">
-        <a href="perfil.html" class="user-link"><i class="fas fa-user-circle"></i> Mi Cuenta</a>
-        <div class="cart-icon" id="cartIcon">
-          <i class="fas fa-shopping-cart"></i>
-          <span id="cartCounter">0</span>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <main class="container profile-container">
+  <div class="profile-container">
     <aside class="profile-sidebar">
-      <div class="profile-avatar">
+      <div class="profile-avatar" id="user-avatar">
         <i class="fas fa-user"></i>
       </div>
-      <h2 class="profile-name" id="profileUserName">Cargando...</h2>
+      <h2 class="profile-name" id="user-name">Cargando...</h2>
       <ul class="profile-menu">
-        <li><a href="#info" class="active" data-section="info"><i class="fas fa-user"></i> Información Personal</a></li>
-        <li><a href="#direccion" data-section="address"><i class="fas fa-map-marker-alt"></i> Dirección</a></li>
-        <li><a href="#compras" data-section="orders"><i class="fas fa-shopping-bag"></i> Mis Compras</a></li>
-        <li><a href="#seguridad" data-section="security"><i class="fas fa-lock"></i> Seguridad</a></li>
+        <li><a href="#" class="active" data-section="info"><i class="fas fa-user"></i> Información Personal</a></li>
+        <li><a href="#" data-section="address"><i class="fas fa-map-marker-alt"></i> Dirección</a></li>
+        <li><a href="#" data-section="orders"><i class="fas fa-shopping-bag"></i> Mis Compras</a></li>
+        <li><a href="#" data-section="security"><i class="fas fa-lock"></i> Seguridad</a></li>
       </ul>
     </aside>
 
@@ -429,30 +188,16 @@
         <div class="info-grid">
           <div class="info-item">
             <div class="info-label">Nombre completo</div>
-            <div class="info-value" id="userFullName">Cargando...</div>
+            <div class="info-value" id="user-fullname">Cargando...</div>
           </div>
           <div class="info-item">
             <div class="info-label">Correo electrónico</div>
-            <div class="info-value" id="userEmail">Cargando...</div>
+            <div class="info-value" id="user-email">Cargando...</div>
           </div>
           <div class="info-item">
             <div class="info-label">Teléfono</div>
-            <div class="info-value" id="userPhone">Cargando...</div>
+            <div class="info-value" id="user-phone">Cargando...</div>
           </div>
-        </div>
-        <button class="edit-btn" id="editPersonalBtn"><i class="fas fa-edit"></i> Editar Información</button>
-        
-        <div id="editPersonalForm" class="edit-form" style="display: none;">
-          <div class="form-group">
-            <label for="editName">Nombre completo</label>
-            <input type="text" id="editName" required>
-          </div>
-          <div class="form-group">
-            <label for="editPhone">Teléfono</label>
-            <input type="tel" id="editPhone" required>
-          </div>
-          <button type="button" class="edit-btn save-btn" id="savePersonalBtn"><i class="fas fa-save"></i> Guardar Cambios</button>
-          <button type="button" class="edit-btn cancel-btn" id="cancelPersonalBtn"><i class="fas fa-times"></i> Cancelar</button>
         </div>
       </section>
 
@@ -461,52 +206,23 @@
         <div class="info-grid">
           <div class="info-item">
             <div class="info-label">Departamento</div>
-            <div class="info-value" id="userDepartment">Cargando...</div>
+            <div class="info-value" id="user-department">Cargando...</div>
           </div>
           <div class="info-item">
             <div class="info-label">Municipio</div>
-            <div class="info-value" id="userMunicipality">Cargando...</div>
+            <div class="info-value" id="user-municipality">Cargando...</div>
           </div>
           <div class="info-item">
             <div class="info-label">Dirección exacta</div>
-            <div class="info-value" id="userAddress">Cargando...</div>
+            <div class="info-value" id="user-address">Cargando...</div>
           </div>
-        </div>
-        <button class="edit-btn" id="editAddressBtn"><i class="fas fa-edit"></i> Editar Dirección</button>
-        
-        <div id="editAddressForm" class="edit-form" style="display: none;">
-          <div class="form-group">
-            <label for="editDepartment">Departamento</label>
-            <select id="editDepartment" required>
-              <option value="">Seleccione un departamento</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="editMunicipality">Municipio</label>
-            <select id="editMunicipality" required disabled>
-              <option value="">Primero seleccione un departamento</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="editAddress">Dirección exacta</label>
-            <input type="text" id="editAddress" required>
-          </div>
-          <button type="button" class="edit-btn save-btn" id="saveAddressBtn"><i class="fas fa-save"></i> Guardar Cambios</button>
-          <button type="button" class="edit-btn cancel-btn" id="cancelAddressBtn"><i class="fas fa-times"></i> Cancelar</button>
         </div>
       </section>
 
       <section id="orders-section" class="profile-section">
-        <h2 class="section-title"><i class="fas fa-shopping-bag"></i> Historial de Compras</h2>
-        
-        <div id="ordersList">
-          <!-- Las órdenes se cargarán dinámicamente aquí -->
-        </div>
-        
-        <div id="emptyOrders" style="display: none; text-align: center; padding: 40px;">
-          <i class="fas fa-shopping-bag" style="font-size: 3rem; color: #ddd; margin-bottom: 20px;"></i>
-          <p style="font-size: 1.2rem; color: #777;">No has realizado ninguna compra aún</p>
-          <a href="productos.html" class="edit-btn" style="margin-top: 20px;"><i class="fas fa-arrow-right"></i> Ver Productos</a>
+        <h2 class="section-title"><i class="fas fa-shopping-bag"></i> Mis Compras</h2>
+        <div id="orders-list">
+          <p>Cargando historial de compras...</p>
         </div>
       </section>
 
@@ -514,190 +230,131 @@
         <h2 class="section-title"><i class="fas fa-lock"></i> Seguridad</h2>
         <div class="info-grid">
           <div class="info-item">
-            <div class="info-label">Contraseña</div>
-            <div class="info-value">••••••••</div>
-          </div>
-          <div class="info-item">
             <div class="info-label">Último inicio de sesión</div>
-            <div class="info-value" id="lastLogin">Cargando...</div>
+            <div class="info-value" id="last-login">Cargando...</div>
           </div>
-        </div>
-        <button class="edit-btn" id="changePasswordBtn"><i class="fas fa-key"></i> Cambiar Contraseña</button>
-        
-        <div id="changePasswordForm" class="edit-form" style="display: none;">
-          <div class="form-group">
-            <label for="currentPassword">Contraseña actual</label>
-            <input type="password" id="currentPassword" required>
-          </div>
-          <div class="form-group">
-            <label for="newPassword">Nueva contraseña</label>
-            <input type="password" id="newPassword" required minlength="6">
-          </div>
-          <div class="form-group">
-            <label for="confirmNewPassword">Confirmar nueva contraseña</label>
-            <input type="password" id="confirmNewPassword" required minlength="6">
-          </div>
-          <button type="button" class="edit-btn save-btn" id="savePasswordBtn"><i class="fas fa-save"></i> Cambiar Contraseña</button>
-          <button type="button" class="edit-btn cancel-btn" id="cancelPasswordBtn"><i class="fas fa-times"></i> Cancelar</button>
         </div>
       </section>
     </div>
-  </main>
+  </div>
 
-  <footer>
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-logo">
-          <img src="img/logo.png" alt="TecnoExpress">
-          <p>Soluciones tecnológicas innovadoras para el mundo moderno.</p>
-        </div>
-        <div class="footer-links">
-          <h3>Enlaces rápidos</h3>
-          <ul>
-            <li><a href="index.html">Inicio</a></li>
-            <li><a href="productos.html">Productos</a></li>
-            <li><a href="#">Contacto</a></li>
-            <li><a href="perfil.html">Mi Cuenta</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="copyright">
-        <p>&copy; 2023 TecnoExpress. Todos los derechos reservados.</p>
-      </div>
-    </div>
-  </footer>
-
-  <script type="module">
-    import { AuthService } from '/js/auth.js';
-    import { 
-      getFirestore, 
-      doc, 
-      getDoc, 
-      updateDoc,
-      collection,
-      query,
-      where,
-      getDocs,
-      serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
-
-    const departamentos = {
-      "Ahuachapán": ["Ahuachapán", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Guaymango", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
-      "Cabañas": ["Sensuntepeque", "Cinquera", "Dolores", "Guacotecti", "Ilobasco", "Jutiapa", "San Isidro", "Tejutepeque", "Victoria"],
-      "Chalatenango": ["Chalatenango", "Agua Caliente", "Arcatao", "Azacualpa", "Cancasque", "Citalá", "Comalapa", "Concepción Quezaltepeque", "Dulce Nombre de María", "El Carrizal", "El Paraíso", "La Laguna", "La Palma", "La Reina", "Las Vueltas", "Nombre de Jesús", "Nueva Concepción", "Nueva Trinidad", "Ojos de Agua", "Potonico", "San Antonio de la Cruz", "San Antonio Los Ranchos", "San Fernando", "San Francisco Lempa", "San Francisco Morazán", "San Ignacio", "San Isidro Labrador", "San José Cancasque", "San José Las Flores", "San Luis del Carmen", "San Miguel de Mercedes", "San Rafael", "Santa Rita", "Tejutla"],
-      "Cuscatlán": ["Cojutepeque", "Candelaria", "El Carmen", "El Rosario", "Monte San Juan", "Oratorio de Concepción", "San Bartolomé Perulapía", "San Cristóbal", "San José Guayabal", "San Pedro Perulapán", "San Rafael Cedros", "San Ramón", "Santa Cruz Analquito", "Santa Cruz Michapa", "Suchitoto", "Tenancingo"],
-      "La Libertad": ["Santa Tecla", "Antiguo Cuscatlán", "Chiltiupán", "Ciudad Arce", "Colón", "Comasagua", "Huizúcar", "Jayaque", "Jicalapa", "La Libertad", "Nuevo Cuscatlán", "Opico", "Quezaltepeque", "Sacacoyo", "San José Villanueva", "San Juan Opico", "San Matías", "San Pablo Tacachico", "Talnique", "Tamanique", "Teotepeque", "Tepecoyo", "Zaragoza"],
-      "La Paz": ["Zacatecoluca", "Cuyultitán", "El Rosario", "Jerusalén", "Mercedes La Ceiba", "Olocuilta", "Paraíso de Osorio", "San Antonio Masahuat", "San Emigdio", "San Francisco Chinameca", "San Juan Nonualco", "San Juan Talpa", "San Juan Tepezontes", "San Luis La Herradura", "San Luis Talpa", "San Miguel Tepezontes", "San Pedro Masahuat", "San Pedro Nonualco", "San Rafael Obrajuelo", "Santa María Ostuma", "Santiago Nonualco", "Tapalhuaca"],
-      "La Unión": ["La Unión", "Anamorós", "Bolívar", "Concepción de Oriente", "Conchagua", "El Carmen", "El Sauce", "Intipucá", "Lislique", "Meanguera del Golfo", "Nueva Esparta", "Pasaquina", "Polorós", "San Alejo", "San José", "Santa Rosa de Lima", "Yayantique", "Yucuaiquín"],
-      "Morazán": ["San Francisco Gotera", "Arambala", "Cacaopera", "Chilanga", "Corinto", "Delicias de Concepción", "El Divisadero", "El Rosario", "Gualococti", "Guatajiagua", "Joateca", "Jocoaitique", "Jocoro", "Lolotiquillo", "Meanguera", "Osicala", "Perquín", "San Carlos", "San Fernando", "San Isidro", "San Simón", "Sensembra", "Sociedad", "Torola", "Yamabal", "Yoloaiquín"],
-      "San Miguel": ["San Miguel", "Carolina", "Chapeltique", "Chinameca", "Chirilagua", "Ciudad Barrios", "Comacarán", "El Tránsito", "Lolotique", "Moncagua", "Nueva Guadalupe", "Nuevo Edén de San Juan", "Quelepa", "San Antonio", "San Gerardo", "San Jorge", "San Luis de la Reina", "San Rafael Oriente", "Sesori", "Uluazapa"],
-      "San Salvador": ["San Salvador", "Aguilares", "Apopa", "Ayutuxtepeque", "Cuscatancingo", "Delgado", "El Paisnal", "Guazapa", "Ilopango", "Mejicanos", "Nejapa", "Panchimalco", "Rosario de Mora", "San Marcos", "San Martín", "Santiago Texacuangos", "Santo Tomás", "Soyapango", "Tonacatepeque"],
-      "San Vicente": ["San Vicente", "Apastepeque", "Guadalupe", "San Cayetano Istepeque", "San Esteban Catarina", "San Ildefonso", "San Lorenzo", "San Sebastián", "Santa Clara", "Santo Domingo", "Tecoluca", "Tepetitán", "Verapaz"],
-      "Santa Ana": ["Santa Ana", "Candelaria de la Frontera", "Chalchuapa", "Coatepeque", "El Congo", "El Porvenir", "Masahuat", "Metapán", "San Antonio Pajonal", "San Sebastián Salitrillo", "Santa Rosa Guachipilín", "Santiago de la Frontera", "Texistepeque"],
-      "Sonsonate": ["Sonsonate", "Acajutla", "Armenia", "Caluco", "Cuisnahuat", "Izalco", "Juayúa", "Nahuizalco", "Nahulingo", "Salcoatitán", "San Antonio del Monte", "San Julián", "Santa Catarina Masahuat", "Santa Isabel Ishuatán", "Santo Domingo de Guzmán", "Sonzacate"],
-      "Usulután": ["Usulután", "Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán"]
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  
+  <script>
+    // Configuración de Firebase (debe coincidir con tu configuración)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
+      authDomain: "mitienda-c2609.firebaseapp.com",
+      projectId: "mitienda-c2609",
+      storageBucket: "mitienda-c2609.appspot.com",
+      messagingSenderId: "536746062790",
+      appId: "1:536746062790:web:cd39eb0057aac14c6538c7"
     };
 
-    const db = getFirestore();
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    async function loadUserData() {
-      try {
-        const user = await AuthService.checkAuth();
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const userName = userData.nombre || user.email.split('@')[0];
+    // Cargar datos del usuario
+    function loadUserData() {
+      const user = auth.currentUser;
+      
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      // Mostrar información básica
+      document.getElementById('user-name').textContent = user.displayName || user.email.split('@')[0];
+      document.getElementById('user-email').textContent = user.email;
+      document.getElementById('user-fullname').textContent = user.displayName || "No especificado";
+      
+      // Configurar avatar
+      const avatar = document.getElementById('user-avatar');
+      if (user.photoURL) {
+        avatar.innerHTML = `<img src="${user.photoURL}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+      } else {
+        const initials = user.displayName ? 
+          user.displayName.split(' ').map(n => n[0]).join('') : 
+          user.email[0].toUpperCase();
+        avatar.textContent = initials;
+      }
+
+      // Obtener datos adicionales de Firestore
+      db.collection("users").doc(user.uid).get().then((doc) => {
+        if (doc.exists) {
+          const userData = doc.data();
           
-          document.getElementById('profileUserName').textContent = userName;
-          document.getElementById('userFullName').textContent = userName;
-          document.getElementById('userEmail').textContent = user.email;
-          document.getElementById('userPhone').textContent = userData.telefono || 'No especificado';
+          // Información personal
+          if (userData.telefono) {
+            document.getElementById('user-phone').textContent = userData.telefono;
+          }
           
+          // Dirección
           if (userData.direccion) {
-            document.getElementById('userDepartment').textContent = userData.direccion.departamento || 'No especificado';
-            document.getElementById('userMunicipality').textContent = userData.direccion.municipio || 'No especificado';
-            document.getElementById('userAddress').textContent = userData.direccion.direccionExacta || 'No especificado';
+            document.getElementById('user-department').textContent = userData.direccion.departamento || "No especificado";
+            document.getElementById('user-municipality').textContent = userData.direccion.municipio || "No especificado";
+            document.getElementById('user-address').textContent = userData.direccion.direccionExacta || "No especificado";
           }
           
-          if (user.metadata.lastSignInTime) {
-            document.getElementById('lastLogin').textContent = new Date(user.metadata.lastSignInTime).toLocaleString();
+          // Último inicio de sesión
+          if (userData.lastLogin) {
+            document.getElementById('last-login').textContent = userData.lastLogin.toDate().toLocaleString();
+          } else {
+            document.getElementById('last-login').textContent = "No disponible";
           }
-          
-          document.getElementById('profile-nav-item').style.display = 'block';
-          await loadOrderHistory(user.uid);
-        } else {
-          document.getElementById('profileUserName').textContent = user.email.split('@')[0];
-          document.getElementById('userEmail').textContent = user.email;
-          document.getElementById('userFullName').textContent = 'No especificado';
         }
-      } catch (error) {
-        console.error("Error:", error);
-        alert(error.message);
-        window.location.href = 'login.html';
-      }
+      }).catch((error) => {
+        console.error("Error obteniendo datos:", error);
+      });
+
+      // Cargar historial de compras
+      loadOrderHistory(user.uid);
     }
 
-    async function loadOrderHistory(userId) {
-      try {
-        const q = query(collection(db, 'orders'), where('userId', '==', userId));
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-          document.getElementById('ordersList').style.display = 'none';
-          document.getElementById('emptyOrders').style.display = 'block';
-          return;
-        }
-        
-        let ordersHTML = '';
-        querySnapshot.forEach(doc => {
-          const order = doc.data();
-          ordersHTML += `
-            <div class="order-card">
-              <div class="order-header">
-                <div>
-                  <span class="order-id">Orden #${doc.id.substring(0, 8)}</span>
-                  <span class="order-date">${new Date(order.date).toLocaleDateString()}</span>
-                </div>
-                <span class="order-status ${getStatusClass(order.status)}">${order.status}</span>
+    // Cargar historial de compras
+    function loadOrderHistory(userId) {
+      db.collection("orders")
+        .where("userId", "==", userId)
+        .get()
+        .then((querySnapshot) => {
+          const ordersList = document.getElementById('orders-list');
+          
+          if (querySnapshot.empty) {
+            ordersList.innerHTML = `<p>No has realizado ninguna compra aún</p>`;
+            return;
+          }
+
+          let ordersHTML = '';
+          querySnapshot.forEach((doc) => {
+            const order = doc.data();
+            ordersHTML += `
+              <div class="order" style="margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 5px;">
+                <h3>Orden #${doc.id.substring(0, 8)}</h3>
+                <p>Fecha: ${order.date.toDate().toLocaleDateString()}</p>
+                <p>Total: $${order.total}</p>
+                <p>Estado: ${order.status}</p>
               </div>
-              <div class="order-items">
-                ${order.items.map(item => `
-                  <div class="order-item">
-                    <img src="${item.image || 'img/default-product.webp'}" alt="${item.name}" class="item-img">
-                    <div class="item-details">
-                      <div class="item-name">${item.name}</div>
-                      <div class="item-price">$${item.price} x ${item.quantity}</div>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
-              <div class="order-total">Total: $${order.total}</div>
-            </div>
-          `;
+            `;
+          });
+
+          ordersList.innerHTML = ordersHTML;
+        })
+        .catch((error) => {
+          console.error("Error cargando compras:", error);
+          document.getElementById('orders-list').innerHTML = `<p>Error al cargar el historial de compras</p>`;
         });
-        
-        document.getElementById('ordersList').innerHTML = ordersHTML;
-      } catch (error) {
-        console.error("Error cargando historial:", error);
-        document.getElementById('ordersList').style.display = 'none';
-        document.getElementById('emptyOrders').style.display = 'block';
-      }
     }
 
-    function getStatusClass(status) {
-      switch(status.toLowerCase()) {
-        case 'completado': return 'status-completed';
-        case 'pendiente': return 'status-pending';
-        case 'cancelado': return 'status-cancelled';
-        default: return '';
-      }
-    }
-
+    // Manejar cambio de secciones
     document.querySelectorAll('.profile-menu a').forEach(link => {
       link.addEventListener('click', function(e) {
         e.preventDefault();
         
+        // Remover clase active de todos los enlaces y secciones
         document.querySelectorAll('.profile-menu a').forEach(item => {
           item.classList.remove('active');
         });
@@ -705,198 +362,21 @@
           section.classList.remove('active');
         });
         
+        // Agregar clase active al enlace y sección seleccionados
         this.classList.add('active');
         const sectionId = this.getAttribute('data-section');
         document.getElementById(`${sectionId}-section`).classList.add('active');
       });
     });
 
-    document.getElementById('editPersonalBtn').addEventListener('click', function() {
-      const currentName = document.getElementById('userFullName').textContent;
-      const currentPhone = document.getElementById('userPhone').textContent;
-      
-      document.getElementById('editName').value = currentName !== 'No especificado' ? currentName : '';
-      document.getElementById('editPhone').value = currentPhone !== 'No especificado' ? currentPhone : '';
-      
-      document.getElementById('editPersonalForm').style.display = 'block';
-      document.getElementById('editPersonalBtn').style.display = 'none';
-    });
-
-    document.getElementById('cancelPersonalBtn').addEventListener('click', function() {
-      document.getElementById('editPersonalForm').style.display = 'none';
-      document.getElementById('editPersonalBtn').style.display = 'inline-flex';
-    });
-
-    document.getElementById('savePersonalBtn').addEventListener('click', async function() {
-      const newName = document.getElementById('editName').value.trim();
-      const newPhone = document.getElementById('editPhone').value.trim();
-      
-      if (!newName) {
-        alert('Por favor ingrese su nombre completo');
-        return;
-      }
-      
-      if (!newPhone || !/^[0-9]{8,}$/.test(newPhone)) {
-        alert('Por favor ingrese un número de teléfono válido (mínimo 8 dígitos)');
-        return;
-      }
-      
-      try {
-        const user = await AuthService.checkAuth();
-        await updateDoc(doc(db, 'users', user.uid), {
-          nombre: newName,
-          telefono: newPhone
-        });
-        
-        document.getElementById('userFullName').textContent = newName;
-        document.getElementById('userPhone').textContent = newPhone;
-        document.getElementById('profileUserName').textContent = newName;
-        
-        document.getElementById('editPersonalForm').style.display = 'none';
-        document.getElementById('editPersonalBtn').style.display = 'inline-flex';
-        
-        alert('Información actualizada correctamente');
-      } catch (error) {
-        console.error("Error actualizando datos:", error);
-        alert('Ocurrió un error al actualizar la información: ' + error.message);
+    // Verificar autenticación al cargar la página
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        loadUserData();
+      } else {
+        window.location.href = "index.html";
       }
     });
-
-    document.getElementById('editAddressBtn').addEventListener('click', function() {
-      const currentDepto = document.getElementById('userDepartment').textContent;
-      const currentMuni = document.getElementById('userMunicipality').textContent;
-      const currentAddress = document.getElementById('userAddress').textContent;
-      
-      if (currentDepto !== 'No especificado') {
-        document.getElementById('editDepartment').value = currentDepto;
-        document.getElementById('editDepartment').dispatchEvent(new Event('change'));
-        
-        setTimeout(() => {
-          if (currentMuni !== 'No especificado') {
-            document.getElementById('editMunicipality').value = currentMuni;
-          }
-        }, 100);
-      }
-      
-      document.getElementById('editAddress').value = currentAddress !== 'No especificado' ? currentAddress : '';
-      
-      document.getElementById('editAddressForm').style.display = 'block';
-      document.getElementById('editAddressBtn').style.display = 'none';
-    });
-
-    document.getElementById('cancelAddressBtn').addEventListener('click', function() {
-      document.getElementById('editAddressForm').style.display = 'none';
-      document.getElementById('editAddressBtn').style.display = 'inline-flex';
-    });
-
-    document.getElementById('saveAddressBtn').addEventListener('click', async function() {
-      const newDepto = document.getElementById('editDepartment').value;
-      const newMuni = document.getElementById('editMunicipality').value;
-      const newAddress = document.getElementById('editAddress').value.trim();
-      
-      if (!newDepto || !newMuni || !newAddress) {
-        alert('Por favor complete todos los campos de dirección');
-        return;
-      }
-      
-      try {
-        const user = await AuthService.checkAuth();
-        await updateDoc(doc(db, 'users', user.uid), {
-          direccion: {
-            departamento: newDepto,
-            municipio: newMuni,
-            direccionExacta: newAddress
-          }
-        });
-        
-        document.getElementById('userDepartment').textContent = newDepto;
-        document.getElementById('userMunicipality').textContent = newMuni;
-        document.getElementById('userAddress').textContent = newAddress;
-        
-        document.getElementById('editAddressForm').style.display = 'none';
-        document.getElementById('editAddressBtn').style.display = 'inline-flex';
-        
-        alert('Dirección actualizada correctamente');
-      } catch (error) {
-        console.error("Error actualizando dirección:", error);
-        alert('Ocurrió un error al actualizar la dirección: ' + error.message);
-      }
-    });
-
-    document.getElementById('changePasswordBtn').addEventListener('click', function() {
-      document.getElementById('changePasswordForm').style.display = 'block';
-      document.getElementById('changePasswordBtn').style.display = 'none';
-    });
-
-    document.getElementById('cancelPasswordBtn').addEventListener('click', function() {
-      document.getElementById('changePasswordForm').style.display = 'none';
-      document.getElementById('changePasswordBtn').style.display = 'inline-flex';
-      
-      document.getElementById('currentPassword').value = '';
-      document.getElementById('newPassword').value = '';
-      document.getElementById('confirmNewPassword').value = '';
-    });
-
-    document.getElementById('savePasswordBtn').addEventListener('click', async function() {
-      const currentPassword = document.getElementById('currentPassword').value;
-      const newPassword = document.getElementById('newPassword').value;
-      const confirmNewPassword = document.getElementById('confirmNewPassword').value;
-      
-      if (!currentPassword || !newPassword || !confirmNewPassword) {
-        alert('Por favor complete todos los campos');
-        return;
-      }
-      
-      if (newPassword.length < 6) {
-        alert('La nueva contraseña debe tener al menos 6 caracteres');
-        return;
-      }
-      
-      if (newPassword !== confirmNewPassword) {
-        alert('Las contraseñas no coinciden');
-        return;
-      }
-      
-      try {
-        await AuthService.changePassword(currentPassword, newPassword);
-        alert('Contraseña cambiada correctamente');
-        
-        document.getElementById('currentPassword').value = '';
-        document.getElementById('newPassword').value = '';
-        document.getElementById('confirmNewPassword').value = '';
-        document.getElementById('changePasswordForm').style.display = 'none';
-        document.getElementById('changePasswordBtn').style.display = 'inline-flex';
-      } catch (error) {
-        console.error("Error cambiando contraseña:", error);
-        alert('Error: ' + error.message);
-      }
-    });
-
-    const editDepartmentSelect = document.getElementById('editDepartment');
-    const editMunicipalitySelect = document.getElementById('editMunicipality');
-
-    Object.keys(departamentos).forEach(depto => {
-      const option = document.createElement('option');
-      option.value = depto;
-      option.textContent = depto;
-      editDepartmentSelect.appendChild(option);
-    });
-
-    editDepartmentSelect.addEventListener('change', function() {
-      editMunicipalitySelect.innerHTML = '<option value="">Seleccione un municipio</option>';
-      editMunicipalitySelect.disabled = !this.value;
-      
-      if (this.value) {
-        departamentos[this.value].forEach(muni => {
-          const option = document.createElement('option');
-          option.value = muni;
-          option.textContent = muni;
-          editMunicipalitySelect.appendChild(option);
-        });
-      }
-    });
-
-    document.addEventListener('DOMContentLoaded', loadUserData);
   </script>
 </body>
 </html>
