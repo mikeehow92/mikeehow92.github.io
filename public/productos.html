@@ -894,8 +894,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
-  
+
   <script>
     // Configuración de Firebase
     const firebaseConfig = {
@@ -908,11 +907,368 @@
     };
 
     // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
+    const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Funcionalidad del modal
+    // Servicio de autenticación
+    const AuthService = {
+      getCurrentUser: () => auth.currentUser,
+      onAuthStateChanged: (callback) => auth.onAuthStateChanged(callback),
+      signInWithEmailAndPassword: (email, password) => 
+        auth.signInWithEmailAndPassword(email, password),
+      signOut: () => auth.signOut(),
+      sendPasswordResetEmail: (email) => auth.sendPasswordResetEmail(email)
+    };
+
+    // Servicio del carrito
+    const CART_STORAGE_KEY = 'guest_cart';
+
+    const CartService = {
+      getCart: async () => {
+        const user = AuthService.getCurrentUser();
+        if (user) {
+          return getCartFromFirestore(user.uid);
+        } else {
+          return getGuestCart();
+        }
+      },
+
+      addItem: async (product, quantity = 1) => {
+        const user = AuthService.getCurrentUser();
+        const cart = await this.getCart();
+        
+        const existingItem = cart.find(item => item.id === product.id);
+        if (existingItem) {
+          existingItem.quantity += quantity;
+        } else {
+          cart.push({
+            ...product,
+            quantity,
+            addedAt: new Date().toISOString()
+          });
+        }
+
+        if (user) {
+          await saveCartToFirestore(user.uid, cart);
+        } else {
+          saveGuestCart(cart);
+        }
+
+        return cart;
+      },
+
+      updateQuantity: async (productId, newQuantity) => {
+        if (newQuantity < 1) return this.removeItem(productId);
+
+        const user = AuthService.getCurrentUser();
+        const cart = await this.getCart();
+        
+        const item = cart.find(item => item.id === productId);
+        if (item) item.quantity = newQuantity;
+
+        if (user) {
+          await saveCartToFirestore(user.uid, cart);
+        } else {
+          saveGuestCart(cart);
+        }
+
+        return cart;
+      },
+
+      removeItem: async (productId) => {
+        const user = AuthService.getCurrentUser();
+        let cart = await this.getCart();
+        
+        cart = cart.filter(item => item.id !== productId);
+
+        if (user) {
+          await saveCartToFirestore(user.uid, cart);
+        } else {
+          saveGuestCart(cart);
+        }
+
+        return cart;
+      },
+
+      clearCart: async () => {
+        const user = AuthService.getCurrentUser();
+        if (user) {
+          await saveCartToFirestore(user.uid, []);
+        } else {
+          localStorage.removeItem(CART_STORAGE_KEY);
+        }
+      },
+
+      migrateGuestCart: async (userId) => {
+        const guestCart = getGuestCart();
+        if (guestCart.length === 0) return;
+
+        const userCart = await getCartFromFirestore(userId);
+        const mergedCart = mergeCarts(userCart, guestCart);
+        
+        await saveCartToFirestore(userId, mergedCart);
+        localStorage.removeItem(CART_STORAGE_KEY);
+      },
+
+      getTotal: (cart) => {
+        return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+      },
+
+      getItemCount: (cart) => {
+        return cart.reduce((count, item) => count + item.quantity, 0);
+      }
+    };
+
+    // Funciones auxiliares del CartService
+    const getCartFromFirestore = async (userId) => {
+      try {
+        const cartDoc = await db.collection('carts').doc(userId).get();
+        return cartDoc.exists ? cartDoc.data().items : [];
+      } catch (error) {
+        console.error("Error obteniendo carrito:", error);
+        return [];
+      }
+    };
+
+    const saveCartToFirestore = async (userId, cart) => {
+      try {
+        await db.collection('carts').doc(userId).set({
+          items: cart,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (error) {
+        console.error("Error guardando carrito:", error);
+        throw error;
+      }
+    };
+
+    const getGuestCart = () => {
+      const cartData = localStorage.getItem(CART_STORAGE_KEY);
+      return cartData ? JSON.parse(cartData) : [];
+    };
+
+    const saveGuestCart = (cart) => {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    };
+
+    const mergeCarts = (userCart, guestCart) => {
+      const merged = [...userCart];
+      
+      guestCart.forEach(guestItem => {
+        const existingIndex = merged.findIndex(item => item.id === guestItem.id);
+        if (existingIndex >= 0) {
+          merged[existingIndex].quantity += guestItem.quantity;
+        } else {
+          merged.push(guestItem);
+        }
+      });
+
+      return merged;
+    };
+
+    // UI del carrito
+    const initCartUI = () => {
+      setupEventListeners();
+      renderCart();
+      setupAuthListener();
+    };
+
+    const setupEventListeners = () => {
+      // Toggle del carrito
+      document.querySelector('#cart-toggle')?.addEventListener('click', toggleCart);
+      document.querySelector('#cart-overlay')?.addEventListener('click', closeCart);
+      document.querySelector('#close-cart')?.addEventListener('click', closeCart);
+
+      // Delegación de eventos para botones dinámicos
+      document.querySelector('#cart-items')?.addEventListener('click', handleCartActions);
+      
+      // Checkout
+      document.querySelector('#checkout-btn')?.addEventListener('click', handleCheckout);
+
+      // Botones "Añadir al carrito"
+      document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', async () => {
+          const product = {
+            id: button.dataset.id,
+            name: button.dataset.name,
+            price: parseFloat(button.dataset.price),
+            image: button.dataset.image
+          };
+          
+          try {
+            await CartService.addItem(product);
+            renderCart();
+            
+            // Feedback visual
+            button.innerHTML = '<i class="fas fa-check"></i> Añadido';
+            button.style.backgroundColor = '#4CAF50';
+            setTimeout(() => {
+              button.innerHTML = '<i class="fas fa-cart-plus"></i> Añadir al carrito';
+              button.style.backgroundColor = '';
+            }, 1000);
+          } catch (error) {
+            console.error('Error añadiendo al carrito:', error);
+            alert('Error al añadir el producto al carrito');
+          }
+        });
+      });
+    };
+
+    const setupAuthListener = () => {
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          CartService.migrateGuestCart(user.uid);
+          document.getElementById('user-info').style.display = 'flex';
+          document.getElementById('guest-buttons').style.display = 'none';
+          document.getElementById('profile-link').style.display = 'block';
+          document.getElementById('orders-link').style.display = 'block';
+          document.getElementById('user-name').textContent = user.displayName || user.email.split('@')[0];
+          document.getElementById('user-avatar').src = user.photoURL || 'https://via.placeholder.com/40';
+        } else {
+          document.getElementById('user-info').style.display = 'none';
+          document.getElementById('guest-buttons').style.display = 'flex';
+          document.getElementById('profile-link').style.display = 'none';
+          document.getElementById('orders-link').style.display = 'none';
+        }
+        renderCart();
+      });
+    };
+
+    const renderCart = async () => {
+      const cart = await CartService.getCart();
+      updateCartCount(cart);
+      renderCartItems(cart);
+      updateCartTotal(cart);
+      toggleEmptyState(cart);
+    };
+
+    const renderCartItems = (cart) => {
+      const container = document.querySelector('#cart-items');
+      if (!container) return;
+
+      container.innerHTML = cart.map(item => `
+        <div class="cart-item" data-id="${item.id}">
+          <img src="${item.image}" alt="${item.name}" class="cart-item-image">
+          <div class="cart-item-details">
+            <div class="cart-item-title">${item.name}</div>
+            <div class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</div>
+          </div>
+          <div class="cart-item-actions">
+            <button class="btn-quantity" data-action="decrease">−</button>
+            <span class="cart-item-quantity">${item.quantity}</span>
+            <button class="btn-quantity" data-action="increase">+</button>
+            <button class="btn-remove" data-action="remove">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    const handleCartActions = async (e) => {
+      const itemElement = e.target.closest('.cart-item');
+      if (!itemElement) return;
+
+      const productId = itemElement.dataset.id;
+      const action = e.target.closest('[data-action]')?.dataset.action;
+
+      try {
+        switch (action) {
+          case 'increase':
+            await CartService.addItem({ id: productId }, 1);
+            break;
+          case 'decrease':
+            const quantityElement = itemElement.querySelector('.cart-item-quantity');
+            const currentQty = parseInt(quantityElement.textContent);
+            await CartService.updateQuantity(productId, currentQty - 1);
+            break;
+          case 'remove':
+            await CartService.removeItem(productId);
+            alert('Producto eliminado');
+            break;
+        }
+        await renderCart();
+      } catch (error) {
+        console.error('Error actualizando carrito:', error);
+        alert('Error al actualizar el carrito');
+      }
+    };
+
+    const handleCheckout = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        alert('Inicia sesión para continuar');
+        document.getElementById('login-modal').classList.add('active');
+        document.getElementById('cart-overlay').classList.remove('active');
+        document.getElementById('cart-container').classList.remove('active');
+        return;
+      }
+
+      const cart = await CartService.getCart();
+      if (cart.length === 0) {
+        alert('El carrito está vacío');
+        return;
+      }
+
+      try {
+        // Guardar carrito para el proceso de pago
+        localStorage.setItem('currentCheckout', JSON.stringify({
+          items: cart,
+          total: CartService.getTotal(cart)
+        }));
+        
+        // Redirigir a página de pago
+        window.location.href = 'pago.html';
+      } catch (error) {
+        console.error('Error en checkout:', error);
+        alert('Error en el proceso de pago');
+      }
+    };
+
+    const updateCartCount = (cart) => {
+      const countElement = document.querySelector('#cart-count');
+      if (!countElement) return;
+
+      const count = CartService.getItemCount(cart);
+      countElement.textContent = count;
+      countElement.classList.toggle('hidden', count === 0);
+    };
+
+    const updateCartTotal = (cart) => {
+      const totalElement = document.querySelector('#cart-total');
+      if (totalElement) {
+        totalElement.textContent = CartService.getTotal(cart).toFixed(2);
+      }
+    };
+
+    const toggleEmptyState = (cart) => {
+      const emptyElement = document.querySelector('#empty-cart');
+      const itemsElement = document.querySelector('#cart-items');
+      if (!emptyElement || !itemsElement) return;
+
+      if (cart.length === 0) {
+        emptyElement.style.display = 'flex';
+        itemsElement.style.display = 'none';
+      } else {
+        emptyElement.style.display = 'none';
+        itemsElement.style.display = 'flex';
+      }
+    };
+
+    const toggleCart = () => {
+      document.querySelector('#cart-container').classList.toggle('active');
+      document.querySelector('#cart-overlay').classList.toggle('active');
+      document.body.style.overflow = 'hidden';
+    };
+
+    const closeCart = () => {
+      document.querySelector('#cart-container').classList.remove('active');
+      document.querySelector('#cart-overlay').classList.remove('active');
+      document.body.style.overflow = '';
+    };
+
+    // Autenticación
     const setupAuthUI = () => {
       // Selectores
       const loginBtn = document.getElementById('open-login-btn');
@@ -925,12 +1281,6 @@
       const loginForm = document.getElementById('login-form');
       const resetForm = document.getElementById('reset-form');
       const logoutBtn = document.getElementById('logout-btn');
-      const guestUI = document.getElementById('guest-buttons');
-      const userUI = document.getElementById('user-info');
-      const userName = document.getElementById('user-name');
-      const userAvatar = document.getElementById('user-avatar');
-      const profileLink = document.getElementById('profile-link');
-      const ordersLink = document.getElementById('orders-link');
 
       // Mostrar modal
       const showModal = (modal) => {
@@ -989,11 +1339,11 @@
         const password = e.target.password.value;
         
         try {
-          await auth.signInWithEmailAndPassword(email, password);
+          await AuthService.signInWithEmailAndPassword(email, password);
           hideModals();
-          showFeedback('Sesión iniciada correctamente', 'success');
+          alert('Sesión iniciada correctamente');
         } catch (error) {
-          showFeedback(getAuthErrorMessage(error), 'error');
+          alert(getAuthErrorMessage(error));
         }
       });
 
@@ -1003,230 +1353,69 @@
         const email = e.target.email.value;
         
         try {
-          await auth.sendPasswordResetEmail(email);
+          await AuthService.sendPasswordResetEmail(email);
           hideModals();
-          showFeedback('Se ha enviado un email con instrucciones para restablecer tu contraseña', 'success');
+          alert('Se ha enviado un email con instrucciones para restablecer tu contraseña');
         } catch (error) {
-          showFeedback(getAuthErrorMessage(error), 'error');
+          alert(getAuthErrorMessage(error));
         }
       });
 
       // Logout
       logoutBtn?.addEventListener('click', async () => {
         try {
-          await auth.signOut();
-          showFeedback('Sesión cerrada correctamente', 'success');
+          await AuthService.signOut();
+          alert('Sesión cerrada correctamente');
         } catch (error) {
-          showFeedback('Error al cerrar sesión', 'error');
+          alert('Error al cerrar sesión');
         }
       });
-
-      // Escuchar cambios de autenticación
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          // Usuario logueado
-          guestUI.style.display = 'none';
-          userUI.style.display = 'flex';
-          profileLink.style.display = 'block';
-          ordersLink.style.display = 'block';
-          
-          userName.textContent = user.displayName || user.email.split('@')[0];
-          userAvatar.src = user.photoURL || 'https://via.placeholder.com/40';
-        } else {
-          // Usuario no logueado
-          guestUI.style.display = 'flex';
-          userUI.style.display = 'none';
-          profileLink.style.display = 'none';
-          ordersLink.style.display = 'none';
-        }
-      });
-
-      // Mostrar feedback
-      const showFeedback = (message, type) => {
-        // Implementar lógica para mostrar mensajes al usuario
-        console.log(`${type}: ${message}`);
-        alert(`${type}: ${message}`); // Temporal
-      };
-
-      // Manejo de errores de autenticación
-      const getAuthErrorMessage = (error) => {
-        const errorMap = {
-          'auth/invalid-email': 'El correo electrónico no es válido',
-          'auth/user-disabled': 'Esta cuenta ha sido deshabilitada',
-          'auth/user-not-found': 'No existe una cuenta con este correo',
-          'auth/wrong-password': 'Contraseña incorrecta',
-          'auth/email-already-in-use': 'Este correo ya está registrado',
-          'auth/operation-not-allowed': 'Operación no permitida',
-          'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres',
-          'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde'
-        };
-        return errorMap[error.code] || 'Ocurrió un error durante la autenticación';
-      };
     };
 
-    // Carrito de compras
-    const cart = [];
-    const cartCounter = document.getElementById('cart-count');
-    const cartItems = document.getElementById('cart-items');
-    const cartTotal = document.getElementById('cart-total');
-    const cartContainer = document.getElementById('cart-container');
-    const cartOverlay = document.getElementById('cart-overlay');
-    const cartToggle = document.getElementById('cart-toggle');
-    const closeCart = document.getElementById('close-cart');
-    const emptyCart = document.getElementById('empty-cart');
-    const checkoutBtn = document.getElementById('checkout-btn');
-    
-    // Año actual
-    document.getElementById('current-year').textContent = new Date().getFullYear();
-    
-    // Abrir/cerrar carrito
-    cartToggle.addEventListener('click', () => {
-      cartContainer.classList.add('active');
-      cartOverlay.classList.add('active');
-      document.body.style.overflow = 'hidden';
-    });
-    
-    closeCart.addEventListener('click', () => {
-      cartContainer.classList.remove('active');
-      cartOverlay.classList.remove('active');
-      document.body.style.overflow = 'auto';
-    });
-    
-    cartOverlay.addEventListener('click', () => {
-      cartContainer.classList.remove('active');
-      cartOverlay.classList.remove('active');
-      document.body.style.overflow = 'auto';
-    });
-    
-    // Añadir al carrito
-    document.querySelectorAll('.add-to-cart').forEach(button => {
-      button.addEventListener('click', () => {
-        const product = {
-          id: button.dataset.id,
-          name: button.dataset.name,
-          price: parseFloat(button.dataset.price),
-          image: button.dataset.image,
-          quantity: 1
-        };
-        
-        // Verificar si el producto ya está en el carrito
-        const existingItem = cart.find(item => item.id === product.id);
-        if (existingItem) {
-          existingItem.quantity += 1;
-        } else {
-          cart.push(product);
-        }
-        
-        updateCart();
-        
-        // Feedback visual
-        button.innerHTML = '<i class="fas fa-check"></i> Añadido';
-        button.style.backgroundColor = '#4CAF50';
-        setTimeout(() => {
-          button.innerHTML = '<i class="fas fa-cart-plus"></i> Añadir al carrito';
-          button.style.backgroundColor = '';
-        }, 1000);
-      });
-    });
-    
-    // Actualizar carrito
-    function updateCart() {
-      // Actualizar contador
-      const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
-      cartCounter.textContent = totalItems;
-      cartCounter.classList.toggle('hidden', totalItems === 0);
-      
-      // Actualizar items del carrito
-      if (cart.length === 0) {
-        emptyCart.style.display = 'flex';
-        cartItems.style.display = 'none';
-      } else {
-        emptyCart.style.display = 'none';
-        cartItems.style.display = 'flex';
-        
-        cartItems.innerHTML = '';
-        let total = 0;
-        
-        cart.forEach((item, index) => {
-          total += item.price * item.quantity;
-          
-          const cartItem = document.createElement('div');
-          cartItem.className = 'cart-item';
-          cartItem.innerHTML = `
-            <img src="${item.image}" alt="${item.name}" class="cart-item-image">
-            <div class="cart-item-details">
-              <div class="cart-item-title">${item.name}</div>
-              <div class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</div>
-            </div>
-            <div class="cart-item-actions">
-              <button class="btn-quantity" data-action="decrease" data-index="${index}">-</button>
-              <span class="cart-item-quantity">${item.quantity}</span>
-              <button class="btn-quantity" data-action="increase" data-index="${index}">+</button>
-              <button class="btn-remove" data-action="remove" data-index="${index}">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          `;
-          
-          cartItems.appendChild(cartItem);
-        });
-        
-        // Actualizar total
-        cartTotal.textContent = total.toFixed(2);
-      }
-    }
-    
-    // Manejar acciones del carrito
-    cartItems.addEventListener('click', (e) => {
-      const action = e.target.closest('[data-action]')?.dataset.action;
-      const index = e.target.closest('[data-index]')?.dataset.index;
-      
-      if (action === 'increase') {
-        cart[index].quantity += 1;
-      } else if (action === 'decrease') {
-        if (cart[index].quantity > 1) {
-          cart[index].quantity -= 1;
-        } else {
-          cart.splice(index, 1);
-        }
-      } else if (action === 'remove') {
-        cart.splice(index, 1);
-      }
-      
-      updateCart();
-    });
-    
-    // Checkout - Modificado para redirigir a pago.html con los datos
-    checkoutBtn.addEventListener('click', () => {
-      if (cart.length === 0) {
-        alert('Tu carrito está vacío');
-        return;
-      }
-      
-      // Verificar si el usuario está autenticado
-      const user = auth.currentUser;
-      if (!user) {
-        showFeedback('Debes iniciar sesión para proceder al pago', 'error');
-        showModal(document.getElementById('login-modal'));
-        return;
-      }
-      
-      // Guardar los datos del carrito para usar en pago.html
-      const checkoutData = {
-        items: cart,
-        total: cart.reduce((total, item) => total + (item.price * item.quantity), 0)
+    // Manejo de errores de autenticación
+    const getAuthErrorMessage = (error) => {
+      const errorMap = {
+        'auth/invalid-email': 'El correo electrónico no es válido',
+        'auth/user-disabled': 'Esta cuenta ha sido deshabilitada',
+        'auth/user-not-found': 'No existe una cuenta con este correo',
+        'auth/wrong-password': 'Contraseña incorrecta',
+        'auth/email-already-in-use': 'Este correo ya está registrado',
+        'auth/operation-not-allowed': 'Operación no permitida',
+        'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres',
+        'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde'
       };
-      
-      // Guardar en localStorage
-      localStorage.setItem('currentCheckout', JSON.stringify(checkoutData));
-      
-      // Redirigir a la página de pago
-      window.location.href = 'pago.html';
-    });
+      return errorMap[error.code] || 'Ocurrió un error durante la autenticación';
+    };
 
-    // Inicializar la UI de autenticación cuando el DOM esté listo
+    // Inicializar cuando el DOM esté listo
     document.addEventListener('DOMContentLoaded', () => {
+      // Año actual
+      document.getElementById('current-year').textContent = new Date().getFullYear();
+      
+      // Inicializar UI del carrito
+      if (document.querySelector('#cart-container')) {
+        initCartUI();
+      }
+      
+      // Inicializar UI de autenticación
       setupAuthUI();
+      
+      // Verificar estado de autenticación inicial
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          document.getElementById('user-info').style.display = 'flex';
+          document.getElementById('guest-buttons').style.display = 'none';
+          document.getElementById('profile-link').style.display = 'block';
+          document.getElementById('orders-link').style.display = 'block';
+          document.getElementById('user-name').textContent = user.displayName || user.email.split('@')[0];
+          document.getElementById('user-avatar').src = user.photoURL || 'https://via.placeholder.com/40';
+        } else {
+          document.getElementById('user-info').style.display = 'none';
+          document.getElementById('guest-buttons').style.display = 'flex';
+          document.getElementById('profile-link').style.display = 'none';
+          document.getElementById('orders-link').style.display = 'none';
+        }
+      });
     });
   </script>
 </body>
