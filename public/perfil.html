@@ -136,26 +136,6 @@
       min-height: 45px;
     }
 
-    .edit-btn {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: all 0.3s ease;
-      margin-top: 20px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .edit-btn:hover {
-      background-color: var(--primary-dark);
-      transform: translateY(-2px);
-    }
-
     @media (max-width: 768px) {
       .profile-container {
         grid-template-columns: 1fr;
@@ -188,15 +168,15 @@
         <div class="info-grid">
           <div class="info-item">
             <div class="info-label">Nombre completo</div>
-            <div class="info-value" id="user-fullname">Cargando...</div>
+            <div class="info-value" id="userFullName">Cargando...</div>
           </div>
           <div class="info-item">
             <div class="info-label">Correo electrónico</div>
-            <div class="info-value" id="user-email">Cargando...</div>
+            <div class="info-value" id="userEmail">Cargando...</div>
           </div>
           <div class="info-item">
             <div class="info-label">Teléfono</div>
-            <div class="info-value" id="user-phone">Cargando...</div>
+            <div class="info-value" id="userPhone">Cargando...</div>
           </div>
         </div>
       </section>
@@ -206,22 +186,22 @@
         <div class="info-grid">
           <div class="info-item">
             <div class="info-label">Departamento</div>
-            <div class="info-value" id="user-department">Cargando...</div>
+            <div class="info-value" id="userDepartment">Cargando...</div>
           </div>
           <div class="info-item">
             <div class="info-label">Municipio</div>
-            <div class="info-value" id="user-municipality">Cargando...</div>
+            <div class="info-value" id="userMunicipality">Cargando...</div>
           </div>
           <div class="info-item">
             <div class="info-label">Dirección exacta</div>
-            <div class="info-value" id="user-address">Cargando...</div>
+            <div class="info-value" id="userAddress">Cargando...</div>
           </div>
         </div>
       </section>
 
       <section id="orders-section" class="profile-section">
         <h2 class="section-title"><i class="fas fa-shopping-bag"></i> Mis Compras</h2>
-        <div id="orders-list">
+        <div id="ordersList">
           <p>Cargando historial de compras...</p>
         </div>
       </section>
@@ -231,7 +211,7 @@
         <div class="info-grid">
           <div class="info-item">
             <div class="info-label">Último inicio de sesión</div>
-            <div class="info-value" id="last-login">Cargando...</div>
+            <div class="info-value" id="lastLogin">Cargando...</div>
           </div>
         </div>
       </section>
@@ -243,7 +223,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
   
   <script>
-    // Configuración de Firebase (debe coincidir con tu configuración)
+    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
       authDomain: "mitienda-c2609.firebaseapp.com",
@@ -267,76 +247,143 @@
         return;
       }
 
-      // Mostrar información básica
-      document.getElementById('user-name').textContent = user.displayName || user.email.split('@')[0];
-      document.getElementById('user-email').textContent = user.email;
-      document.getElementById('user-fullname').textContent = user.displayName || "No especificado";
+      // Mostrar email inmediatamente
+      document.getElementById('userEmail').textContent = user.email;
       
-      // Configurar avatar
-      const avatar = document.getElementById('user-avatar');
-      if (user.photoURL) {
-        avatar.innerHTML = `<img src="${user.photoURL}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-      } else {
-        const initials = user.displayName ? 
-          user.displayName.split(' ').map(n => n[0]).join('') : 
-          user.email[0].toUpperCase();
-        avatar.textContent = initials;
-      }
-
       // Obtener datos adicionales de Firestore
       db.collection("users").doc(user.uid).get().then((doc) => {
         if (doc.exists) {
           const userData = doc.data();
           
-          // Información personal
-          if (userData.telefono) {
-            document.getElementById('user-phone').textContent = userData.telefono;
-          }
+          // Mostrar nombre (prioridad: Firestore > Auth > email)
+          const userName = userData.nombre || user.displayName || user.email.split('@')[0];
+          document.getElementById('user-name').textContent = userName;
+          document.getElementById('userFullName').textContent = userName;
           
-          // Dirección
+          // Mostrar teléfono
+          document.getElementById('userPhone').textContent = userData.telefono || "No especificado";
+          
+          // Mostrar dirección
           if (userData.direccion) {
-            document.getElementById('user-department').textContent = userData.direccion.departamento || "No especificado";
-            document.getElementById('user-municipality').textContent = userData.direccion.municipio || "No especificado";
-            document.getElementById('user-address').textContent = userData.direccion.direccionExacta || "No especificado";
+            document.getElementById('userDepartment').textContent = userData.direccion.departamento || "No especificado";
+            document.getElementById('userMunicipality').textContent = userData.direccion.municipio || "No especificado";
+            document.getElementById('userAddress').textContent = userData.direccion.direccionExacta || "No especificado";
           }
           
-          // Último inicio de sesión
+          // Mostrar último login
           if (userData.lastLogin) {
-            document.getElementById('last-login').textContent = userData.lastLogin.toDate().toLocaleString();
+            document.getElementById('lastLogin').textContent = userData.lastLogin.toDate().toLocaleString();
           } else {
-            document.getElementById('last-login').textContent = "No disponible";
+            document.getElementById('lastLogin').textContent = "No disponible";
           }
+          
+          // Configurar avatar
+          setupUserAvatar(user, userData);
+        } else {
+          // Si no hay datos en Firestore, usar solo datos de Auth
+          const userName = user.displayName || user.email.split('@')[0];
+          document.getElementById('user-name').textContent = userName;
+          document.getElementById('userFullName').textContent = userName;
+          document.getElementById('userPhone').textContent = "No especificado";
+          setupUserAvatar(user);
         }
       }).catch((error) => {
-        console.error("Error obteniendo datos:", error);
+        console.error("Error cargando datos:", error);
       });
 
       // Cargar historial de compras
       loadOrderHistory(user.uid);
     }
 
+    // Configurar avatar del usuario
+    function setupUserAvatar(user, userData = {}) {
+      const avatar = document.getElementById('user-avatar');
+      avatar.innerHTML = '';
+      
+      // Prioridad: photoURL de Auth > photoURL de Firestore > iniciales
+      if (user.photoURL) {
+        const img = document.createElement('img');
+        img.src = user.photoURL;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.borderRadius = '50%';
+        img.style.objectFit = 'cover';
+        avatar.appendChild(img);
+      } else if (userData.photoURL) {
+        const img = document.createElement('img');
+        img.src = userData.photoURL;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.borderRadius = '50%';
+        img.style.objectFit = 'cover';
+        avatar.appendChild(img);
+      } else {
+        const name = user.displayName || userData.nombre || user.email;
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
+        avatar.textContent = initials;
+        avatar.style.display = 'flex';
+        avatar.style.alignItems = 'center';
+        avatar.style.justifyContent = 'center';
+        avatar.style.fontSize = '2.5rem';
+        avatar.style.fontWeight = 'bold';
+      }
+    }
+
     // Cargar historial de compras
     function loadOrderHistory(userId) {
       db.collection("orders")
         .where("userId", "==", userId)
+        .orderBy("date", "desc")
         .get()
         .then((querySnapshot) => {
-          const ordersList = document.getElementById('orders-list');
+          const ordersList = document.getElementById('ordersList');
           
           if (querySnapshot.empty) {
-            ordersList.innerHTML = `<p>No has realizado ninguna compra aún</p>`;
+            ordersList.innerHTML = `
+              <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-shopping-bag" style="font-size: 3rem; color: #ddd;"></i>
+                <p style="margin-top: 20px;">No has realizado ninguna compra aún</p>
+              </div>
+            `;
             return;
           }
 
           let ordersHTML = '';
           querySnapshot.forEach((doc) => {
             const order = doc.data();
+            const orderDate = order.date.toDate().toLocaleDateString();
+            
             ordersHTML += `
-              <div class="order" style="margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 5px;">
-                <h3>Orden #${doc.id.substring(0, 8)}</h3>
-                <p>Fecha: ${order.date.toDate().toLocaleDateString()}</p>
-                <p>Total: $${order.total}</p>
-                <p>Estado: ${order.status}</p>
+              <div style="border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                  <strong>Orden #${doc.id.substring(0, 8)}</strong>
+                  <span>${orderDate}</span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                  ${order.items.map(item => `
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                      <img src="${item.image || 'https://via.placeholder.com/50'}" 
+                           alt="${item.name}" 
+                           style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; margin-right: 10px;">
+                      <div>
+                        <div>${item.name}</div>
+                        <div style="color: var(--primary); font-weight: bold;">$${item.price} x ${item.quantity}</div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+                <div style="text-align: right; font-weight: bold;">
+                  Total: $${order.total}
+                </div>
+                <div style="margin-top: 10px;">
+                  <span style="background-color: ${getStatusColor(order.status)}; 
+                               color: white; 
+                               padding: 3px 8px; 
+                               border-radius: 12px; 
+                               font-size: 0.8rem;">
+                    ${order.status}
+                  </span>
+                </div>
               </div>
             `;
           });
@@ -345,8 +392,23 @@
         })
         .catch((error) => {
           console.error("Error cargando compras:", error);
-          document.getElementById('orders-list').innerHTML = `<p>Error al cargar el historial de compras</p>`;
+          document.getElementById('ordersList').innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--primary);">
+              <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+              <p style="margin-top: 15px;">Error al cargar el historial de compras</p>
+            </div>
+          `;
         });
+    }
+
+    // Helper para colores de estado
+    function getStatusColor(status) {
+      switch(status.toLowerCase()) {
+        case 'completado': return '#28a745';
+        case 'pendiente': return '#ffc107';
+        case 'cancelado': return '#dc3545';
+        default: return '#6c757d';
+      }
     }
 
     // Manejar cambio de secciones
@@ -354,7 +416,7 @@
       link.addEventListener('click', function(e) {
         e.preventDefault();
         
-        // Remover clase active de todos los enlaces y secciones
+        // Remover clase active de todos
         document.querySelectorAll('.profile-menu a').forEach(item => {
           item.classList.remove('active');
         });
@@ -362,14 +424,14 @@
           section.classList.remove('active');
         });
         
-        // Agregar clase active al enlace y sección seleccionados
+        // Agregar clase active al seleccionado
         this.classList.add('active');
         const sectionId = this.getAttribute('data-section');
         document.getElementById(`${sectionId}-section`).classList.add('active');
       });
     });
 
-    // Verificar autenticación al cargar la página
+    // Verificar autenticación al cargar
     auth.onAuthStateChanged((user) => {
       if (user) {
         loadUserData();
