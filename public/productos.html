@@ -486,125 +486,37 @@
       display: block;
     }
     
-    /* Modales de autenticación */
-    .auth-modal {
-      display: none;
+    /* Feedback */
+    .feedback {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      justify-content: center;
-      align-items: center;
+      bottom: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      border-radius: 5px;
+      color: white;
       z-index: 1000;
+      animation: slideIn 0.3s ease-out;
     }
     
-    .auth-modal.active {
-      display: flex;
+    .feedback.success {
+      background-color: #4CAF50;
     }
     
-    .modal-content {
-      background: var(--white);
-      border-radius: 0.8rem;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: var(--shadow-lg);
-      overflow: hidden;
-      animation: modalFadeIn 0.3s ease-out;
+    .feedback.error {
+      background-color: #f44336;
     }
     
-    @keyframes modalFadeIn {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
+    .feedback.warning {
+      background-color: #ff9800;
     }
     
-    .modal-header {
-      padding: 1.5rem;
-      background-color: var(--secondary);
-      color: var(--white);
-      text-align: center;
-      position: relative;
+    .feedback.info {
+      background-color: #2196F3;
     }
     
-    .modal-header h2 {
-      font-size: 1.5rem;
-      margin: 0;
-    }
-    
-    .close-modal {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: none;
-      border: none;
-      color: var(--white);
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-    
-    .auth-form {
-      padding: 2rem;
-    }
-    
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-    
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-    }
-    
-    .form-group input {
-      width: 100%;
-      padding: 0.8rem;
-      border: 1px solid #ddd;
-      border-radius: 0.4rem;
-      font-family: inherit;
-    }
-    
-    .form-group input:focus {
-      border-color: var(--primary);
-      outline: none;
-    }
-    
-    .forgot-password {
-      display: block;
-      text-align: right;
-      margin-top: 0.5rem;
-      font-size: 0.9rem;
-      color: var(--primary);
-      text-decoration: none;
-    }
-    
-    .submit-btn {
-      width: 100%;
-      padding: 0.8rem;
-      background-color: var(--primary);
-      color: var(--white);
-      border: none;
-      border-radius: 0.4rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-    
-    .submit-btn:hover {
-      background-color: var(--primary-dark);
-    }
-    
-    .form-footer {
-      text-align: center;
-      margin-top: 1rem;
-      font-size: 0.9rem;
-    }
-    
-    .form-footer a {
-      color: var(--primary);
-      font-weight: 500;
-      text-decoration: none;
+    @keyframes slideIn {
+      from { transform: translateY(100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
 
     @media (max-width: 768px) {
@@ -681,57 +593,6 @@
     </div>
   </header>
 
-  <!-- Modal de Login -->
-  <div class="auth-modal" id="login-modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Iniciar Sesión</h2>
-        <button class="close-modal">&times;</button>
-      </div>
-      <div class="auth-form">
-        <form id="login-form">
-          <div class="form-group">
-            <label for="login-email">Correo Electrónico</label>
-            <input type="email" id="login-email" name="email" required>
-          </div>
-          <div class="form-group">
-            <label for="login-password">Contraseña</label>
-            <input type="password" id="login-password" name="password" required>
-          </div>
-          <div class="form-group">
-            <a href="#recuperar" id="forgot-password" class="forgot-password">¿Olvidaste tu contraseña?</a>
-          </div>
-          <button type="submit" class="submit-btn">Ingresar</button>
-        </form>
-        <div class="form-footer">
-          <p>¿No tienes cuenta? <a href="registro.html" id="switch-to-signup">Regístrate aquí</a></p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal de Recuperación de Contraseña -->
-  <div class="auth-modal" id="reset-modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Recuperar Contraseña</h2>
-        <button class="close-modal">&times;</button>
-      </div>
-      <div class="auth-form">
-        <form id="reset-form">
-          <div class="form-group">
-            <label for="reset-email">Correo Electrónico</label>
-            <input type="email" id="reset-email" name="email" required>
-          </div>
-          <button type="submit" class="submit-btn">Enviar Instrucciones</button>
-        </form>
-        <div class="form-footer">
-          <p><a href="#" id="switch-to-login-from-reset">Volver a Iniciar Sesión</a></p>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Cart Modal -->
   <div class="cart-overlay" id="cart-overlay"></div>
   <div class="cart-modal" id="cart-container">
@@ -771,11 +632,7 @@
             <h3>Licuadora Profesional</h3>
             <p>Potente motor de 1000W con 6 velocidades</p>
             <div class="product-price">$89.99</div>
-            <button class="add-to-cart" 
-                    data-id="prod001"
-                    data-name="Licuadora Profesional"
-                    data-price="89.99"
-                    data-image="https://images.unsplash.com/photo-1592155931584-901ac15763e3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
+            <button class="add-to-cart" data-action="add-to-cart" data-product-id="prod001" data-name="Licuadora Profesional" data-price="89.99" data-image="https://images.unsplash.com/photo-1592155931584-901ac15763e3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
               <i class="fas fa-cart-plus"></i> Añadir al carrito
             </button>
           </div>
@@ -790,11 +647,7 @@
             <h3>Jeans Clásicos</h3>
             <p>Jeans para hombre, corte recto, varios colores</p>
             <div class="product-price">$39.99</div>
-            <button class="add-to-cart" 
-                    data-id="prod002"
-                    data-name="Jeans Clásicos"
-                    data-price="39.99"
-                    data-image="https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
+            <button class="add-to-cart" data-action="add-to-cart" data-product-id="prod002" data-name="Jeans Clásicos" data-price="39.99" data-image="https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
               <i class="fas fa-cart-plus"></i> Añadir al carrito
             </button>
           </div>
@@ -809,11 +662,7 @@
             <h3>Zapatos Deportivos</h3>
             <p>Cómodos y ligeros para todo tipo de actividades</p>
             <div class="product-price">$59.99</div>
-            <button class="add-to-cart" 
-                    data-id="prod003"
-                    data-name="Zapatos Deportivos"
-                    data-price="59.99"
-                    data-image="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
+            <button class="add-to-cart" data-action="add-to-cart" data-product-id="prod003" data-name="Zapatos Deportivos" data-price="59.99" data-image="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
               <i class="fas fa-cart-plus"></i> Añadir al carrito
             </button>
           </div>
@@ -828,11 +677,7 @@
             <h3>Tostadora Moderna</h3>
             <p>Doble ranura con ajuste de temperatura</p>
             <div class="product-price">$45.99</div>
-            <button class="add-to-cart" 
-                    data-id="prod004"
-                    data-name="Tostadora Moderna"
-                    data-price="45.99"
-                    data-image="https://images.unsplash.com/photo-1586449480533-9c92c564b8b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
+            <button class="add-to-cart" data-action="add-to-cart" data-product-id="prod004" data-name="Tostadora Moderna" data-price="45.99" data-image="https://images.unsplash.com/photo-1586449480533-9c92c564b8b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
               <i class="fas fa-cart-plus"></i> Añadir al carrito
             </button>
           </div>
@@ -847,11 +692,7 @@
             <h3>Vestido de Verano</h3>
             <p>Ligero y fresco, ideal para días calurosos</p>
             <div class="product-price">$34.99</div>
-            <button class="add-to-cart" 
-                    data-id="prod005"
-                    data-name="Vestido de Verano"
-                    data-price="34.99"
-                    data-image="https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
+            <button class="add-to-cart" data-action="add-to-cart" data-product-id="prod005" data-name="Vestido de Verano" data-price="34.99" data-image="https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
               <i class="fas fa-cart-plus"></i> Añadir al carrito
             </button>
           </div>
@@ -866,11 +707,7 @@
             <h3>Zapatos Formales</h3>
             <p>Elegantes y cómodos para ocasiones especiales</p>
             <div class="product-price">$79.99</div>
-            <button class="add-to-cart" 
-                    data-id="prod006"
-                    data-name="Zapatos Formales"
-                    data-price="79.99"
-                    data-image="https://images.unsplash.com/photo-1560769629-975ec94e6a86?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
+            <button class="add-to-cart" data-action="add-to-cart" data-product-id="prod006" data-name="Zapatos Formales" data-price="79.99" data-image="https://images.unsplash.com/photo-1560769629-975ec94e6a86?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80">
               <i class="fas fa-cart-plus"></i> Añadir al carrito
             </button>
           </div>
@@ -891,10 +728,12 @@
     </div>
   </footer>
 
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
 
+  <!-- Script principal -->
   <script>
     // Configuración de Firebase
     const firebaseConfig = {
@@ -1090,7 +929,7 @@
       document.querySelectorAll('.add-to-cart').forEach(button => {
         button.addEventListener('click', async () => {
           const product = {
-            id: button.dataset.id,
+            id: button.dataset.productId,
             name: button.dataset.name,
             price: parseFloat(button.dataset.price),
             image: button.dataset.image
@@ -1101,6 +940,8 @@
             renderCart();
             
             // Feedback visual
+            showFeedback(`${product.name} añadido al carrito`, 'success');
+            
             button.innerHTML = '<i class="fas fa-check"></i> Añadido';
             button.style.backgroundColor = '#4CAF50';
             setTimeout(() => {
@@ -1109,7 +950,7 @@
             }, 1000);
           } catch (error) {
             console.error('Error añadiendo al carrito:', error);
-            alert('Error al añadir el producto al carrito');
+            showFeedback('Error al añadir el producto al carrito', 'error');
           }
         });
       });
@@ -1185,29 +1026,26 @@
             break;
           case 'remove':
             await CartService.removeItem(productId);
-            alert('Producto eliminado');
+            showFeedback('Producto eliminado', 'success');
             break;
         }
         await renderCart();
       } catch (error) {
         console.error('Error actualizando carrito:', error);
-        alert('Error al actualizar el carrito');
+        showFeedback('Error al actualizar el carrito', 'error');
       }
     };
 
     const handleCheckout = async () => {
       const user = auth.currentUser;
       if (!user) {
-        alert('Inicia sesión para continuar');
-        document.getElementById('login-modal').classList.add('active');
-        document.getElementById('cart-overlay').classList.remove('active');
-        document.getElementById('cart-container').classList.remove('active');
+        showFeedback('Inicia sesión para continuar', 'error');
         return;
       }
 
       const cart = await CartService.getCart();
       if (cart.length === 0) {
-        alert('El carrito está vacío');
+        showFeedback('El carrito está vacío', 'error');
         return;
       }
 
@@ -1222,7 +1060,7 @@
         window.location.href = 'pago.html';
       } catch (error) {
         console.error('Error en checkout:', error);
-        alert('Error en el proceso de pago');
+        showFeedback('Error en el proceso de pago', 'error');
       }
     };
 
@@ -1268,123 +1106,16 @@
       document.body.style.overflow = '';
     };
 
-    // Autenticación
-    const setupAuthUI = () => {
-      // Selectores
-      const loginBtn = document.getElementById('open-login-btn');
-      const loginModal = document.getElementById('login-modal');
-      const resetModal = document.getElementById('reset-modal');
-      const closeBtns = document.querySelectorAll('.close-modal');
-      const switchToSignup = document.getElementById('switch-to-signup');
-      const switchToLoginFromReset = document.getElementById('switch-to-login-from-reset');
-      const forgotPassword = document.getElementById('forgot-password');
-      const loginForm = document.getElementById('login-form');
-      const resetForm = document.getElementById('reset-form');
-      const logoutBtn = document.getElementById('logout-btn');
-
-      // Mostrar modal
-      const showModal = (modal) => {
-        document.querySelectorAll('.auth-modal').forEach(m => m.classList.remove('active'));
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      };
-
-      // Ocultar modales
-      const hideModals = () => {
-        document.querySelectorAll('.auth-modal').forEach(m => m.classList.remove('active'));
-        document.body.style.overflow = '';
-      };
-
-      // Cambiar a login
-      const showLogin = () => {
-        hideModals();
-        showModal(loginModal);
-      };
-
-      // Cambiar a recuperación
-      const showReset = () => {
-        hideModals();
-        showModal(resetModal);
-      };
-
-      // Manejadores de eventos
-      loginBtn?.addEventListener('click', () => showModal(loginModal));
-      closeBtns.forEach(btn => btn.addEventListener('click', hideModals));
-      switchToSignup?.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.location.href = 'registro.html';
-      });
-      switchToLoginFromReset?.addEventListener('click', (e) => {
-        e.preventDefault();
-        showLogin();
-      });
-      forgotPassword?.addEventListener('click', (e) => {
-        e.preventDefault();
-        showReset();
-      });
-
-      // Cerrar modal al hacer clic fuera
-      document.querySelectorAll('.auth-modal').forEach(modal => {
-        modal.addEventListener('click', (e) => {
-          if (e.target === modal) {
-            hideModals();
-          }
-        });
-      });
-
-      // Login con email
-      loginForm?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = e.target.email.value;
-        const password = e.target.password.value;
-        
-        try {
-          await AuthService.signInWithEmailAndPassword(email, password);
-          hideModals();
-          alert('Sesión iniciada correctamente');
-        } catch (error) {
-          alert(getAuthErrorMessage(error));
-        }
-      });
-
-      // Recuperación de contraseña
-      resetForm?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = e.target.email.value;
-        
-        try {
-          await AuthService.sendPasswordResetEmail(email);
-          hideModals();
-          alert('Se ha enviado un email con instrucciones para restablecer tu contraseña');
-        } catch (error) {
-          alert(getAuthErrorMessage(error));
-        }
-      });
-
-      // Logout
-      logoutBtn?.addEventListener('click', async () => {
-        try {
-          await AuthService.signOut();
-          alert('Sesión cerrada correctamente');
-        } catch (error) {
-          alert('Error al cerrar sesión');
-        }
-      });
-    };
-
-    // Manejo de errores de autenticación
-    const getAuthErrorMessage = (error) => {
-      const errorMap = {
-        'auth/invalid-email': 'El correo electrónico no es válido',
-        'auth/user-disabled': 'Esta cuenta ha sido deshabilitada',
-        'auth/user-not-found': 'No existe una cuenta con este correo',
-        'auth/wrong-password': 'Contraseña incorrecta',
-        'auth/email-already-in-use': 'Este correo ya está registrado',
-        'auth/operation-not-allowed': 'Operación no permitida',
-        'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres',
-        'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde'
-      };
-      return errorMap[error.code] || 'Ocurrió un error durante la autenticación';
+    // Sistema de feedback
+    const showFeedback = (message, type = 'info') => {
+      const feedback = document.createElement('div');
+      feedback.className = `feedback ${type}`;
+      feedback.textContent = message;
+      document.body.appendChild(feedback);
+      
+      setTimeout(() => {
+        feedback.remove();
+      }, 3000);
     };
 
     // Inicializar cuando el DOM esté listo
@@ -1396,9 +1127,6 @@
       if (document.querySelector('#cart-container')) {
         initCartUI();
       }
-      
-      // Inicializar UI de autenticación
-      setupAuthUI();
       
       // Verificar estado de autenticación inicial
       auth.onAuthStateChanged((user) => {
