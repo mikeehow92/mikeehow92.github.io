@@ -2,18 +2,19 @@ import { AuthService } from './auth.js';
 import { showFeedback } from '../shared/feedback.js';
 import { CartUI } from '../cart/cart-ui.js';
 
-// Selectors and classes
+// Constantes para selectores y clases
 const SELECTORS = {
   LOGIN_MODAL: '#login-modal',
   LOGIN_FORM: '#login-form',
   LOGOUT_BTN: '#logout-btn',
-  OPEN_LOGIN: '#loginBtn', // Changed to match your HTML button ID
+  OPEN_LOGIN: '#open-login-btn',
   FORGOT_PASSWORD: '#forgot-password',
   USER_NAME: '#user-name',
+  USER_EMAIL: '#user-email',
   USER_AVATAR: '#user-avatar',
   GUEST_UI: '#guest-buttons',
   USER_UI: '#user-info',
-  CLOSE_MODAL: '.close-btn',
+  CLOSE_MODAL: '.close-modal',
   PROFILE_LINK: '#profile-link',
   ORDERS_LINK: '#orders-link'
 };
@@ -23,33 +24,35 @@ const CLASSES = {
   HIDDEN: 'hidden'
 };
 
-// Initialize auth UI
+// Inicialización de la UI de autenticación
 export function initAuthUI() {
   setupEventListeners();
   setupAuthStateListener();
 }
 
-// Set up event listeners
+// Configuración de event listeners
 function setupEventListeners() {
-  // Open login modal
+  // Abrir modal de login
   document.querySelector(SELECTORS.OPEN_LOGIN)?.addEventListener('click', () => {
     toggleModal(SELECTORS.LOGIN_MODAL, true);
   });
 
-  // Close modal
-  document.querySelector(SELECTORS.CLOSE_MODAL)?.addEventListener('click', closeAllModals);
-
-  // Forgot password
-  document.querySelector(SELECTORS.FORGOT_PASSWORD)?.addEventListener('click', (e) => {
-    e.preventDefault();
-    showFeedback('Contact support to reset your password', 'info');
+  // Cerrar modales
+  document.querySelectorAll(SELECTORS.CLOSE_MODAL).forEach(btn => {
+    btn.addEventListener('click', closeAllModals);
   });
 
-  // Login form submission
+  // Recuperación de contraseña
+  document.querySelector(SELECTORS.FORGOT_PASSWORD)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    showFeedback('Por favor contacte al soporte técnico para recuperar su contraseña', 'info');
+  });
+
+  // Login con email
   document.querySelector(SELECTORS.LOGIN_FORM)?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = e.target.querySelector('#email').value;
-    const password = e.target.querySelector('#password').value;
+    const email = e.target.querySelector('#login-email').value;
+    const password = e.target.querySelector('#login-password').value;
     await handleLogin(email, password);
   });
 
@@ -57,7 +60,7 @@ function setupEventListeners() {
   document.querySelector(SELECTORS.LOGOUT_BTN)?.addEventListener('click', handleLogout);
 }
 
-// Auth state listener
+// Listener de cambios de autenticación
 function setupAuthStateListener() {
   AuthService.onAuthStateChanged((user) => {
     updateUI(user);
@@ -67,7 +70,7 @@ function setupAuthStateListener() {
   });
 }
 
-// Update UI based on auth state
+// Actualización de la UI según estado de autenticación
 function updateUI(user) {
   const guestUI = document.querySelector(SELECTORS.GUEST_UI);
   const userUI = document.querySelector(SELECTORS.USER_UI);
@@ -87,49 +90,52 @@ function updateUI(user) {
   }
 }
 
-// Update user avatar
+// Actualizar avatar del usuario
 function updateUserAvatar(element, user) {
   if (!element) return;
   
   if (user.photoURL) {
     element.src = user.photoURL;
     element.classList.remove(CLASSES.HIDDEN);
+  } else if (user.profile?.photoURL) {
+    element.src = user.profile.photoURL;
+    element.classList.remove(CLASSES.HIDDEN);
   } else {
+    // Usar placeholder o iniciales del nombre
     const nameInitials = user.displayName 
       ? user.displayName.split(' ').map(n => n[0]).join('')
       : user.email[0].toUpperCase();
-    element.src = `https://ui-avatars.com/api/?name=${nameInitials}&background=e63946&color=fff`;
+    
+    element.src = `https://ui-avatars.com/api/?name=${nameInitials}&background=${encodeURIComponent('#e63946')}&color=fff`;
     element.classList.remove(CLASSES.HIDDEN);
   }
 }
 
-// Handle login
+// Manejadores de autenticación
 async function handleLogin(email, password) {
   try {
     await AuthService.login(email, password);
     closeAllModals();
-    showFeedback('Login successful', 'success');
+    showFeedback('Sesión iniciada correctamente', 'success');
   } catch (error) {
     showFeedback(error.message, 'error');
   }
 }
 
-// Handle logout
 async function handleLogout() {
   try {
     await AuthService.logout();
-    showFeedback('Logged out successfully', 'success');
+    showFeedback('Sesión cerrada correctamente', 'success');
   } catch (error) {
-    showFeedback('Error logging out', 'error');
+    showFeedback('Error al cerrar sesión', 'error');
   }
 }
 
-// Close all modals
+// Helpers
 function closeAllModals() {
   toggleModal(SELECTORS.LOGIN_MODAL, false);
 }
 
-// Toggle modal visibility
 function toggleModal(selector, show) {
   const modal = document.querySelector(selector);
   if (!modal) return;
@@ -143,7 +149,6 @@ function toggleModal(selector, show) {
   }
 }
 
-// Toggle element visibility
 function toggleElement(element, show) {
   if (!element) return;
   element.style.display = show ? 'flex' : 'none';
