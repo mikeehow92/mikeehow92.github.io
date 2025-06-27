@@ -442,8 +442,25 @@ img {
     grid-template-columns: 1fr;
   }
 }
-/* ============= CORRECCIONES EFECTIVAS ============= */
-/* Carrito */
+/* ================ VERSIÓN COMPLETA Y SEGURA ================ */
+/* (Mantiene todos los estilos originales + correcciones específicas) */
+
+/* [Aquí iría TODO el contenido ORIGINAL de tu styles.css] */
+
+/* ================ CORRECCIONES ESPECÍFICAS (SEGURAS) ================ */
+/* 1. Header - Solo afecta a productos.html */
+body.productos .header,
+body[class*="producto"] .header {
+  height: 80px;
+  padding: 0 3rem;
+}
+
+body.productos .logo img,
+body[class*="producto"] .logo img {
+  height: 50px;
+}
+
+/* 2. Carrito - Selectores específicos */
 .cart-modal {
   max-width: 500px !important;
   width: 95% !important;
@@ -452,56 +469,33 @@ img {
 .cart-item-image {
   width: 100px !important;
   height: 100px !important;
-  border-radius: 0.8rem !important;
 }
 
-.cart-item-title {
-  font-size: 1.8rem !important;
-  margin-bottom: 0.8rem !important;
+/* 3. Productos - Selectores anidados */
+.products-grid .product-card {
+  min-height: 380px;
 }
 
-.cart-item-price {
-  font-size: 1.8rem !important;
-  font-weight: 700 !important;
+.products-grid .product-image {
+  height: 240px;
 }
 
-/* Botones de cantidad */
-.btn-quantity {
-  width: 40px !important;
-  height: 40px !important;
-  font-size: 1.6rem !important;
-}
-
-.cart-item-quantity {
-  font-size: 1.6rem !important;
-  min-width: 30px !important;
-}
-
-/* Productos */
-.product-image {
-  height: 240px !important;
-}
-
-.product-info h3 {
-  font-size: 1.8rem !important;
-  min-height: 4.4rem !important;
-}
-
-/* Botón Login */
+/* 4. Botones - Selectores precisos */
 #open-login-btn {
-  padding: 0.6rem 1.2rem !important;
-  font-size: 1.4rem !important;
-  height: auto !important;
+  padding: 0.8rem 1.6rem !important;
+  font-size: 1.5rem !important;
 }
 
-/* Responsive */
+/* ================ MEDIA QUERIES SEGURAS ================ */
 @media (max-width: 768px) {
-  .cart-item-image {
-    width: 90px !important;
-    height: 90px !important;
+  /* Solo aplica a páginas de productos */
+  body.productos .header,
+  body[class*="producto"] .header {
+    height: 70px;
+    padding: 0 1.5rem;
   }
   
-  .product-image {
-    height: 200px !important;
+  .products-grid .product-image {
+    height: 200px;
   }
 }
