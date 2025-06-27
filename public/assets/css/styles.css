@@ -442,91 +442,80 @@ img {
     grid-template-columns: 1fr;
   }
 }
-/* ================ AJUSTES ESPECÍFICOS PARA TAMAÑOS ================ */
-
-/* 1. Ajuste base para tamaños (agregar al inicio del CSS) */
-:root {
-  --btn-font-size: 1.6rem; /* Tamaño base aumentado para botones */
-  --cart-font-size: 1.6rem; /* Tamaño base para el carrito */
-}
-
-/* 2. Corrección para botones principales */
-.btn, 
-.add-to-cart, 
-.checkout-btn {
-  padding: 1.2rem 2.4rem; /* Tamaño original aumentado */
-  font-size: var(--btn-font-size);
-  min-height: 4.8rem; /* Altura mínima garantizada */
-}
-
-/* 3. Correcciones para el carrito */
+/* ============= CORRECCIONES PARA ELEMENTOS PEQUEÑOS ============= */
+/* 1. Carrito más grande y legible */
 .cart-modal {
-  max-width: 450px; /* Ancho aumentado desde 400px */
+  max-width: 500px; /* +25% de ancho */
+  width: 95%;
 }
 
 .cart-header {
-  padding: 2rem; /* Aumentado desde 1.5rem */
+  padding: 2rem;
 }
 
 .cart-title {
-  font-size: 2.2rem; /* Aumentado desde 1.5rem */
+  font-size: 2.2rem; /* Texto más grande */
 }
 
 .cart-item {
-  padding: 1.5rem; /* Aumentado desde 1rem */
+  padding: 1.5rem;
+  gap: 1.5rem;
 }
 
 .cart-item-image {
-  width: 80px; /* Aumentado desde 60px */
-  height: 80px; /* Aumentado desde 60px */
+  width: 100px; /* +66% tamaño */
+  height: 100px;
 }
 
-.cart-item-title,
+.cart-item-title {
+  font-size: 1.6rem; /* Casi el doble */
+  margin-bottom: 0.5rem;
+}
+
 .cart-item-price {
-  font-size: var(--cart-font-size); /* Aumentado desde 0.9rem */
+  font-size: 1.8rem;
 }
 
+/* 2. Botones de cantidad accesibles */
 .btn-quantity {
-  width: 35px; /* Aumentado desde 25px */
-  height: 35px; /* Aumentado desde 25px */
-  font-size: var(--cart-font-size);
+  width: 36px; /* +44% tamaño */
+  height: 36px;
+  font-size: 1.6rem;
 }
 
-.cart-item-quantity {
-  min-width: 30px; /* Aumentado desde 20px */
-  font-size: var(--cart-font-size);
+/* 3. Botón Login - Tamaño original */
+#open-login-btn {
+  padding: 0.6rem 1.2rem !important; /* Restaura tamaño */
+  font-size: 1.4rem !important;
 }
 
-.btn-remove i {
-  font-size: var(--cart-font-size);
+/* 4. Tarjetas de producto mejoradas */
+.product-card {
+  min-height: 360px; /* Altura mínima */
 }
 
-.cart-total {
-  font-size: 1.8rem; /* Aumentado */
+.product-image {
+  height: 220px; /* +10% altura */
 }
 
-/* 4. Ajustes para móviles (agregar al media query existente) */
+.product-info h3 {
+  font-size: 1.8rem; /* Texto más claro */
+  min-height: 4rem;
+}
+
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .btn, 
-  .add-to-cart {
-    padding: 1rem 1.8rem;
-    font-size: 1.4rem;
-  }
-  
-  .btn-quantity {
-    width: 40px; /* Más grande en móviles */
-    height: 40px;
-  }
-  
   .cart-modal {
-    width: 85%; /* Más ancho en móviles */
+    width: 90%;
+    max-width: none;
   }
-}
-
-/* 5. Ajuste para iconos (agregar al final) */
-.nav-link i, 
-.btn i, 
-.add-to-cart i, 
-.cart-title i {
-  font-size: 1.4rem; /* Tamaño consistente */
+  
+  .cart-item-image {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .product-image {
+    height: 180px;
+  }
 }
