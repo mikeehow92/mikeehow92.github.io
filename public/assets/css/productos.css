@@ -1,0 +1,130 @@
+/* products.css - Estilos específicos para productos.html */
+
+/* Mantenemos todas las variables globales originales */
+:root {
+  --primary: #e63946;
+  --primary-dark: #c1121f;
+  --secondary: #1d3557;
+  --white: #ffffff;
+  --gray-light: #f1f5f9;
+  --shadow: 0 4px 6px rgba(0,0,0,0.1);
+  --transition: all 0.3s ease;
+  --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* Aumentamos el tamaño base de la fuente */
+body {
+  font-size: 20px; /* Aumentado de 18px */
+  line-height: 1.7; /* Aumentado para mejor legibilidad */
+}
+
+/* Títulos más grandes */
+.section-title {
+  font-size: 3rem; /* Aumentado de 2.5rem */
+  margin-bottom: 5rem; /* Más espacio */
+}
+
+/* Productos - Textos más grandes */
+.product-info h3 {
+  font-size: 1.8rem; /* Aumentado de 1.5rem */
+  margin-bottom: 1.5rem; /* Más espacio */
+}
+
+.product-info p {
+  font-size: 1.3rem; /* Aumentado de 1.1rem */
+  margin-bottom: 2rem; /* Más espacio */
+}
+
+.product-price {
+  font-size: 1.8rem; /* Aumentado de 1.5rem */
+}
+
+/* Botones más grandes */
+.btn, .add-to-cart, .checkout-btn, .submit-btn {
+  font-size: 1.3rem; /* Aumentado de 1.1rem */
+  padding: 1rem 2rem; /* Más grande */
+}
+
+.add-to-cart {
+  padding: 1.2rem; /* Más grande */
+}
+
+/* Carrito - Textos más grandes */
+.cart-title {
+  font-size: 1.8rem; /* Aumentado de 1.5rem */
+}
+
+.cart-item-title {
+  font-size: 1.1rem; /* Aumentado de 0.9rem */
+}
+
+.cart-item-price {
+  font-size: 1.1rem; /* Aumentado de 0.9rem */
+}
+
+/* Navegación - Textos más grandes */
+.nav-link {
+  font-size: 1.3rem; /* Aumentado de 1.1rem */
+}
+
+/* Modal de autenticación - Textos más grandes */
+.modal-header h2 {
+  font-size: 1.8rem; /* Aumentado de 1.5rem */
+}
+
+.form-group label {
+  font-size: 1.2rem; /* Más grande */
+}
+
+.form-group input {
+  font-size: 1.2rem; /* Más grande */
+  padding: 1rem; /* Más grande */
+}
+
+.form-footer {
+  font-size: 1.1rem; /* Más grande */
+}
+
+/* Feedback - Textos más grandes */
+.feedback {
+  font-size: 1.2rem;
+  padding: 20px 30px; /* Más grande */
+}
+
+/* Mantenemos todos los media queries originales pero ajustamos tamaños */
+@media (max-width: 1200px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    font-size: 18px; /* Ajuste para móviles */
+  }
+  
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .nav-list {
+    display: none;
+  }
+  
+  .header-container {
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .auth-section {
+    order: 3;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  /* Ajustes para móviles - botones */
+  .btn, .add-to-cart {
+    font-size: 1.2rem;
+    padding: 0.9rem 1.8rem;
+  }
+}
