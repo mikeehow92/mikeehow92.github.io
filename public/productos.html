@@ -1212,13 +1212,8 @@
     };
 
     const handleCheckout = async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        showFeedback('Inicia sesión para continuar', 'error');
-        return;
-      }
-
       const cart = await CartService.getCart();
+      
       if (cart.length === 0) {
         showFeedback('El carrito está vacío', 'error');
         return;
@@ -1228,7 +1223,8 @@
         // Guardar carrito para el proceso de pago
         localStorage.setItem('currentCheckout', JSON.stringify({
           items: cart,
-          total: CartService.getTotal(cart)
+          total: CartService.getTotal(cart),
+          isGuest: !auth.currentUser // Indicar si es un checkout como invitado
         }));
         
         // Redirigir a página de pago
