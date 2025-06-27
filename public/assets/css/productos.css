@@ -1,4 +1,4 @@
-/* products-optimized.css - Versión mejorada */
+/* products-optimized.css - Versión mejorada con estilos para profile-link y orders-link */
 
 :root {
   --primary: #e63946;
@@ -28,6 +28,30 @@ body {
 .nav-link {
   font-size: 1.15rem; /* Ajustado de 1.3rem */
   gap: 0.4rem;
+}
+
+/* Estilos específicos para los enlaces de perfil y compras */
+#profile-link a,
+#orders-link a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.15rem;
+  transition: var(--transition);
+}
+
+#profile-link a:hover,
+#orders-link a:hover {
+  color: var(--primary);
+}
+
+#profile-link a.active,
+#orders-link a.active {
+  color: var(--primary);
+  font-weight: 600;
 }
 
 .cart-icon {
@@ -93,5 +117,12 @@ body {
   .btn {
     font-size: 1rem;
     padding: 0.8rem 1.5rem;
+  }
+
+  /* Ajustes para los enlaces en móviles */
+  #profile-link a,
+  #orders-link a {
+    font-size: 1rem;
+    padding: 0.5rem 0;
   }
 }
