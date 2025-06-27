@@ -1,6 +1,5 @@
-/* products.css - Estilos específicos para productos.html */
+/* products-optimized.css - Versión mejorada */
 
-/* Mantenemos todas las variables globales originales */
 :root {
   --primary: #e63946;
   --primary-dark: #c1121f;
@@ -9,122 +8,90 @@
   --gray-light: #f1f5f9;
   --shadow: 0 4px 6px rgba(0,0,0,0.1);
   --transition: all 0.3s ease;
-  --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
 }
 
-/* Aumentamos el tamaño base de la fuente */
+/* Base más equilibrada */
 body {
-  font-size: 20px; /* Aumentado de 18px */
-  line-height: 1.7; /* Aumentado para mejor legibilidad */
+  font-size: 18px; /* Reducido de 20px */
+  line-height: 1.6;
 }
 
-/* Títulos más grandes */
+/* Header ajustado */
+.header {
+  padding: 1.2rem 2rem; /* Menos altura */
+}
+
+.logo img {
+  height: 60px; /* Reducido de 70px */
+}
+
+.nav-link {
+  font-size: 1.15rem; /* Ajustado de 1.3rem */
+  gap: 0.4rem;
+}
+
+.cart-icon {
+  font-size: 2.8rem; /* Reducido de 3.5rem */
+}
+
+/* Títulos */
 .section-title {
-  font-size: 3rem; /* Aumentado de 2.5rem */
-  margin-bottom: 5rem; /* Más espacio */
+  font-size: 2.2rem; /* Reducido de 3rem */
+  margin-bottom: 3rem;
 }
 
-/* Productos - Textos más grandes */
+/* Productos */
 .product-info h3 {
-  font-size: 1.8rem; /* Aumentado de 1.5rem */
-  margin-bottom: 1.5rem; /* Más espacio */
+  font-size: 1.5rem; /* Ajustado de 1.8rem */
 }
 
 .product-info p {
-  font-size: 1.3rem; /* Aumentado de 1.1rem */
-  margin-bottom: 2rem; /* Más espacio */
+  font-size: 1.1rem; /* Reducido de 1.3rem */
 }
 
 .product-price {
-  font-size: 1.8rem; /* Aumentado de 1.5rem */
+  font-size: 1.5rem;
 }
 
-/* Botones más grandes */
-.btn, .add-to-cart, .checkout-btn, .submit-btn {
-  font-size: 1.3rem; /* Aumentado de 1.1rem */
-  padding: 1rem 2rem; /* Más grande */
+/* Botones */
+.btn, 
+.add-to-cart, 
+.checkout-btn {
+  font-size: 1.1rem; /* Reducido de 1.3rem */
+  padding: 0.9rem 1.8rem;
 }
 
-.add-to-cart {
-  padding: 1.2rem; /* Más grande */
-}
-
-/* Carrito - Textos más grandes */
+/* Carrito */
 .cart-title {
-  font-size: 1.8rem; /* Aumentado de 1.5rem */
+  font-size: 1.5rem; /* Reducido de 1.8rem */
 }
 
-.cart-item-title {
-  font-size: 1.1rem; /* Aumentado de 0.9rem */
+/* Dropdown usuario */
+.dropdown-content a {
+  font-size: 1rem; /* Reducido de 1.1rem */
+  padding: 10px 14px;
 }
 
-.cart-item-price {
-  font-size: 1.1rem; /* Aumentado de 0.9rem */
-}
-
-/* Navegación - Textos más grandes */
-.nav-link {
-  font-size: 1.3rem; /* Aumentado de 1.1rem */
-}
-
-/* Modal de autenticación - Textos más grandes */
-.modal-header h2 {
-  font-size: 1.8rem; /* Aumentado de 1.5rem */
-}
-
-.form-group label {
-  font-size: 1.2rem; /* Más grande */
-}
-
-.form-group input {
-  font-size: 1.2rem; /* Más grande */
-  padding: 1rem; /* Más grande */
-}
-
-.form-footer {
-  font-size: 1.1rem; /* Más grande */
-}
-
-/* Feedback - Textos más grandes */
-.feedback {
-  font-size: 1.2rem;
-  padding: 20px 30px; /* Más grande */
-}
-
-/* Mantenemos todos los media queries originales pero ajustamos tamaños */
-@media (max-width: 1200px) {
-  .products-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
+/* Media queries para móviles */
 @media (max-width: 768px) {
   body {
-    font-size: 18px; /* Ajuste para móviles */
+    font-size: 16px;
   }
   
-  .products-grid {
-    grid-template-columns: 1fr;
+  .header {
+    padding: 1rem;
   }
   
-  .nav-list {
-    display: none;
+  .logo img {
+    height: 50px;
   }
   
-  .header-container {
-    flex-wrap: wrap;
-    gap: 1.5rem;
-  }
-
-  .auth-section {
-    order: 3;
-    width: 100%;
-    justify-content: flex-end;
+  .section-title {
+    font-size: 1.8rem;
   }
   
-  /* Ajustes para móviles - botones */
-  .btn, .add-to-cart {
-    font-size: 1.2rem;
-    padding: 0.9rem 1.8rem;
+  .btn {
+    font-size: 1rem;
+    padding: 0.8rem 1.5rem;
   }
 }
