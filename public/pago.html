@@ -86,16 +86,51 @@
       border-bottom: 2px solid #f0f0f0;
     }
 
-    /* Order items */
+    /* Order items - ESTILOS NUEVOS */
     .order-item {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      padding: 10px 0;
+      padding: 12px 0;
       border-bottom: 1px solid #eee;
+    }
+
+    .item-name {
+      flex: 2;
     }
 
     .item-quantity {
       margin: 0 10px;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .item-price {
+      min-width: 80px;
+      text-align: right;
+    }
+
+    /* Botón de eliminar - ESTILOS NUEVOS */
+    .btn-remove {
+      background: none;
+      border: none;
+      color: #e63946;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-left: 15px;
+      padding: 5px 8px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .btn-remove:hover {
+      background: #f8f9fa;
+      color: #c1121f;
+    }
+
+    .btn-remove:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
     }
 
     .order-total {
@@ -179,15 +214,15 @@
       border-color: #2ecc71;
     }
 
-    /* Loading state */
+    /* Loading state - ESTILOS ACTUALIZADOS */
     .loading {
       display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(0,0,0,.3);
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(0,0,0,.2);
       border-radius: 50%;
       border-top-color: var(--primary);
-      animation: spin 1s ease-in-out infinite;
+      animation: spin 1s linear infinite;
     }
 
     @keyframes spin {
@@ -242,6 +277,19 @@
       .form-row {
         grid-template-columns: 1fr;
         gap: 15px;
+      }
+
+      .order-item {
+        flex-wrap: wrap;
+      }
+
+      .item-name {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+
+      .btn-remove {
+        margin-left: auto;
       }
     }
   </style>
@@ -371,134 +419,191 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      // Cargar datos del carrito
-      const checkoutData = JSON.parse(localStorage.getItem('currentCheckout'));
+      // Cargar datos del carrito desde localStorage
+      let checkoutData = JSON.parse(localStorage.getItem('currentCheckout'));
       
+      // Verificar si hay items en el carrito
       if (!checkoutData || !checkoutData.items || checkoutData.items.length === 0) {
         showErrorAndRedirect('No se encontraron productos en el carrito');
         return;
       }
 
-      // Mostrar productos en el resumen
-      displayOrderItems(checkoutData.items);
-      updateOrderTotals(checkoutData.total);
-      updateCartCounter(checkoutData.items);
+      // Función para renderizar los items del carrito
+      const renderCartItems = () => {
+        const orderItemsContainer = document.getElementById('orderItems');
+        const items = checkoutData.items;
+        
+        let html = '';
+        items.forEach(item => {
+          html += `
+            <div class="order-item" data-id="${item.id}">
+              <span class="item-name">${item.name}</span>
+              <span class="item-quantity">${item.quantity} ×</span>
+              <span class="item-price">$${item.price.toFixed(2)}</span>
+              <button class="btn-remove" data-id="${item.id}">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          `;
+        });
+        
+        orderItemsContainer.innerHTML = html || '<p>No hay productos en el carrito</p>';
+        
+        // Actualizar totales
+        document.getElementById('orderTotal').textContent = checkoutData.total.toFixed(2);
+        document.getElementById('paymentTotal').textContent = checkoutData.total.toFixed(2);
+        
+        // Actualizar contador del carrito
+        updateCartCounter();
+        
+        // Agregar event listeners a los botones de eliminar
+        document.querySelectorAll('.btn-remove').forEach(btn => {
+          btn.addEventListener('click', handleRemoveItem);
+        });
+      };
 
-      // Configurar formulario
-      setupFormValidation(checkoutData);
-    });
+      // Función para actualizar el contador del carrito
+      const updateCartCounter = () => {
+        const counter = document.getElementById('cart-counter');
+        if (counter) {
+          const totalItems = checkoutData.items.reduce((sum, item) => sum + item.quantity, 0);
+          counter.textContent = totalItems;
+        }
+      };
 
-    // Mostrar items del pedido
-    function displayOrderItems(items) {
-      const orderItemsContainer = document.getElementById('orderItems');
-      
-      let html = '';
-      items.forEach(item => {
-        html += `
-          <div class="order-item">
-            <span>${item.name}</span>
-            <span class="item-quantity">${item.quantity} ×</span>
-            <span class="item-price">$${item.price.toFixed(2)}</span>
-          </div>
-        `;
-      });
-      
-      orderItemsContainer.innerHTML = html;
-    }
+      // Función para manejar la eliminación de items
+      const handleRemoveItem = async (e) => {
+        const productId = e.currentTarget.dataset.id;
+        const btn = e.currentTarget;
+        
+        try {
+          // Mostrar estado de carga
+          btn.innerHTML = '<span class="loading"></span>';
+          btn.disabled = true;
+          
+          // Eliminar el item del carrito local
+          checkoutData.items = checkoutData.items.filter(item => item.id !== productId);
+          
+          // Recalcular total
+          checkoutData.total = checkoutData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          
+          // Actualizar localStorage
+          localStorage.setItem('currentCheckout', JSON.stringify(checkoutData));
+          
+          // Volver a renderizar
+          renderCartItems();
+          
+          // Mostrar feedback
+          showFeedback('Producto eliminado', 'El producto ha sido removido de tu carrito', 'success');
+          
+          // Si el carrito queda vacío, redirigir
+          if (checkoutData.items.length === 0) {
+            setTimeout(() => {
+              window.location.href = 'productos.html';
+            }, 1500);
+          }
+        } catch (error) {
+          console.error('Error al eliminar producto:', error);
+          showFeedback('Error', 'No se pudo eliminar el producto', 'error');
+          btn.innerHTML = '<i class="fas fa-trash"></i>';
+          btn.disabled = false;
+        }
+      };
 
-    // Actualizar totales
-    function updateOrderTotals(total) {
-      document.getElementById('orderTotal').textContent = total.toFixed(2);
-      document.getElementById('paymentTotal').textContent = total.toFixed(2);
-    }
+      // Función para validar el formulario
+      const validateForm = () => {
+        let isValid = true;
+        const requiredFields = [
+          'customerName', 'customerEmail', 'customerPhone', 
+          'shippingAddress', 'departamento', 'municipio',
+          'cardName', 'cardNumber', 'expiryDate', 'cvv'
+        ];
 
-    // Actualizar contador del carrito
-    function updateCartCounter(items) {
-      const counter = document.getElementById('cartCounter');
-      if (counter) {
-        const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-        counter.textContent = totalItems;
-      }
-    }
+        requiredFields.forEach(fieldId => {
+          const field = document.getElementById(fieldId);
+          const errorMsg = field.parentElement.querySelector('.error-message');
+          
+          if (!field.value.trim()) {
+            if (errorMsg) errorMsg.style.display = 'block';
+            isValid = false;
+          } else {
+            if (errorMsg) errorMsg.style.display = 'none';
+          }
+        });
 
-    // Configurar validación del formulario
-    function setupFormValidation(checkoutData) {
-      const form = document.getElementById('paymentForm');
-      
-      form.addEventListener('submit', async (e) => {
+        return isValid;
+      };
+
+      // Función para procesar el pago (simulado)
+      const processPayment = () => {
+        return new Promise((resolve, reject) => {
+          // Simular demora de red
+          setTimeout(() => {
+            // Simular éxito 90% de las veces
+            if (Math.random() > 0.1) {
+              resolve();
+            } else {
+              reject(new Error('Error al procesar el pago. Intente nuevamente.'));
+            }
+          }, 1500);
+        });
+      };
+
+      // Configurar el formulario
+      document.getElementById('paymentForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Validar campos
-        if (!validateForm()) {
-          return;
-        }
-
-        // Mostrar estado de carga
+        if (!validateForm()) return;
+        
         const submitBtn = e.target.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<span class="loading"></span> Procesando...';
         submitBtn.disabled = true;
-
+        
         try {
-          // Simular procesamiento de pago
-          await processPayment(checkoutData);
-          
-          // Mostrar feedback positivo
+          await processPayment();
           showFeedback('¡Pago completado!', `Pedido #${generateOrderId()} procesado`, 'success');
           
-          // Limpiar carrito y redirigir después de 3 segundos
+          // Limpiar carrito después de pago exitoso
+          localStorage.removeItem('currentCheckout');
+          
           setTimeout(() => {
-            localStorage.removeItem('currentCheckout');
             window.location.href = 'confirmacion.html';
           }, 3000);
-          
         } catch (error) {
-          // Mostrar error
           showFeedback('Error en el pago', error.message, 'error');
           submitBtn.innerHTML = originalText;
           submitBtn.disabled = false;
         }
       });
-    }
 
-    // Validar formulario
-    function validateForm() {
-      let isValid = true;
-      const requiredFields = [
-        'customerName', 'customerEmail', 'customerPhone', 
-        'shippingAddress', 'departamento', 'municipio',
-        'cardName', 'cardNumber', 'expiryDate', 'cvv'
-      ];
+      // Renderizar inicialmente
+      renderCartItems();
 
-      requiredFields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        const errorMsg = field.parentElement.querySelector('.error-message');
+      // Configurar municipios según departamento seleccionado
+      document.getElementById('departamento').addEventListener('change', function() {
+        const municipioSelect = document.getElementById('municipio');
+        municipioSelect.innerHTML = '<option value="">Seleccione...</option>';
         
-        if (!field.value.trim()) {
-          if (errorMsg) errorMsg.style.display = 'block';
-          isValid = false;
-        } else {
-          if (errorMsg) errorMsg.style.display = 'none';
+        if (this.value === 'San Salvador') {
+          addMunicipios(['San Salvador', 'Soyapango', 'Apopa', 'Mejicanos']);
+        } else if (this.value === 'Santa Ana') {
+          addMunicipios(['Santa Ana', 'Chalchuapa', 'Metapán']);
+        } else if (this.value === 'San Miguel') {
+          addMunicipios(['San Miguel', 'Chinameca', 'Nueva Guadalupe']);
         }
       });
 
-      return isValid;
-    }
-
-    // Procesar pago (simulado)
-    function processPayment(checkoutData) {
-      return new Promise((resolve, reject) => {
-        // Simular demora de red
-        setTimeout(() => {
-          // Simular éxito 90% de las veces
-          if (Math.random() > 0.1) {
-            resolve();
-          } else {
-            reject(new Error('Error al procesar el pago. Intente nuevamente.'));
-          }
-        }, 1500);
-      });
-    }
+      function addMunicipios(municipios) {
+        const select = document.getElementById('municipio');
+        municipios.forEach(municipio => {
+          const option = document.createElement('option');
+          option.value = municipio;
+          option.textContent = municipio;
+          select.appendChild(option);
+        });
+      }
+    });
 
     // Generar ID de pedido aleatorio
     function generateOrderId() {
