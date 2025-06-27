@@ -760,151 +760,154 @@
       sendPasswordResetEmail: (email) => auth.sendPasswordResetEmail(email)
     };
 
-    // Servicio del carrito
+    // Servicio del carrito - Versión corregida
     const CART_STORAGE_KEY = 'guest_cart';
-
-    const CartService = {
-      getCart: async () => {
-        const user = AuthService.getCurrentUser();
-        if (user) {
-          return getCartFromFirestore(user.uid);
-        } else {
-          return getGuestCart();
+    
+    const CartService = (function() {
+      // Funciones privadas
+      const getCartFromFirestore = async (userId) => {
+        try {
+          const cartDoc = await db.collection('carts').doc(userId).get();
+          return cartDoc.exists ? cartDoc.data().items : [];
+        } catch (error) {
+          console.error("Error obteniendo carrito:", error);
+          return [];
         }
-      },
+      };
 
-      addItem: async (product, quantity = 1) => {
-        const user = AuthService.getCurrentUser();
-        const cart = await this.getCart();
-        
-        const existingItem = cart.find(item => item.id === product.id);
-        if (existingItem) {
-          existingItem.quantity += quantity;
-        } else {
-          cart.push({
-            ...product,
-            quantity,
-            addedAt: new Date().toISOString()
+      const saveCartToFirestore = async (userId, cart) => {
+        try {
+          await db.collection('carts').doc(userId).set({
+            items: cart,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
+        } catch (error) {
+          console.error("Error guardando carrito:", error);
+          throw error;
         }
+      };
 
-        if (user) {
-          await saveCartToFirestore(user.uid, cart);
-        } else {
-          saveGuestCart(cart);
-        }
+      const getGuestCart = () => {
+        const cartData = localStorage.getItem(CART_STORAGE_KEY);
+        return cartData ? JSON.parse(cartData) : [];
+      };
 
-        return cart;
-      },
+      const saveGuestCart = (cart) => {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      };
 
-      updateQuantity: async (productId, newQuantity) => {
-        if (newQuantity < 1) return this.removeItem(productId);
-
-        const user = AuthService.getCurrentUser();
-        const cart = await this.getCart();
+      const mergeCarts = (userCart, guestCart) => {
+        const merged = [...userCart];
         
-        const item = cart.find(item => item.id === productId);
-        if (item) item.quantity = newQuantity;
-
-        if (user) {
-          await saveCartToFirestore(user.uid, cart);
-        } else {
-          saveGuestCart(cart);
-        }
-
-        return cart;
-      },
-
-      removeItem: async (productId) => {
-        const user = AuthService.getCurrentUser();
-        let cart = await this.getCart();
-        
-        cart = cart.filter(item => item.id !== productId);
-
-        if (user) {
-          await saveCartToFirestore(user.uid, cart);
-        } else {
-          saveGuestCart(cart);
-        }
-
-        return cart;
-      },
-
-      clearCart: async () => {
-        const user = AuthService.getCurrentUser();
-        if (user) {
-          await saveCartToFirestore(user.uid, []);
-        } else {
-          localStorage.removeItem(CART_STORAGE_KEY);
-        }
-      },
-
-      migrateGuestCart: async (userId) => {
-        const guestCart = getGuestCart();
-        if (guestCart.length === 0) return;
-
-        const userCart = await getCartFromFirestore(userId);
-        const mergedCart = mergeCarts(userCart, guestCart);
-        
-        await saveCartToFirestore(userId, mergedCart);
-        localStorage.removeItem(CART_STORAGE_KEY);
-      },
-
-      getTotal: (cart) => {
-        return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-      },
-
-      getItemCount: (cart) => {
-        return cart.reduce((count, item) => count + item.quantity, 0);
-      }
-    };
-
-    // Funciones auxiliares del CartService
-    const getCartFromFirestore = async (userId) => {
-      try {
-        const cartDoc = await db.collection('carts').doc(userId).get();
-        return cartDoc.exists ? cartDoc.data().items : [];
-      } catch (error) {
-        console.error("Error obteniendo carrito:", error);
-        return [];
-      }
-    };
-
-    const saveCartToFirestore = async (userId, cart) => {
-      try {
-        await db.collection('carts').doc(userId).set({
-          items: cart,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        guestCart.forEach(guestItem => {
+          const existingIndex = merged.findIndex(item => item.id === guestItem.id);
+          if (existingIndex >= 0) {
+            merged[existingIndex].quantity += guestItem.quantity;
+          } else {
+            merged.push(guestItem);
+          }
         });
-      } catch (error) {
-        console.error("Error guardando carrito:", error);
-        throw error;
-      }
-    };
 
-    const getGuestCart = () => {
-      const cartData = localStorage.getItem(CART_STORAGE_KEY);
-      return cartData ? JSON.parse(cartData) : [];
-    };
+        return merged;
+      };
 
-    const saveGuestCart = (cart) => {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-    };
+      // Métodos públicos
+      return {
+        getCart: async () => {
+          const user = AuthService.getCurrentUser();
+          if (user) {
+            return await getCartFromFirestore(user.uid);
+          } else {
+            return getGuestCart();
+          }
+        },
 
-    const mergeCarts = (userCart, guestCart) => {
-      const merged = [...userCart];
-      
-      guestCart.forEach(guestItem => {
-        const existingIndex = merged.findIndex(item => item.id === guestItem.id);
-        if (existingIndex >= 0) {
-          merged[existingIndex].quantity += guestItem.quantity;
-        } else {
-          merged.push(guestItem);
+        addItem: async function(product, quantity = 1) {
+          const user = AuthService.getCurrentUser();
+          const cart = await this.getCart();
+          
+          const existingItem = cart.find(item => item.id === product.id);
+          if (existingItem) {
+            existingItem.quantity += quantity;
+          } else {
+            cart.push({
+              ...product,
+              quantity,
+              addedAt: new Date().toISOString()
+            });
+          }
+
+          if (user) {
+            await saveCartToFirestore(user.uid, cart);
+          } else {
+            saveGuestCart(cart);
+          }
+
+          return cart;
+        },
+
+        updateQuantity: async function(productId, newQuantity) {
+          if (newQuantity < 1) return this.removeItem(productId);
+
+          const user = AuthService.getCurrentUser();
+          const cart = await this.getCart();
+          
+          const item = cart.find(item => item.id === productId);
+          if (item) item.quantity = newQuantity;
+
+          if (user) {
+            await saveCartToFirestore(user.uid, cart);
+          } else {
+            saveGuestCart(cart);
+          }
+
+          return cart;
+        },
+
+        removeItem: async function(productId) {
+          const user = AuthService.getCurrentUser();
+          let cart = await this.getCart();
+          
+          cart = cart.filter(item => item.id !== productId);
+
+          if (user) {
+            await saveCartToFirestore(user.uid, cart);
+          } else {
+            saveGuestCart(cart);
+          }
+
+          return cart;
+        },
+
+        clearCart: async function() {
+          const user = AuthService.getCurrentUser();
+          if (user) {
+            await saveCartToFirestore(user.uid, []);
+          } else {
+            localStorage.removeItem(CART_STORAGE_KEY);
+          }
+        },
+
+        migrateGuestCart: async function(userId) {
+          const guestCart = getGuestCart();
+          if (guestCart.length === 0) return;
+
+          const userCart = await getCartFromFirestore(userId);
+          const mergedCart = mergeCarts(userCart, guestCart);
+          
+          await saveCartToFirestore(userId, mergedCart);
+          localStorage.removeItem(CART_STORAGE_KEY);
+        },
+
+        getTotal: (cart) => {
+          return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+        },
+
+        getItemCount: (cart) => {
+          return cart.reduce((count, item) => count + item.quantity, 0);
         }
-      });
-
-      return merged;
-    };
+      };
+    })();
 
     // UI del carrito
     const initCartUI = () => {
@@ -926,7 +929,7 @@
       document.querySelector('#checkout-btn')?.addEventListener('click', handleCheckout);
 
       // Botones "Añadir al carrito"
-      document.querySelectorAll('.add-to-cart').forEach(button => {
+      document.querySelectorAll('.add-to-cart[data-action="add-to-cart"]').forEach(button => {
         button.addEventListener('click', async () => {
           const product = {
             id: button.dataset.productId,
