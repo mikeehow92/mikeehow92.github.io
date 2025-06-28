@@ -1,9 +1,7 @@
 // ==================== CONFIGURACIÓN INICIAL ====================
-// Firebase Configuration
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
@@ -15,90 +13,69 @@ const firebaseConfig = {
   appId: "1:536746062790:web:6e545efbc8f037e36538c7"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const functions = getFunctions(app);
-
-// Variables para almacenar las credenciales de PayPal
-let paypalClientId = '';
-
-// Función para obtener las credenciales de PayPal desde Firebase Functions
-async function getPayPalCredentials() {
-  try {
-    const response = await fetch('https://us-central1-mitienda-c2609.cloudfunctions.net/getPayPalCredentials');
-    const data = await response.json();
-    paypalClientId = data.clientId;
-  } catch (error) {
-    console.error("Error obteniendo credenciales de PayPal:", error);
-    // Mostrar método de pago alternativo si falla
-    document.getElementById('alternativePayment').style.display = 'block';
-  }
-}
 
 // Datos de municipios (Ejemplo para El Salvador)
 const municipiosPorDepartamento = {
   'Ahuachapán': ['Ahuachapán', 'Apaneca', 'Atiquizaya', 'Concepción de Ataco', 'El Refugio', 
                 'Guaymango', 'Jujutla', 'San Francisco Menéndez', 'San Lorenzo', 'San Pedro Puxtla',
                 'Tacuba', 'Turín'],
-  'Santa Ana': ['Santa Ana', 'Candelaria de la Frontera', 'Chalchuapa', 'Coatepeque', 'El Congo',
-              'El Porvenir', 'Masahuat', 'Metapán', 'San Antonio Pajonal', 'San Sebastián Salitrillo',
-              'Santiago de la Frontera', 'Texistepeque'],
-  'Sonsonate': ['Sonsonate', 'Acajutla', 'Armenia', 'Caluco', 'Cuisnahuat', 'Izalco', 'Juayúa',
-              'Nahuizalco', 'Nahulingo', 'Salcoatitán', 'San Antonio del Monte', 'San Julián',
-              'Santa Catarina Masahuat', 'Santa Isabel Ishuatán', 'Santo Domingo de Guzmán',
-              'Sonzacate'],
-  'Chalatenango': ['Chalatenango', 'Agua Caliente', 'Arcatao', 'Azacualpa', 'Cancasque', 'Citalá',
-                  'Comalapa', 'Concepción Quezaltepeque', 'Dulce Nombre de María', 'El Carrizal',
-                  'El Paraíso', 'La Laguna', 'La Palma', 'La Reina', 'Las Flores', 'Las Vueltas',
-                  'Nombre de Jesús', 'Nueva Concepción', 'Nueva Trinidad', 'Ojos de Agua',
-                  'Potonico', 'San Antonio de la Cruz', 'San Antonio Los Ranchos', 'San Fernando',
-                  'San Francisco Lempa', 'San Francisco Morazán', 'San Ignacio', 'San Isidro Labrador',
-                  'San José Cancasque', 'San José Las Flores', 'San Luis del Carmen', 'San Miguel de Mercedes',
-                  'San Rafael', 'Santa Rita', 'Tejutla'],
-  'La Libertad': ['Santa Tecla', 'Antiguo Cuscatlán', 'Chiltiupán', 'Ciudad Arce', 'Colón', 'Comasagua',
-                'Huizúcar', 'Jayaque', 'Jicalapa', 'La Libertad', 'Nuevo Cuscatlán', 'Opico',
-                'Quezaltepeque', 'Sacacoyo', 'San José Villanueva', 'San Juan Opico', 'San Matías',
-                'San Pablo Tacachico', 'Talnique', 'Tamanique', 'Teotepeque', 'Tepecoyo', 'Zaragoza'],
-  'San Salvador': ['San Salvador', 'Aguilares', 'Apopa', 'Ayutuxtepeque', 'Cuscatancingo', 'Delgado',
-                  'El Paisnal', 'Guazapa', 'Ilopango', 'Mejicanos', 'Nejapa', 'Panchimalco',
-                  'Rosario de Mora', 'San Marcos', 'San Martín', 'Santiago Texacuangos',
-                  'Santo Tomás', 'Soyapango', 'Tonacatepeque'],
-  'Cuscatlán': ['Cojutepeque', 'Candelaria', 'El Carmen', 'El Rosario', 'Monte San Juan', 'Oratorio de Concepción',
-              'San Bartolomé Perulapía', 'San Cristóbal', 'San José Guayabal', 'San Pedro Perulapán',
-              'San Rafael Cedros', 'San Ramón', 'Santa Cruz Analquito', 'Santa Cruz Michapa', 'Suchitoto',
-              'Tenancingo'],
-  'La Paz': ['Zacatecoluca', 'Cuyultitán', 'El Rosario', 'Jerusalén', 'Mercedes La Ceiba', 'Olocuilta',
-            'Paraíso de Osorio', 'San Antonio Masahuat', 'San Emigdio', 'San Francisco Chinameca',
-            'San Juan Nonualco', 'San Juan Talpa', 'San Juan Tepezontes', 'San Luis La Herradura',
-            'San Luis Talpa', 'San Miguel Tepezontes', 'San Pedro Masahuat', 'San Pedro Nonualco',
-            'San Rafael Obrajuelo', 'Santa María Ostuma', 'Santiago Nonualco', 'Tapalhuaca'],
-  'Cabañas': ['Sensuntepeque', 'Cinquera', 'Dolores', 'Guacotecti', 'Ilobasco', 'Jutiapa', 'San Isidro',
-            'Tejutepeque', 'Victoria'],
-  'San Vicente': ['San Vicente', 'Apastepeque', 'Guadalupe', 'San Cayetano Istepeque', 'San Esteban Catarina',
-                'San Ildefonso', 'San Lorenzo', 'San Sebastián', 'Santa Clara', 'Santo Domingo',
-                'Tecoluca', 'Tepetitán', 'Verapaz'],
-  'Usulután': ['Usulután', 'Alegría', 'Berlín', 'California', 'Concepción Batres', 'El Triunfo',
-              'Ereguayquín', 'Estanzuelas', 'Jiquilisco', 'Jucuapa', 'Jucuarán', 'Mercedes Umaña',
-              'Nueva Granada', 'Ozatlán', 'Puerto El Triunfo', 'San Agustín', 'San Buenaventura',
-              'San Dionisio', 'San Francisco Javier', 'Santa Elena', 'Santa María', 'Santiago de María',
-              'Tecapán'],
-  'San Miguel': ['San Miguel', 'Carolina', 'Chapeltique', 'Chinameca', 'Chirilagua', 'Ciudad Barrios',
-                'Comacarán', 'El Tránsito', 'Lolotique', 'Moncagua', 'Nueva Guadalupe', 'Nuevo Edén de San Juan',
-                'Quelepa', 'San Antonio del Mosco', 'San Gerardo', 'San Jorge', 'San Luis de la Reina',
-                'San Rafael Oriente', 'Sesori', 'Uluazapa'],
-  'Morazán': ['San Francisco Gotera', 'Arambala', 'Cacaopera', 'Chilanga', 'Corinto', 'Delicias de Concepción',
-            'El Divisadero', 'El Rosario', 'Gualococti', 'Guatajiagua', 'Joateca', 'Jocoaitique',
-            'Jocoro', 'Lolotiquillo', 'Meanguera', 'Osicala', 'Perquín', 'San Carlos', 'San Fernando',
-            'San Isidro', 'San Simón', 'Sensembra', 'Sociedad', 'Torola', 'Yamabal', 'Yoloaiquín'],
-  'La Unión': ['La Unión', 'Anamorós', 'Bolívar', 'Concepción de Oriente', 'Conchagua', 'El Carmen',
-              'El Sauce', 'Intipucá', 'Lislique', 'Meanguera del Golfo', 'Nueva Esparta', 'Pasaquina',
-              'Polorós', 'San Alejo', 'San José', 'Santa Rosa de Lima', 'Yayantique', 'Yucuaiquín']
+  // ... (mantén el resto de municipios)
 };
 
-// Variables globales
 let checkoutData = null;
+
+// ==================== FUNCIONES PAYPAL CON BACKEND ====================
+async function createPayPalOrder() {
+  try {
+    const response = await fetch('https://us-central1-mitienda-c2609.cloudfunctions.net/api/create-order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        amount: checkoutData.total,
+        items: checkoutData.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        })),
+        customer: {
+          email: document.getElementById('customerEmail').value,
+          name: document.getElementById('customerName').value
+        },
+        shipping: {
+          address: document.getElementById('shippingAddress').value,
+          department: document.getElementById('departamento').value,
+          municipality: document.getElementById('municipio').value
+        }
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error creando orden PayPal:", error);
+    throw error;
+  }
+}
+
+async function capturePayPalOrder(orderID) {
+  try {
+    const response = await fetch('https://us-central1-mitienda-c2609.cloudfunctions.net/api/capture-order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ orderID })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error capturando orden PayPal:", error);
+    throw error;
+  }
+}
 
 // ==================== FUNCIONES DE FIRESTORE ====================
 async function saveTransaction(paymentDetails, orderId) {
@@ -108,12 +85,7 @@ async function saveTransaction(paymentDetails, orderId) {
     await setDoc(doc(db, "transactions", orderId), {
       orderId: orderId,
       amount: checkoutData.total,
-      items: checkoutData.items.map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity
-      })),
+      items: checkoutData.items,
       customer: {
         userId: user?.uid || "guest",
         email: document.getElementById('customerEmail').value,
@@ -127,38 +99,22 @@ async function saveTransaction(paymentDetails, orderId) {
       },
       paymentMethod: 'paypal',
       status: paymentDetails.status,
-      paypalData: {
-        transactionId: paymentDetails.id,
-        payer: paymentDetails.payer
-      },
+      paypalData: paymentDetails,
       timestamp: serverTimestamp()
     });
-    
-    console.log("Transacción guardada:", orderId);
   } catch (error) {
     console.error("Error guardando transacción:", error);
     throw error;
   }
 }
 
-// ==================== INTEGRACIÓN PAYPAL ====================
-function loadPayPalSDK() {
-  return new Promise((resolve, reject) => {
-    if (window.paypal) return resolve();
-    
-    if (!paypalClientId) {
-      return reject(new Error('Credenciales de PayPal no disponibles'));
-    }
-    
-    const script = document.createElement('script');
-    script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}&currency=USD`;
-    script.onload = resolve;
-    script.onerror = () => reject(new Error('Error cargando PayPal SDK'));
-    document.head.appendChild(script);
-  });
-}
-
+// ==================== INTEGRACIÓN PAYPAL BUTTON ====================
 function setupPayPalButton() {
+  if (!window.paypal) {
+    console.error("PayPal SDK no cargado");
+    return;
+  }
+
   window.paypal.Buttons({
     style: {
       layout: 'vertical',
@@ -167,48 +123,21 @@ function setupPayPalButton() {
       label: 'paypal',
       height: 40
     },
-    createOrder: function(data, actions) {
+    createOrder: async function() {
       if (!validateForm()) {
-        return Promise.reject(new Error('Complete todos los campos requeridos'));
+        throw new Error('Complete todos los campos requeridos');
       }
-      
-      return actions.order.create({
-        purchase_units: [{
-          amount: {
-            value: checkoutData.total.toFixed(2),
-            currency_code: 'USD',
-            breakdown: {
-              item_total: {
-                value: checkoutData.total.toFixed(2),
-                currency_code: 'USD'
-              }
-            }
-          },
-          items: checkoutData.items.map(item => ({
-            name: item.name.substring(0, 127),
-            unit_amount: {
-              value: item.price.toFixed(2),
-              currency_code: 'USD'
-            },
-            quantity: item.quantity.toString()
-          })),
-          shipping: {
-            address: {
-              address_line_1: document.getElementById('shippingAddress').value,
-              admin_area_2: document.getElementById('municipio').value,
-              admin_area_1: document.getElementById('departamento').value,
-              country_code: 'SV'
-            }
-          }
-        }],
-        application_context: {
-          shipping_preference: 'SET_PROVIDED_ADDRESS'
-        }
-      });
-    },
-    onApprove: async function(data, actions) {
       try {
-        const details = await actions.order.capture();
+        const order = await createPayPalOrder();
+        return order.id;
+      } catch (error) {
+        showFeedback('Error', 'No se pudo iniciar el pago', 'error');
+        throw error;
+      }
+    },
+    onApprove: async function(data) {
+      try {
+        const details = await capturePayPalOrder(data.orderID);
         await saveTransaction(details, data.orderID);
         
         showFeedback('¡Pago completado!', `Orden #${data.orderID} procesada`, 'success');
@@ -218,8 +147,8 @@ function setupPayPalButton() {
           window.location.href = 'confirmacion.html';
         }, 3000);
       } catch (error) {
-        console.error("Error procesando pago:", error);
-        showFeedback('Error', 'Pago completado pero error al guardar datos', 'error');
+        console.error("Error en el pago:", error);
+        showFeedback('Error', 'Error al procesar el pago', 'error');
       }
     },
     onError: function(err) {
@@ -245,6 +174,7 @@ function setupAlternativePayment() {
       
       await saveTransaction({
         status: 'completed',
+        id: orderId,
         payer: {
           name: { given_name: document.getElementById('customerName').value },
           email_address: document.getElementById('customerEmail').value
@@ -300,13 +230,11 @@ function setupAddressForm() {
   const deptoSelect = document.getElementById('departamento');
   const muniSelect = document.getElementById('municipio');
 
-  // Llenar departamentos
   deptoSelect.innerHTML = '<option value="">Seleccione departamento...</option>';
   Object.keys(municipiosPorDepartamento).forEach(depto => {
     deptoSelect.innerHTML += `<option value="${depto}">${depto}</option>`;
   });
 
-  // Actualizar municipios
   deptoSelect.addEventListener('change', function() {
     updateMunicipios(this.value);
   });
@@ -330,6 +258,7 @@ function renderCartItems() {
   checkoutData.items.forEach(item => {
     html += `
       <div class="order-item">
+        <img src="${item.image || 'assets/default-product.png'}" alt="${item.name}" width="50">
         <span>${item.name}</span>
         <span>${item.quantity} × $${item.price.toFixed(2)}</span>
       </div>
@@ -360,16 +289,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupAddressForm();
   renderCartItems();
   
-  // Obtener credenciales de PayPal primero
-  await getPayPalCredentials();
-  
-  try {
-    await loadPayPalSDK();
-    setupPayPalButton();
-  } catch (error) {
-    console.error("Error inicializando PayPal:", error);
+  // Cargar SDK PayPal dinámicamente
+  const script = document.createElement('script');
+  script.src = 'https://www.paypal.com/sdk/js?client-id=SB&currency=USD'; // SB para sandbox
+  script.onload = () => setupPayPalButton();
+  script.onerror = () => {
+    console.error("Error cargando PayPal SDK");
     document.getElementById('alternativePayment').style.display = 'block';
-  }
+  };
+  document.head.appendChild(script);
   
   setupAlternativePayment();
   
