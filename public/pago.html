@@ -3,303 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pago - MiTienda503</title>
+  <title>Pago - MiTienda</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    :root {
-      --primary: #e63946;
-      --primary-dark: #c1121f;
-      --secondary: #1d3557;
-      --white: #ffffff;
-      --gray-light: #f1f5f9;
-    }
-
-    /* Estilos base */
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      line-height: 1.6;
-      color: #333;
-      background-color: var(--gray-light);
-      margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 1rem;
-    }
-
-    /* Header */
-    .header {
-      background-color: var(--secondary);
-      color: white;
-      padding: 1rem 2rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .header-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .logo img {
-      height: 60px;
-    }
-
-    /* Main content */
-    main {
-      padding: 3rem 0;
-    }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 2rem;
-      color: var(--secondary);
-      font-size: 2.2rem;
-    }
-
-    /* Checkout grid */
-    .checkout-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 30px;
-      margin-top: 30px;
-    }
-
-    .order-summary, .payment-form {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      padding: 30px;
-    }
-
-    .order-summary h2, .payment-form h2 {
-      font-size: 1.5rem;
-      color: var(--secondary);
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #f0f0f0;
-    }
-
-    /* Order items - ESTILOS NUEVOS */
-    .order-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid #eee;
-    }
-
-    .item-name {
-      flex: 2;
-    }
-
-    .item-quantity {
-      margin: 0 10px;
-      min-width: 50px;
-      text-align: center;
-    }
-
-    .item-price {
-      min-width: 80px;
-      text-align: right;
-    }
-
-    /* Botón de eliminar - ESTILOS NUEVOS */
-    .btn-remove {
-      background: none;
-      border: none;
-      color: #e63946;
-      cursor: pointer;
-      font-size: 1rem;
-      margin-left: 15px;
-      padding: 5px 8px;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
-
-    .btn-remove:hover {
-      background: #f8f9fa;
-      color: #c1121f;
-    }
-
-    .btn-remove:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-
-    .order-total {
-      font-weight: bold;
-      font-size: 1.2rem;
-      margin-top: 20px;
-      padding-top: 10px;
-      border-top: 2px solid #f0f0f0;
-      text-align: right;
-    }
-
-    /* Form styles */
-    .form-group {
-      margin-bottom: 20px;
-      position: relative;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-      color: var(--secondary);
-    }
-
-    .form-group input, .form-group select {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-size: 1rem;
-    }
-
-    .form-group input:focus, .form-group select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.2);
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    /* Submit button */
-    .submit-payment {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 1rem;
-      width: 100%;
-      transition: all 0.3s ease;
-      margin-top: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-
-    .submit-payment:hover {
-      background-color: var(--primary-dark);
-      transform: translateY(-2px);
-    }
-
-    /* Error states */
-    .error-message {
-      color: #e74c3c;
-      font-size: 0.8rem;
-      margin-top: 5px;
-      display: none;
-    }
-
-    input:invalid, select:invalid {
-      border-color: #e74c3c;
-    }
-
-    input:valid, select:valid {
-      border-color: #2ecc71;
-    }
-
-    /* Loading state - ESTILOS ACTUALIZADOS */
-    .loading {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(0,0,0,.2);
-      border-radius: 50%;
-      border-top-color: var(--primary);
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Feedback modal */
-    .feedback-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s;
-    }
-    
-    .feedback-overlay.active {
-      opacity: 1;
-      pointer-events: all;
-    }
-    
-    .feedback-content {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      text-align: center;
-      max-width: 400px;
-      width: 90%;
-    }
-    
-    .feedback-icon {
-      font-size: 3rem;
-      margin-bottom: 20px;
-    }
-    
-    .success { color: #27ae60; }
-    .error { color: #e74c3c; }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .checkout-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .form-row {
-        grid-template-columns: 1fr;
-        gap: 15px;
-      }
-
-      .order-item {
-        flex-wrap: wrap;
-      }
-
-      .item-name {
-        width: 100%;
-        margin-bottom: 5px;
-      }
-
-      .btn-remove {
-        margin-left: auto;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- SDK Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-functions-compat.js"></script>
 </head>
 <body>
   <!-- Header -->
   <header class="header">
     <div class="container header-container">
       <div class="logo">
-        <a href="index.html"><img src="/assets/imagenes/logo.png" alt="MiTienda503"></a>
+        <a href="index.html"><img src="assets/logo.png" alt="MiTienda"></a>
       </div>
       <div class="cart-icon">
         <i class="fas fa-shopping-cart"></i>
@@ -312,10 +29,11 @@
     <h1><i class="fas fa-credit-card"></i> Finalizar Compra</h1>
     
     <div class="checkout-grid">
-      <!-- Resumen del pedido -->
+      <!-- Resumen del Pedido -->
       <div class="order-summary">
         <h2>Resumen de tu Pedido</h2>
         <div id="orderItems">
+          <!-- Los productos se cargarán dinámicamente -->
           <div class="loading-items">
             <span class="loading"></span> Cargando productos...
           </div>
@@ -325,98 +43,67 @@
         </div>
       </div>
       
-      <!-- Formulario de pago -->
+      <!-- Formulario de Pago -->
       <div class="payment-form">
-        <h2>Información de Pago</h2>
+        <h2>Información de Envío y Pago</h2>
         <form id="paymentForm">
-          <!-- Información de contacto -->
+          <!-- Información del Cliente -->
           <div class="form-group">
-            <label for="customerName">Nombre Completo</label>
+            <label for="customerName">Nombre Completo*</label>
             <input type="text" id="customerName" required>
-            <div class="error-message">Por favor ingrese su nombre</div>
+            <div class="error-message">Este campo es requerido</div>
           </div>
           
           <div class="form-group">
-            <label for="customerEmail">Correo Electrónico</label>
+            <label for="customerEmail">Correo Electrónico*</label>
             <input type="email" id="customerEmail" required>
-            <div class="error-message">Por favor ingrese un correo válido</div>
+            <div class="error-message">Ingrese un correo válido</div>
           </div>
           
           <div class="form-group">
-            <label for="customerPhone">Teléfono</label>
+            <label for="customerPhone">Teléfono*</label>
             <input type="tel" id="customerPhone" required>
-            <div class="error-message">Por favor ingrese un teléfono válido</div>
+            <div class="error-message">Este campo es requerido</div>
           </div>
           
-          <!-- Información de envío -->
+          <!-- Dirección de Envío -->
           <div class="form-group">
-            <label for="shippingAddress">Dirección</label>
-            <input type="text" id="shippingAddress" required>
-            <div class="error-message">Por favor ingrese su dirección</div>
+            <label for="shippingAddress">Dirección Exacta*</label>
+            <input type="text" id="shippingAddress" required placeholder="Calle, número, colonia, referencia">
+            <div class="error-message">Este campo es requerido</div>
           </div>
           
           <div class="form-row">
             <div class="form-group">
-              <label for="departamento">Departamento</label>
+              <label for="departamento">Departamento*</label>
               <select id="departamento" required>
                 <option value="">Seleccione...</option>
-                <option value="Ahuachapán">Ahuachapán</option>
-                <option value="Santa Ana">Santa Ana</option>
-                <option value="Sonsonate">Sonsonate</option>
-                <option value="Chalatenango">Chalatenango</option>
-                <option value="La Libertad">La Libertad</option>
-                <option value="San Salvador">San Salvador</option>
-                <option value="Cuscatlán">Cuscatlán</option>
-                <option value="La Paz">La Paz</option>
-                <option value="Cabañas">Cabañas</option>
-                <option value="San Vicente">San Vicente</option>
-                <option value="Usulután">Usulután</option>
-                <option value="San Miguel">San Miguel</option>
-                <option value="Morazán">Morazán</option>
-                <option value="La Unión">La Unión</option>
+                <!-- Los departamentos se cargarán dinámicamente -->
               </select>
             </div>
             
             <div class="form-group">
-              <label for="municipio">Municipio</label>
+              <label for="municipio">Municipio*</label>
               <select id="municipio" required>
                 <option value="">Seleccione departamento primero</option>
               </select>
             </div>
           </div>
           
-          <!-- Información de pago -->
+          <!-- Método de Pago -->
           <div class="form-group">
-            <label for="cardName">Nombre en la Tarjeta</label>
-            <input type="text" id="cardName" required>
+            <h3>Método de Pago</h3>
+            <div id="paypal-button-container"></div>
+            <button type="button" id="alternativePayment" class="submit-payment" style="display: none;">
+              <i class="fas fa-lock"></i> Confirmar Pago $<span id="paymentTotal">0.00</span>
+            </button>
           </div>
-          
-          <div class="form-group">
-            <label for="cardNumber">Número de Tarjeta</label>
-            <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" required>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="expiryDate">Fecha de Expiración</label>
-              <input type="text" id="expiryDate" placeholder="MM/AA" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="cvv">CVV</label>
-              <input type="text" id="cvv" placeholder="123" required>
-            </div>
-          </div>
-          
-          <button type="submit" class="submit-payment">
-            <i class="fas fa-lock"></i> Confirmar Pago $<span id="paymentTotal">0.00</span>
-          </button>
         </form>
       </div>
     </div>
   </main>
 
-  <!-- Modal de feedback -->
+  <!-- Modal de Feedback -->
   <div class="feedback-overlay" id="feedbackModal">
     <div class="feedback-content">
       <div class="feedback-icon" id="feedbackIcon">
@@ -428,281 +115,7 @@
     </div>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Cargar datos del carrito desde localStorage
-      let checkoutData = JSON.parse(localStorage.getItem('currentCheckout'));
-      
-      // Verificar si hay items en el carrito
-      if (!checkoutData || !checkoutData.items || checkoutData.items.length === 0) {
-        showErrorAndRedirect('No se encontraron productos en el carrito');
-        return;
-      }
-
-      // Función para renderizar los items del carrito
-      const renderCartItems = () => {
-        const orderItemsContainer = document.getElementById('orderItems');
-        const items = checkoutData.items;
-        
-        let html = '';
-        items.forEach(item => {
-          html += `
-            <div class="order-item" data-id="${item.id}">
-              <span class="item-name">${item.name}</span>
-              <span class="item-quantity">${item.quantity} ×</span>
-              <span class="item-price">$${item.price.toFixed(2)}</span>
-              <button class="btn-remove" data-id="${item.id}">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          `;
-        });
-        
-        orderItemsContainer.innerHTML = html || '<p>No hay productos en el carrito</p>';
-        
-        // Actualizar totales
-        document.getElementById('orderTotal').textContent = checkoutData.total.toFixed(2);
-        document.getElementById('paymentTotal').textContent = checkoutData.total.toFixed(2);
-        
-        // Actualizar contador del carrito
-        updateCartCounter();
-        
-        // Agregar event listeners a los botones de eliminar
-        document.querySelectorAll('.btn-remove').forEach(btn => {
-          btn.addEventListener('click', handleRemoveItem);
-        });
-      };
-
-      // Función para actualizar el contador del carrito
-      const updateCartCounter = () => {
-        const counter = document.getElementById('cart-counter');
-        if (counter) {
-          const totalItems = checkoutData.items.reduce((sum, item) => sum + item.quantity, 0);
-          counter.textContent = totalItems;
-        }
-      };
-
-      // Función para manejar la eliminación de items
-      const handleRemoveItem = async (e) => {
-        const productId = e.currentTarget.dataset.id;
-        const btn = e.currentTarget;
-        
-        try {
-          // Mostrar estado de carga
-          btn.innerHTML = '<span class="loading"></span>';
-          btn.disabled = true;
-          
-          // Eliminar el item del carrito local
-          checkoutData.items = checkoutData.items.filter(item => item.id !== productId);
-          
-          // Recalcular total
-          checkoutData.total = checkoutData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-          
-          // Actualizar localStorage
-          localStorage.setItem('currentCheckout', JSON.stringify(checkoutData));
-          
-          // Volver a renderizar
-          renderCartItems();
-          
-          // Mostrar feedback
-          showFeedback('Producto eliminado', 'El producto ha sido removido de tu carrito', 'success');
-          
-          // Si el carrito queda vacío, redirigir
-          if (checkoutData.items.length === 0) {
-            setTimeout(() => {
-              window.location.href = 'productos.html';
-            }, 1500);
-          }
-        } catch (error) {
-          console.error('Error al eliminar producto:', error);
-          showFeedback('Error', 'No se pudo eliminar el producto', 'error');
-          btn.innerHTML = '<i class="fas fa-trash"></i>';
-          btn.disabled = false;
-        }
-      };
-
-      // Función para validar el formulario
-      const validateForm = () => {
-        let isValid = true;
-        const requiredFields = [
-          'customerName', 'customerEmail', 'customerPhone', 
-          'shippingAddress', 'departamento', 'municipio',
-          'cardName', 'cardNumber', 'expiryDate', 'cvv'
-        ];
-
-        requiredFields.forEach(fieldId => {
-          const field = document.getElementById(fieldId);
-          const errorMsg = field.parentElement.querySelector('.error-message');
-          
-          if (!field.value.trim()) {
-            if (errorMsg) errorMsg.style.display = 'block';
-            isValid = false;
-          } else {
-            if (errorMsg) errorMsg.style.display = 'none';
-          }
-        });
-
-        return isValid;
-      };
-
-      // Función para procesar el pago (simulado)
-      const processPayment = () => {
-        return new Promise((resolve, reject) => {
-          // Simular demora de red
-          setTimeout(() => {
-            // Simular éxito 90% de las veces
-            if (Math.random() > 0.1) {
-              resolve();
-            } else {
-              reject(new Error('Error al procesar el pago. Intente nuevamente.'));
-            }
-          }, 1500);
-        });
-      };
-
-      // Configurar el formulario
-      document.getElementById('paymentForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        if (!validateForm()) return;
-        
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<span class="loading"></span> Procesando...';
-        submitBtn.disabled = true;
-        
-        try {
-          await processPayment();
-          showFeedback('¡Pago completado!', `Pedido #${generateOrderId()} procesado`, 'success');
-          
-          // Limpiar carrito después de pago exitoso
-          localStorage.removeItem('currentCheckout');
-          
-          setTimeout(() => {
-            window.location.href = 'confirmacion.html';
-          }, 3000);
-        } catch (error) {
-          showFeedback('Error en el pago', error.message, 'error');
-          submitBtn.innerHTML = originalText;
-          submitBtn.disabled = false;
-        }
-      });
-
-      // Renderizar inicialmente
-      renderCartItems();
-
-      // Configurar municipios según departamento seleccionado
-      document.getElementById('departamento').addEventListener('change', function() {
-        const municipioSelect = document.getElementById('municipio');
-        municipioSelect.innerHTML = '<option value="">Seleccione...</option>';
-        
-        const municipios = {
-          'Ahuachapán': ['Ahuachapán', 'Apaneca', 'Atiquizaya', 'Concepción de Ataco', 'El Refugio', 
-                        'Guaymango', 'Jujutla', 'San Francisco Menéndez', 'San Lorenzo', 'San Pedro Puxtla',
-                        'Tacuba', 'Turín'],
-          'Santa Ana': ['Santa Ana', 'Candelaria de la Frontera', 'Chalchuapa', 'Coatepeque', 'El Congo',
-                      'El Porvenir', 'Masahuat', 'Metapán', 'San Antonio Pajonal', 'San Sebastián Salitrillo',
-                      'Santiago de la Frontera', 'Texistepeque'],
-          'Sonsonate': ['Sonsonate', 'Acajutla', 'Armenia', 'Caluco', 'Cuisnahuat', 'Izalco', 'Juayúa',
-                      'Nahuizalco', 'Nahulingo', 'Salcoatitán', 'San Antonio del Monte', 'San Julián',
-                      'Santa Catarina Masahuat', 'Santa Isabel Ishuatán', 'Santo Domingo de Guzmán',
-                      'Sonzacate'],
-          'Chalatenango': ['Chalatenango', 'Agua Caliente', 'Arcatao', 'Azacualpa', 'Cancasque', 'Citalá',
-                          'Comalapa', 'Concepción Quezaltepeque', 'Dulce Nombre de María', 'El Carrizal',
-                          'El Paraíso', 'La Laguna', 'La Palma', 'La Reina', 'Las Flores', 'Las Vueltas',
-                          'Nombre de Jesús', 'Nueva Concepción', 'Nueva Trinidad', 'Ojos de Agua',
-                          'Potonico', 'San Antonio de la Cruz', 'San Antonio Los Ranchos', 'San Fernando',
-                          'San Francisco Lempa', 'San Francisco Morazán', 'San Ignacio', 'San Isidro Labrador',
-                          'San José Cancasque', 'San José Las Flores', 'San Luis del Carmen', 'San Miguel de Mercedes',
-                          'San Rafael', 'Santa Rita', 'Tejutla'],
-          'La Libertad': ['Santa Tecla', 'Antiguo Cuscatlán', 'Chiltiupán', 'Ciudad Arce', 'Colón', 'Comasagua',
-                        'Huizúcar', 'Jayaque', 'Jicalapa', 'La Libertad', 'Nuevo Cuscatlán', 'Opico',
-                        'Quezaltepeque', 'Sacacoyo', 'San José Villanueva', 'San Juan Opico', 'San Matías',
-                        'San Pablo Tacachico', 'Talnique', 'Tamanique', 'Teotepeque', 'Tepecoyo', 'Zaragoza'],
-          'San Salvador': ['San Salvador', 'Aguilares', 'Apopa', 'Ayutuxtepeque', 'Cuscatancingo', 'Delgado',
-                          'El Paisnal', 'Guazapa', 'Ilopango', 'Mejicanos', 'Nejapa', 'Panchimalco',
-                          'Rosario de Mora', 'San Marcos', 'San Martín', 'Santiago Texacuangos',
-                          'Santo Tomás', 'Soyapango', 'Tonacatepeque'],
-          'Cuscatlán': ['Cojutepeque', 'Candelaria', 'El Carmen', 'El Rosario', 'Monte San Juan', 'Oratorio de Concepción',
-                      'San Bartolomé Perulapía', 'San Cristóbal', 'San José Guayabal', 'San Pedro Perulapán',
-                      'San Rafael Cedros', 'San Ramón', 'Santa Cruz Analquito', 'Santa Cruz Michapa', 'Suchitoto',
-                      'Tenancingo'],
-          'La Paz': ['Zacatecoluca', 'Cuyultitán', 'El Rosario', 'Jerusalén', 'Mercedes La Ceiba', 'Olocuilta',
-                    'Paraíso de Osorio', 'San Antonio Masahuat', 'San Emigdio', 'San Francisco Chinameca',
-                    'San Juan Nonualco', 'San Juan Talpa', 'San Juan Tepezontes', 'San Luis La Herradura',
-                    'San Luis Talpa', 'San Miguel Tepezontes', 'San Pedro Masahuat', 'San Pedro Nonualco',
-                    'San Rafael Obrajuelo', 'Santa María Ostuma', 'Santiago Nonualco', 'Tapalhuaca'],
-          'Cabañas': ['Sensuntepeque', 'Cinquera', 'Dolores', 'Guacotecti', 'Ilobasco', 'Jutiapa', 'San Isidro',
-                    'Tejutepeque', 'Victoria'],
-          'San Vicente': ['San Vicente', 'Apastepeque', 'Guadalupe', 'San Cayetano Istepeque', 'San Esteban Catarina',
-                        'San Ildefonso', 'San Lorenzo', 'San Sebastián', 'Santa Clara', 'Santo Domingo',
-                        'Tecoluca', 'Tepetitán', 'Verapaz'],
-          'Usulután': ['Usulután', 'Alegría', 'Berlín', 'California', 'Concepción Batres', 'El Triunfo',
-                      'Ereguayquín', 'Estanzuelas', 'Jiquilisco', 'Jucuapa', 'Jucuarán', 'Mercedes Umaña',
-                      'Nueva Granada', 'Ozatlán', 'Puerto El Triunfo', 'San Agustín', 'San Buenaventura',
-                      'San Dionisio', 'San Francisco Javier', 'Santa Elena', 'Santa María', 'Santiago de María',
-                      'Tecapán'],
-          'San Miguel': ['San Miguel', 'Carolina', 'Chapeltique', 'Chinameca', 'Chirilagua', 'Ciudad Barrios',
-                        'Comacarán', 'El Tránsito', 'Lolotique', 'Moncagua', 'Nueva Guadalupe', 'Nuevo Edén de San Juan',
-                        'Quelepa', 'San Antonio del Mosco', 'San Gerardo', 'San Jorge', 'San Luis de la Reina',
-                        'San Rafael Oriente', 'Sesori', 'Uluazapa'],
-          'Morazán': ['San Francisco Gotera', 'Arambala', 'Cacaopera', 'Chilanga', 'Corinto', 'Delicias de Concepción',
-                    'El Divisadero', 'El Rosario', 'Gualococti', 'Guatajiagua', 'Joateca', 'Jocoaitique',
-                    'Jocoro', 'Lolotiquillo', 'Meanguera', 'Osicala', 'Perquín', 'San Carlos', 'San Fernando',
-                    'San Isidro', 'San Simón', 'Sensembra', 'Sociedad', 'Torola', 'Yamabal', 'Yoloaiquín'],
-          'La Unión': ['La Unión', 'Anamorós', 'Bolívar', 'Concepción de Oriente', 'Conchagua', 'El Carmen',
-                      'El Sauce', 'Intipucá', 'Lislique', 'Meanguera del Golfo', 'Nueva Esparta', 'Pasaquina',
-                      'Polorós', 'San Alejo', 'San José', 'Santa Rosa de Lima', 'Yayantique', 'Yucuaiquín']
-        };
-        
-        const selectedDepartamento = this.value;
-        if (selectedDepartamento && municipios[selectedDepartamento]) {
-          municipios[selectedDepartamento].forEach(municipio => {
-            const option = document.createElement('option');
-            option.value = municipio;
-            option.textContent = municipio;
-            municipioSelect.appendChild(option);
-          });
-        }
-      });
-    });
-
-    // Generar ID de pedido aleatorio
-    function generateOrderId() {
-      return Math.random().toString(36).substring(2, 10).toUpperCase();
-    }
-
-    // Mostrar feedback
-    function showFeedback(title, message, type = 'success') {
-      const modal = document.getElementById('feedbackModal');
-      const icon = document.getElementById('feedbackIcon');
-      const feedbackTitle = document.getElementById('feedbackTitle');
-      const feedbackMessage = document.getElementById('feedbackMessage');
-      
-      // Configurar contenido
-      icon.innerHTML = `<i class="fas fa-${
-        type === 'success' ? 'check-circle' : 'times-circle'
-      } ${type}"></i>`;
-      
-      feedbackTitle.textContent = title;
-      feedbackMessage.textContent = message;
-      
-      // Mostrar modal
-      modal.classList.add('active');
-      
-      // Configurar cierre
-      document.getElementById('feedbackClose').onclick = () => {
-        modal.classList.remove('active');
-      };
-    }
-
-    // Mostrar error y redirigir
-    function showErrorAndRedirect(message) {
-      showFeedback('Error', message, 'error');
-      setTimeout(() => {
-        window.location.href = 'productos.html';
-      }, 3000);
-    }
-  </script>
+  <!-- Scripts -->
+  <script src="js/pago.js"></script>
 </body>
 </html>
