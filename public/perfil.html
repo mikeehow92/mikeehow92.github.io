@@ -3,226 +3,169 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Perfil - MiTienda503</title>
+  <title>Pago - MiTienda</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Estilos -->
+  <link rel="stylesheet" href="/assets/css/styles.css">
   <style>
-    :root {
-      --primary: #e63946;
-      --primary-dark: #c1121f;
-      --secondary: #1d3557;
-      --white: #ffffff;
-      --gray-light: #f1f5f9;
+    .paypal-button-container {
+      margin: 20px 0;
     }
-
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      line-height: 1.6;
-      background-color: var(--gray-light);
-      margin: 0;
-      padding: 0;
-    }
-
-    .profile-container {
-      max-width: 1200px;
-      margin: 40px auto;
-      padding: 0 20px;
-      display: grid;
-      grid-template-columns: 300px 1fr;
-      gap: 30px;
-    }
-
-    .profile-sidebar {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      padding: 30px;
-      height: fit-content;
-    }
-
-    .profile-avatar {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      background-color: var(--primary);
+    #alternativePayment {
+      display: none;
+      background: #0070ba;
       color: white;
-      display: flex;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+    }
+    .feedback-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
       align-items: center;
       justify-content: center;
-      font-size: 3rem;
-      margin: 0 auto 20px;
     }
-
-    .profile-name {
-      text-align: center;
-      font-size: 1.5rem;
-      margin-bottom: 30px;
-      color: var(--secondary);
-    }
-
-    .profile-menu {
-      list-style: none;
-      padding: 0;
-    }
-
-    .profile-menu li {
-      margin-bottom: 15px;
-    }
-
-    .profile-menu a {
+    .feedback-overlay.active {
       display: flex;
-      align-items: center;
-      gap: 10px;
-      color: #555;
-      text-decoration: none;
-      padding: 10px;
-      border-radius: 5px;
-      transition: all 0.3s ease;
     }
-
-    .profile-menu a:hover, .profile-menu a.active {
-      background-color: #f0f7ff;
-      color: var(--primary);
-    }
-
-    .profile-content {
+    .feedback-content {
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
       padding: 30px;
+      border-radius: 8px;
+      text-align: center;
+      max-width: 400px;
     }
-
-    .profile-section {
-      display: none;
+    .success {
+      color: #28a745;
     }
-
-    .profile-section.active {
-      display: block;
+    .error {
+      color: #dc3545;
     }
-
-    .section-title {
-      font-size: 1.8rem;
-      color: var(--secondary);
-      margin-bottom: 25px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #f0f0f0;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
-    }
-
-    .info-item {
-      margin-bottom: 15px;
-    }
-
-    .info-label {
-      font-weight: 500;
-      color: #7f8c8d;
-      margin-bottom: 5px;
-      font-size: 0.9rem;
-    }
-
-    .info-value {
-      font-size: 1.1rem;
-      color: #2c3e50;
-      padding: 10px;
-      background-color: #f9f9f9;
-      border-radius: 5px;
-      min-height: 45px;
-    }
-
-    @media (max-width: 768px) {
-      .profile-container {
-        grid-template-columns: 1fr;
-      }
-      
-      .info-grid {
-        grid-template-columns: 1fr;
-      }
+    .info {
+      color: #17a2b8;
     }
   </style>
 </head>
 <body>
-  <div class="profile-container">
-    <aside class="profile-sidebar">
-      <div class="profile-avatar" id="user-avatar">
-        <i class="fas fa-user"></i>
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-container">
+      <div class="logo">
+        <a href="index.html"><img src="assets/logo.png" alt="MiTienda"></a>
       </div>
-      <h2 class="profile-name" id="user-name">Cargando...</h2>
-      <ul class="profile-menu">
-        <li><a href="#" class="active" data-section="info"><i class="fas fa-user"></i> Información Personal</a></li>
-        <li><a href="#" data-section="address"><i class="fas fa-map-marker-alt"></i> Dirección</a></li>
-        <li><a href="#" data-section="orders"><i class="fas fa-shopping-bag"></i> Mis Compras</a></li>
-        <li><a href="#" data-section="security"><i class="fas fa-lock"></i> Seguridad</a></li>
-      </ul>
-    </aside>
+      <div class="cart-icon">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="cart-counter">0</span>
+      </div>
+    </div>
+  </header>
 
-    <div class="profile-content">
-      <section id="info-section" class="profile-section active">
-        <h2 class="section-title"><i class="fas fa-user"></i> Información Personal</h2>
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Nombre completo</div>
-            <div class="info-value" id="userFullName">Cargando...</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Correo electrónico</div>
-            <div class="info-value" id="userEmail">Cargando...</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Teléfono</div>
-            <div class="info-value" id="userPhone">Cargando...</div>
+  <main class="container">
+    <h1><i class="fas fa-credit-card"></i> Finalizar Compra</h1>
+    
+    <div class="checkout-grid">
+      <!-- Resumen del Pedido -->
+      <div class="order-summary">
+        <h2>Resumen de tu Pedido</h2>
+        <div id="orderItems">
+          <!-- Los productos se cargarán dinámicamente -->
+          <div class="loading-items">
+            <span class="loading"></span> Cargando productos...
           </div>
         </div>
-      </section>
-
-      <section id="address-section" class="profile-section">
-        <h2 class="section-title"><i class="fas fa-map-marker-alt"></i> Dirección</h2>
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Departamento</div>
-            <div class="info-value" id="userDepartment">Cargando...</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Municipio</div>
-            <div class="info-value" id="userMunicipality">Cargando...</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Dirección exacta</div>
-            <div class="info-value" id="userAddress">Cargando...</div>
-          </div>
+        <div class="order-total">
+          Total: $<span id="orderTotal">0.00</span>
         </div>
-      </section>
-
-      <section id="orders-section" class="profile-section">
-        <h2 class="section-title"><i class="fas fa-shopping-bag"></i> Mis Compras</h2>
-        <div id="orders-list">
-          <p>Cargando historial de compras...</p>
-        </div>
-      </section>
-
-      <section id="security-section" class="profile-section">
-        <h2 class="section-title"><i class="fas fa-lock"></i> Seguridad</h2>
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Último inicio de sesión</div>
-            <div class="info-value" id="lastLogin">Cargando...</div>
+      </div>
+      
+      <!-- Formulario de Pago -->
+      <div class="payment-form">
+        <h2>Información de Envío y Pago</h2>
+        <form id="paymentForm">
+          <!-- Información del Cliente -->
+          <div class="form-group">
+            <label for="customerName">Nombre Completo*</label>
+            <input type="text" id="customerName" required>
+            <div class="error-message">Este campo es requerido</div>
           </div>
-        </div>
-      </section>
+          
+          <div class="form-group">
+            <label for="customerEmail">Correo Electrónico*</label>
+            <input type="email" id="customerEmail" required>
+            <div class="error-message">Ingrese un correo válido</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="customerPhone">Teléfono*</label>
+            <input type="tel" id="customerPhone" required>
+            <div class="error-message">Este campo es requerido</div>
+          </div>
+          
+          <!-- Dirección de Envío -->
+          <div class="form-group">
+            <label for="shippingAddress">Dirección Exacta*</label>
+            <input type="text" id="shippingAddress" required placeholder="Calle, número, colonia, referencia">
+            <div class="error-message">Este campo es requerido</div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="departamento">Departamento*</label>
+              <select id="departamento" required>
+                <option value="">Seleccione...</option>
+                <!-- Los departamentos se cargarán dinámicamente -->
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="municipio">Municipio*</label>
+              <select id="municipio" required>
+                <option value="">Seleccione departamento primero</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Método de Pago -->
+          <div class="form-group">
+            <h3>Método de Pago</h3>
+            <div id="paypal-button-container"></div>
+            <button type="button" id="alternativePayment" class="submit-payment">
+              <i class="fas fa-lock"></i> Confirmar Pago $<span id="paymentTotal">0.00</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal de Feedback -->
+  <div class="feedback-overlay" id="feedbackModal">
+    <div class="feedback-content">
+      <div class="feedback-icon" id="feedbackIcon">
+        <i class="fas fa-check-circle success"></i>
+      </div>
+      <h3 id="feedbackTitle">¡Pago Completado!</h3>
+      <p id="feedbackMessage">Tu pedido ha sido procesado correctamente.</p>
+      <button class="submit-payment" id="feedbackClose">Aceptar</button>
     </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-  
-  <script>
+  <!-- Scripts -->
+  <script type="module">
     // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
@@ -230,157 +173,18 @@
       projectId: "mitienda-c2609",
       storageBucket: "mitienda-c2609.appspot.com",
       messagingSenderId: "536746062790",
-      appId: "1:536746062790:web:cd39eb0057aac14c6538c7"
+      appId: "1:536746062790:web:6e545efbc8f037e36538c7"
     };
 
     // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // Cargar datos del usuario
-    function loadUserData() {
-      const user = auth.currentUser;
-      
-      if (!user) {
-        window.location.href = "index.html";
-        return;
-      }
-
-      // Mostrar email inmediatamente
-      document.getElementById('userEmail').textContent = user.email;
-      
-      // Obtener datos adicionales de Firestore
-      db.collection("users").doc(user.uid).get().then((doc) => {
-        if (doc.exists) {
-          const userData = doc.data();
-          
-          // Mostrar nombre (prioridad: Firestore > Auth > email)
-          const userName = userData.nombre || user.displayName || user.email.split('@')[0];
-          document.getElementById('user-name').textContent = userName;
-          document.getElementById('userFullName').textContent = userName;
-          
-          // Mostrar teléfono
-          document.getElementById('userPhone').textContent = userData.telefono || "No especificado";
-          
-          // Mostrar dirección
-          if (userData.direccion) {
-            document.getElementById('userDepartment').textContent = userData.direccion.departamento || "No especificado";
-            document.getElementById('userMunicipality').textContent = userData.direccion.municipio || "No especificado";
-            document.getElementById('userAddress').textContent = userData.direccion.direccionExacta || "No especificado";
-          }
-          
-          // Mostrar último login
-          if (userData.lastLogin) {
-            document.getElementById('lastLogin').textContent = userData.lastLogin.toDate().toLocaleString();
-          } else {
-            document.getElementById('lastLogin').textContent = "No disponible";
-          }
-          
-          // Configurar avatar
-          setupUserAvatar(user, userData);
-        } else {
-          // Si no hay datos en Firestore, usar solo datos de Auth
-          const userName = user.displayName || user.email.split('@')[0];
-          document.getElementById('user-name').textContent = userName;
-          document.getElementById('userFullName').textContent = userName;
-          document.getElementById('userPhone').textContent = "No especificado";
-          setupUserAvatar(user);
-        }
-      }).catch((error) => {
-        console.error("Error cargando datos:", error);
-      });
-
-      // Cargar historial de compras
-      loadOrderHistory(user.uid);
-    }
-
-    // Configurar avatar del usuario
-    function setupUserAvatar(user, userData = {}) {
-      const avatar = document.getElementById('user-avatar');
-      avatar.innerHTML = '';
-      
-      if (user.photoURL) {
-        const img = document.createElement('img');
-        img.src = user.photoURL;
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.borderRadius = '50%';
-        img.style.objectFit = 'cover';
-        avatar.appendChild(img);
-      } else {
-        const name = user.displayName || userData.nombre || user.email;
-        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
-        avatar.textContent = initials;
-        avatar.style.display = 'flex';
-        avatar.style.alignItems = 'center';
-        avatar.style.justifyContent = 'center';
-        avatar.style.fontSize = '2.5rem';
-        avatar.style.fontWeight = 'bold';
-      }
-    }
-
-    // Cargar historial de compras (versión original que solicitaste)
-    function loadOrderHistory(userId) {
-      db.collection("orders")
-        .where("userId", "==", userId)
-        .get()
-        .then((querySnapshot) => {
-          const ordersList = document.getElementById('orders-list');
-          
-          if (querySnapshot.empty) {
-            ordersList.innerHTML = `<p>No has realizado ninguna compra aún</p>`;
-            return;
-          }
-
-          let ordersHTML = '';
-          querySnapshot.forEach((doc) => {
-            const order = doc.data();
-            ordersHTML += `
-              <div class="order" style="margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 5px;">
-                <h3>Orden #${doc.id.substring(0, 8)}</h3>
-                <p>Fecha: ${order.date.toDate().toLocaleDateString()}</p>
-                <p>Total: $${order.total}</p>
-                <p>Estado: ${order.status}</p>
-              </div>
-            `;
-          });
-
-          ordersList.innerHTML = ordersHTML;
-        })
-        .catch((error) => {
-          console.error("Error cargando compras:", error);
-          document.getElementById('orders-list').innerHTML = `<p>Error al cargar el historial de compras</p>`;
-        });
-    }
-
-    // Manejar cambio de secciones
-    document.querySelectorAll('.profile-menu a').forEach(link => {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        // Remover clase active de todos
-        document.querySelectorAll('.profile-menu a').forEach(item => {
-          item.classList.remove('active');
-        });
-        document.querySelectorAll('.profile-section').forEach(section => {
-          section.classList.remove('active');
-        });
-        
-        // Agregar clase active al seleccionado
-        this.classList.add('active');
-        const sectionId = this.getAttribute('data-section');
-        document.getElementById(`${sectionId}-section`).classList.add('active');
-      });
-    });
-
-    // Verificar autenticación al cargar
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        loadUserData();
-      } else {
-        window.location.href = "index.html";
-      }
+    
+    // Importar el módulo de pago
+    import { initializePayment } from '/js/pago.js';
+    
+    // Inicializar el sistema de pago
+    document.addEventListener('DOMContentLoaded', () => {
+      initializePayment();
     });
   </script>
 </body>
