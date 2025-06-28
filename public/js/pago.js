@@ -1,20 +1,24 @@
-// Configuración de Firebase
+// ==================== CONFIGURACIÓN INICIAL ====================
+// Firebase Configuration
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+
 const firebaseConfig = {
-  apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
-  authDomain: "mitienda-c2609.firebaseapp.com",
-  databaseURL: "https://mitienda-c2609-default-rtdb.firebaseio.com",
-  projectId: "mitienda-c2609",
-  storageBucket: "mitienda-c2609.firebasestorage.app",
-  messagingSenderId: "536746062790",
-  appId: "1:536746062790:web:6e545efbc8f037e36538c7"
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  projectId: "TU_PROYECTO",
+  storageBucket: "TU_PROYECTO.appspot.com",
+  messagingSenderId: "TU_SENDER_ID",
+  appId: "TU_APP_ID"
 };
 
-// Inicializar Firebase
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-// Datos de municipios por departamento (El Salvador)
+// Datos de municipios (Ejemplo para El Salvador)
 const municipiosPorDepartamento = {
   'Ahuachapán': ['Ahuachapán', 'Apaneca', 'Atiquizaya', 'Concepción de Ataco', 'El Refugio', 
                 'Guaymango', 'Jujutla', 'San Francisco Menéndez', 'San Lorenzo', 'San Pedro Puxtla',
@@ -74,226 +78,28 @@ const municipiosPorDepartamento = {
               'Polorós', 'San Alejo', 'San José', 'Santa Rosa de Lima', 'Yayantique', 'Yucuaiquín']
 };
 
+
 // Variables globales
 let checkoutData = null;
-let paypalSdkLoaded = false;
 
-// ==================== FUNCIONES PRINCIPALES ====================
-
-// Función para inicializar PayPal
-async function initializePayPal() {
+// ==================== FUNCIONES DE FIRESTORE ====================
+async function saveTransaction(paymentDetails, orderId) {
   try {
-    console.log("Inicializando PayPal...");
+    const user = auth.currentUser;
     
-    // 1. Obtener configuración de PayPal desde Cloud Functions
-    const getPaypalConfig = firebase.functions().httpsCallable('getPaypalConfig');
-    const { data } = await getPaypalConfig();
-    
-    if (!data || !data.clientId) {
-      throw new Error("No se recibió clientId de PayPal");
-    }
-
-    // 2. Cargar SDK de PayPal dinámicamente
-    await loadPayPalSdk(data.clientId);
-    
-    // 3. Configurar botones de PayPal
-    setupPayPalButton();
-    
-  } catch (error) {
-    console.error("Error al inicializar PayPal:", error);
-    showFeedback('Aviso', 'El pago con PayPal no está disponible. Por favor use el método alternativo.', 'info');
-    activateAlternativePayment();
-  }
-}
-
-// Función para cargar el SDK de PayPal
-function loadPayPalSdk(clientId) {
-  return new Promise((resolve, reject) => {
-    if (window.paypal) {
-      paypalSdkLoaded = true;
-      return resolve();
-    }
-
-    const script = document.createElement('script');
-    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
-    script.async = true;
-    
-    // Timeout para evitar espera infinita
-    const timeout = setTimeout(() => {
-      reject(new Error("Timeout al cargar SDK de PayPal"));
-    }, 10000);
-
-    script.onload = () => {
-      clearTimeout(timeout);
-      paypalSdkLoaded = true;
-      console.log("SDK de PayPal cargado correctamente");
-      resolve();
-    };
-    
-    script.onerror = () => {
-      clearTimeout(timeout);
-      reject(new Error("Error al cargar SDK de PayPal"));
-    };
-    
-    document.head.appendChild(script);
-  });
-}
-
-// Configurar botones de PayPal
-function setupPayPalButton() {
-  try {
-    if (!window.paypal || !window.paypal.Buttons) {
-      throw new Error("PayPal Buttons no disponible");
-    }
-
-    paypal.Buttons({
-      style: {
-        layout: 'vertical',
-        color: 'blue',
-        shape: 'rect',
-        label: 'paypal'
-      },
-      createOrder: function(data, actions) {
-        if (!validateForm()) {
-          return Promise.reject(new Error('Complete todos los campos requeridos'));
-        }
-        
-        return actions.order.create({
-          purchase_units: [{
-            amount: {
-              value: checkoutData.total.toFixed(2),
-              currency_code: 'USD'
-            },
-            shipping: {
-              address: {
-                address_line_1: document.getElementById('shippingAddress').value,
-                admin_area_2: document.getElementById('municipio').value,
-                admin_area_1: document.getElementById('departamento').value,
-                country_code: 'SV'
-              }
-            }
-          }]
-        });
-      },
-      onApprove: function(data, actions) {
-        return actions.order.capture().then(function(details) {
-          processPaymentSuccess(details, data.orderID, 'paypal');
-        });
-      },
-      onError: function(err) {
-        console.error("Error en PayPal:", err);
-        handlePaymentError(err);
-      }
-    }).render('#paypal-button-container');
-    
-  } catch (error) {
-    console.error("Error al configurar botón PayPal:", error);
-    handlePaymentError(error);
-  }
-}
-
-// Activar método de pago alternativo
-function activateAlternativePayment() {
-  console.log("Activando método de pago alternativo...");
-  document.getElementById('paypal-button-container').style.display = 'none';
-  document.getElementById('alternativePayment').style.display = 'block';
-}
-
-// Configurar botón de pago alternativo
-function setupAlternativePayment() {
-  const altPaymentBtn = document.getElementById('alternativePayment');
-  
-  altPaymentBtn.addEventListener('click', async function() {
-    if (!validateForm()) {
-      showFeedback('Error', 'Complete todos los campos requeridos', 'error');
-      return;
-    }
-    
-    try {
-      showFeedback('Procesando', 'Procesando su pago alternativo...', 'info');
-      
-      const orderId = generateOrderId();
-      await processPaymentSuccess({
-        status: 'completed',
-        payer: {
-          name: { given_name: document.getElementById('customerName').value },
-          email_address: document.getElementById('customerEmail').value
-        }
-      }, orderId, 'alternative');
-      
-    } catch (error) {
-      console.error("Error en pago alternativo:", error);
-      showFeedback('Error', 'Error al procesar el pago alternativo', 'error');
-    }
-  });
-}
-
-// Procesar pago exitoso
-async function processPaymentSuccess(details, orderId, paymentMethod) {
-  try {
-    await saveTransactionToFirebase(details, orderId, paymentMethod);
-    
-    showFeedback(
-      '¡Pago completado!', 
-      `Pedido #${orderId} procesado correctamente`, 
-      'success'
-    );
-    
-    localStorage.removeItem('currentCheckout');
-    setTimeout(() => window.location.href = 'confirmacion.html', 3000);
-    
-  } catch (error) {
-    console.error("Error al procesar pago:", error);
-    throw error;
-  }
-}
-
-// Manejar errores de pago
-function handlePaymentError(error) {
-  console.error("Error en el proceso de pago:", error);
-  showFeedback(
-    'Error en el pago', 
-    'No pudimos procesar su pago. Por favor intente con el método alternativo.', 
-    'error'
-  );
-  activateAlternativePayment();
-}
-
-// ==================== FUNCIONES AUXILIARES ====================
-
-// Validar formulario
-function validateForm() {
-  const requiredFields = [
-    'customerName', 'customerEmail', 
-    'customerPhone', 'shippingAddress', 
-    'departamento', 'municipio'
-  ];
-  
-  let isValid = true;
-
-  requiredFields.forEach(fieldId => {
-    const field = document.getElementById(fieldId);
-    if (!field.value.trim()) {
-      isValid = false;
-      field.style.borderColor = '#e63946';
-    } else {
-      field.style.borderColor = '';
-    }
-  });
-
-  return isValid;
-}
-
-// Guardar transacción en Firebase
-async function saveTransactionToFirebase(details, orderId, paymentMethod) {
-  try {
-    const transactionData = {
-      orderId,
+    await setDoc(doc(db, "transactions", orderId), {
+      orderId: orderId,
       amount: checkoutData.total,
-      items: checkoutData.items,
+      items: checkoutData.items.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      })),
       customer: {
-        name: document.getElementById('customerName').value,
+        userId: user?.uid || "guest",
         email: document.getElementById('customerEmail').value,
+        name: document.getElementById('customerName').value,
         phone: document.getElementById('customerPhone').value
       },
       shipping: {
@@ -301,19 +107,163 @@ async function saveTransactionToFirebase(details, orderId, paymentMethod) {
         department: document.getElementById('departamento').value,
         municipality: document.getElementById('municipio').value
       },
-      status: details.status || 'completed',
-      paymentMethod,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    await firebase.firestore().collection('transactions').add(transactionData);
+      paymentMethod: 'paypal',
+      status: paymentDetails.status,
+      paypalData: {
+        transactionId: paymentDetails.id,
+        payer: paymentDetails.payer
+      },
+      timestamp: serverTimestamp()
+    });
+    
+    console.log("Transacción guardada:", orderId);
   } catch (error) {
-    console.error("Error al guardar transacción:", error);
+    console.error("Error guardando transacción:", error);
     throw error;
   }
 }
 
-// Mostrar feedback al usuario
+// ==================== INTEGRACIÓN PAYPAL ====================
+function loadPayPalSDK() {
+  return new Promise((resolve, reject) => {
+    if (window.paypal) return resolve();
+    
+    const script = document.createElement('script');
+    script.src = 'https://www.paypal.com/sdk/js?client-id=TU_CLIENT_ID&currency=USD';
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Error cargando PayPal SDK'));
+    document.head.appendChild(script);
+  });
+}
+
+function setupPayPalButton() {
+  window.paypal.Buttons({
+    style: {
+      layout: 'vertical',
+      color: 'blue',
+      shape: 'rect',
+      label: 'paypal',
+      height: 40
+    },
+    createOrder: function(data, actions) {
+      if (!validateForm()) {
+        return Promise.reject(new Error('Complete todos los campos requeridos'));
+      }
+      
+      return actions.order.create({
+        purchase_units: [{
+          amount: {
+            value: checkoutData.total.toFixed(2),
+            currency_code: 'USD',
+            breakdown: {
+              item_total: {
+                value: checkoutData.total.toFixed(2),
+                currency_code: 'USD'
+              }
+            }
+          },
+          items: checkoutData.items.map(item => ({
+            name: item.name.substring(0, 127),
+            unit_amount: {
+              value: item.price.toFixed(2),
+              currency_code: 'USD'
+            },
+            quantity: item.quantity.toString()
+          })),
+          shipping: {
+            address: {
+              address_line_1: document.getElementById('shippingAddress').value,
+              admin_area_2: document.getElementById('municipio').value,
+              admin_area_1: document.getElementById('departamento').value,
+              country_code: 'SV'
+            }
+          }
+        }],
+        application_context: {
+          shipping_preference: 'SET_PROVIDED_ADDRESS'
+        }
+      });
+    },
+    onApprove: async function(data, actions) {
+      try {
+        const details = await actions.order.capture();
+        await saveTransaction(details, data.orderID);
+        
+        showFeedback('¡Pago completado!', `Orden #${data.orderID} procesada`, 'success');
+        localStorage.removeItem('currentCheckout');
+        
+        setTimeout(() => {
+          window.location.href = 'confirmacion.html';
+        }, 3000);
+      } catch (error) {
+        console.error("Error procesando pago:", error);
+        showFeedback('Error', 'Pago completado pero error al guardar datos', 'error');
+      }
+    },
+    onError: function(err) {
+      console.error("Error en PayPal:", err);
+      showFeedback('Error', 'Error al procesar pago con PayPal', 'error');
+      document.getElementById('alternativePayment').style.display = 'block';
+    }
+  }).render('#paypal-button-container');
+}
+
+// ==================== MÉTODO ALTERNATIVO ====================
+function setupAlternativePayment() {
+  const altBtn = document.getElementById('alternativePayment');
+  
+  altBtn.addEventListener('click', async function() {
+    if (!validateForm()) {
+      showFeedback('Error', 'Complete todos los campos', 'error');
+      return;
+    }
+    
+    try {
+      const orderId = 'ALT-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+      
+      await saveTransaction({
+        status: 'completed',
+        payer: {
+          name: { given_name: document.getElementById('customerName').value },
+          email_address: document.getElementById('customerEmail').value
+        }
+      }, orderId);
+      
+      showFeedback('¡Pago exitoso!', `Orden #${orderId} procesada`, 'success');
+      localStorage.removeItem('currentCheckout');
+      
+      setTimeout(() => {
+        window.location.href = 'confirmacion.html';
+      }, 3000);
+    } catch (error) {
+      console.error("Error en pago alternativo:", error);
+      showFeedback('Error', 'Error al procesar pago alternativo', 'error');
+    }
+  });
+}
+
+// ==================== FUNCIONES AUXILIARES ====================
+function validateForm() {
+  const requiredFields = [
+    'customerName', 'customerEmail', 'customerPhone',
+    'shippingAddress', 'departamento', 'municipio'
+  ];
+  
+  let isValid = true;
+  
+  requiredFields.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (!field.value.trim()) {
+      isValid = false;
+      field.style.borderColor = '#ff0000';
+    } else {
+      field.style.borderColor = '';
+    }
+  });
+  
+  return isValid;
+}
+
 function showFeedback(title, message, type = 'success') {
   const modal = document.getElementById('feedbackModal');
   const icon = document.getElementById('feedbackIcon');
@@ -324,12 +274,6 @@ function showFeedback(title, message, type = 'success') {
   modal.classList.add('active');
 }
 
-// Generar ID de orden
-function generateOrderId() {
-  return 'ORD-' + Math.random().toString(36).substring(2, 10).toUpperCase();
-}
-
-// Configurar formulario de dirección
 function setupAddressForm() {
   const deptoSelect = document.getElementById('departamento');
   const muniSelect = document.getElementById('municipio');
@@ -340,13 +284,12 @@ function setupAddressForm() {
     deptoSelect.innerHTML += `<option value="${depto}">${depto}</option>`;
   });
 
-  // Actualizar municipios al cambiar departamento
+  // Actualizar municipios
   deptoSelect.addEventListener('change', function() {
     updateMunicipios(this.value);
   });
 }
 
-// Actualizar lista de municipios
 function updateMunicipios(departamento) {
   const muniSelect = document.getElementById('municipio');
   muniSelect.innerHTML = '<option value="">Seleccione municipio...</option>';
@@ -358,81 +301,54 @@ function updateMunicipios(departamento) {
   }
 }
 
-// Mostrar error y redirigir
-function showErrorAndRedirect(message) {
-  showFeedback('Error', message, 'error');
-  setTimeout(() => window.location.href = 'productos.html', 3000);
-}
-
-// Renderizar items del carrito
 function renderCartItems() {
-  const orderItemsContainer = document.getElementById('orderItems');
+  const container = document.getElementById('orderItems');
   let html = '';
   
   checkoutData.items.forEach(item => {
     html += `
-      <div class="order-item" data-id="${item.id}">
-        <span class="item-name">${item.name}</span>
-        <span class="item-quantity">${item.quantity} ×</span>
-        <span class="item-price">$${item.price.toFixed(2)}</span>
-        <button class="btn-remove" data-id="${item.id}">
-          <i class="fas fa-trash"></i>
-        </button>
+      <div class="order-item">
+        <span>${item.name}</span>
+        <span>${item.quantity} × $${item.price.toFixed(2)}</span>
       </div>
     `;
   });
   
-  orderItemsContainer.innerHTML = html || '<p>No hay productos en el carrito</p>';
+  container.innerHTML = html || '<p>No hay productos en el carrito</p>';
   updateTotals();
-  
-  // Agregar event listeners para eliminar items
-  document.querySelectorAll('.btn-remove').forEach(btn => {
-    btn.addEventListener('click', handleRemoveItem);
-  });
 }
 
-// Manejar eliminación de items
-function handleRemoveItem(e) {
-  const productId = e.currentTarget.dataset.id;
-  checkoutData.items = checkoutData.items.filter(item => item.id !== productId);
-  checkoutData.total = checkoutData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
-  localStorage.setItem('currentCheckout', JSON.stringify(checkoutData));
-  renderCartItems();
-  
-  if (!checkoutData.items.length) {
-    setTimeout(() => window.location.href = 'productos.html', 1500);
-  }
-}
-
-// Actualizar totales
 function updateTotals() {
   document.getElementById('orderTotal').textContent = checkoutData.total.toFixed(2);
   document.getElementById('paymentTotal').textContent = checkoutData.total.toFixed(2);
 }
 
 // ==================== INICIALIZACIÓN ====================
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Cargar datos del carrito
   checkoutData = JSON.parse(localStorage.getItem('currentCheckout')) || { items: [], total: 0 };
   
   if (!checkoutData.items.length) {
-    showErrorAndRedirect('No hay productos en el carrito');
+    showFeedback('Error', 'No hay productos en el carrito', 'error');
+    setTimeout(() => window.location.href = 'productos.html', 2000);
     return;
   }
 
-  // Configurar formulario de dirección
+  // Inicializar componentes
   setupAddressForm();
-  
-  // Mostrar items del carrito
   renderCartItems();
   
-  // Inicializar métodos de pago
-  initializePayPal();
+  try {
+    await loadPayPalSDK();
+    setupPayPalButton();
+  } catch (error) {
+    console.error("Error inicializando PayPal:", error);
+    document.getElementById('alternativePayment').style.display = 'block';
+  }
+  
   setupAlternativePayment();
   
-  // Configurar cierre de modal de feedback
+  // Cerrar modal de feedback
   document.getElementById('feedbackClose').addEventListener('click', () => {
     document.getElementById('feedbackModal').classList.remove('active');
   });
