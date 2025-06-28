@@ -3,6 +3,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
@@ -18,6 +19,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const functions = getFunctions(app);
+
+// Variables para almacenar las credenciales de PayPal
+let paypalClientId = '';
+
+// Función para obtener las credenciales de PayPal desde Firebase Functions
+async function getPayPalCredentials() {
+  try {
+    const response = await fetch('https://us-central1-mitienda-c2609.cloudfunctions.net/getPayPalCredentials');
+    const data = await response.json();
+    paypalClientId = data.clientId;
+  } catch (error) {
+    console.error("Error obteniendo credenciales de PayPal:", error);
+    // Mostrar método de pago alternativo si falla
+    document.getElementById('alternativePayment').style.display = 'block';
+  }
+}
 
 // Datos de municipios (Ejemplo para El Salvador)
 const municipiosPorDepartamento = {
@@ -79,7 +97,6 @@ const municipiosPorDepartamento = {
               'Polorós', 'San Alejo', 'San José', 'Santa Rosa de Lima', 'Yayantique', 'Yucuaiquín']
 };
 
-
 // Variables globales
 let checkoutData = null;
 
@@ -129,8 +146,12 @@ function loadPayPalSDK() {
   return new Promise((resolve, reject) => {
     if (window.paypal) return resolve();
     
+    if (!paypalClientId) {
+      return reject(new Error('Credenciales de PayPal no disponibles'));
+    }
+    
     const script = document.createElement('script');
-    script.src = 'https://www.paypal.com/sdk/js?client-id=TU_CLIENT_ID&currency=USD';
+    script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}&currency=USD`;
     script.onload = resolve;
     script.onerror = () => reject(new Error('Error cargando PayPal SDK'));
     document.head.appendChild(script);
@@ -338,6 +359,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Inicializar componentes
   setupAddressForm();
   renderCartItems();
+  
+  // Obtener credenciales de PayPal primero
+  await getPayPalCredentials();
   
   try {
     await loadPayPalSDK();
