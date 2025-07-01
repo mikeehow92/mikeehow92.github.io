@@ -1,112 +1,134 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
-// Inicialización de Firebase Admin
-admin.initializeApp();
+// 1. Configuración inicial de Firebase Admin
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(),
+  databaseURL: 'https://tu-proyecto.firebaseio.com',
+  storageBucket: 'tu-proyecto.appspot.com'
+});
 
-// Importación de las funciones PayPal
-import { createPayPalOrder } from './paypal/createOrder';
-import { capturePayPalOrder } from './paypal/captureOrder';
+// 2. Configuración optimizada para El Salvador
+const db = admin.firestore();
+db.settings({
+  preferRest: true,      // Mejor para HTTP en entornos serverless
+  timeout: 5000,         // Timeout ajustado para conexiones desde Centroamérica
+  ignoreUndefinedProperties: true  // Ignora campos undefined automáticamente
+});
 
-// Configuración global
-const region = 'southamerica-east1'; // Ajusta tu región preferida
+// 3. Inicialización de PayPal (si es necesario)
+import * as paypal from '@paypal/paypal-server-sdk';
+const paypalClient = new paypal.core.PayPalHttpClient(
+  new paypal.core.SandboxEnvironment(
+    functions.config().paypal.client_id,
+    functions.config().paypal.client_secret
+  )
+);
 
-/**
- * ======================================
- *  FUNCIONES PRINCIPALES
- * ======================================
- */
-
-// Función para crear órdenes PayPal
-exports.createPayPalOrder = functions
-  .region(region)
+// 4. Funciones principales
+export const createOrder = functions
+  .region('us-central1')
   .https
-  .onCall(createPayPalOrder);
+  .onCall(async (data, context) => {
+    // Validación de autenticación
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        'unauthenticated', 
+        'Debes iniciar sesión para realizar pedidos',
+        { code: 'NO_AUTH' }
+      );
+    }
 
-// Función para capturar pagos PayPal
-exports.capturePayPalOrder = functions
-  .region(region)
+    try {
+      // Crear orden en PayPal
+      const request = new paypal.orders.OrdersCreateRequest();
+      request.requestBody({
+        intent: 'CAPTURE',
+        purchase_units: [{
+          amount: {
+            currency_code: 'USD',  // Moneda oficial de El Salvador
+            value: data.total.toFixed(2)
+          },
+          description: `Compra desde ${data.country || 'SV'}`
+        }]
+      });
+
+      const response = await paypalClient.execute(request);
+      const order = response.result;
+
+      // Guardar en Firestore
+      await db.collection('orders').doc(order.id).set({
+        userId: context.auth.uid,
+        status: 'CREATED',
+        amount: data.total,
+        currency: 'USD',
+        country: 'SV',
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      return { id: order.id };
+
+    } catch (error) {
+      functions.logger.error('Error en createOrder:', { 
+        userId: context.auth?.uid, 
+        error: error.message 
+      });
+      throw new functions.https.HttpsError(
+        'internal', 
+        'Error al crear la orden', 
+        { debugId: context.instanceIdToken }
+      );
+    }
+  });
+
+export const capturePayment = functions
+  .region('us-central1')
   .https
-  .onCall(capturePayPalOrder);
+  .onCall(async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        'unauthenticated', 
+        'Acceso no autorizado'
+      );
+    }
 
-/**
- * ======================================
- *  FUNCIONES AUXILIARES
- * ======================================
- */
+    try {
+      const captureRequest = new paypal.orders.OrdersCaptureRequest(data.orderId);
+      const response = await paypalClient.execute(captureRequest);
+      const captureData = response.result;
 
-// Función para limpiar órdenes antiguas (ejecución diaria)
-exports.cleanupOldOrders = functions
-  .region(region)
-  .pubsub
-  .schedule('every 24 hours')
-  .onRun(async () => {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - 30); // 30 días atrás
-
-    const ordersRef = admin.firestore().collection('orders');
-    const query = ordersRef
-      .where('status', 'in', ['CREATED', 'PENDING'])
-      .where('createdAt', '<', cutoffDate);
-
-    const snapshot = await query.get();
-    const batch = admin.firestore().batch();
-
-    snapshot.docs.forEach(doc => {
-      batch.update(doc.ref, {
-        status: 'EXPIRED',
+      // Actualizar Firestore
+      await db.collection('orders').doc(data.orderId).update({
+        status: 'COMPLETED',
+        paypalCaptureId: captureData.id,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
-    });
 
-    await batch.commit();
-    return { processed: snapshot.size };
+      return { status: 'success' };
+
+    } catch (error) {
+      await db.collection('payment_errors').add({
+        orderId: data.orderId,
+        error: error.message,
+        timestamp: admin.firestore.FieldValue.serverTimestamp()
+      });
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'Error al procesar el pago',
+        { paypalError: error.message }
+      );
+    }
   });
 
-/**
- * ======================================
- *  TRIGGERS DE FIRESTORE
- * ======================================
- */
-
-// Trigger cuando se actualiza una orden
-exports.onOrderUpdate = functions
-  .region(region)
-  .firestore
-  .document('orders/{orderId}')
-  .onUpdate(async (change, context) => {
-    const newData = change.after.data();
-    const previousData = change.before.data();
-
-    // Solo procesar si cambió el estado
-    if (newData.status === previousData.status) return null;
-
-    const userRef = admin.firestore().collection('users').doc(newData.userId);
-
-    // Actualizar estadísticas del usuario
-    await userRef.update({
-      lastOrderStatus: newData.status,
-      [`statusCounts.${newData.status}`]: admin.firestore.FieldValue.increment(1),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-
-    return { result: 'User stats updated' };
-  });
-
-/**
- * ======================================
- *  CONFIGURACIÓN Y UTILIDADES
- * ======================================
- */
-
-// Health Check endpoint
-exports.healthCheck = functions
-  .region(region)
+// 5. Función de utilidad para el cliente
+export const getAppConfig = functions
+  .region('us-central1')
   .https
-  .onRequest((req, res) => {
-    res.status(200).json({
-      status: 'OK',
-      timestamp: new Date().toISOString(),
-      environment: process.env.FUNCTIONS_EMULATOR ? 'development' : 'production'
-    });
+  .onCall(() => {
+    return {
+      country: 'SV',
+      currency: 'USD',
+      paypalEnv: 'sandbox',
+      allowedPaymentMethods: ['card', 'paypal']
+    };
   });
