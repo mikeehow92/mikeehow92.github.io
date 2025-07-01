@@ -10,7 +10,7 @@
       {
         "source": "/api/**",
         "function": "api",
-        "region": "us-central1"  // ¡Consistente con tu servidor!
+        "region": "us-central1"  
       },
       {
         "source": "/pago",
