@@ -1,17 +1,12 @@
 {
   "name": "mitienda-functions",
   "version": "1.0.0",
-  "description": "Cloud Functions para Mi Tienda",
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
-    "build:watch": "tsc --watch",
     "serve": "firebase emulators:start --only functions",
-    "shell": "firebase functions:shell",
-    "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "logs": "firebase functions:log"
   },
   "dependencies": {
     "firebase-admin": "^11.11.0",
@@ -19,9 +14,7 @@
     "@paypal/paypal-server-sdk": "^1.0.1"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
-    "firebase-tools": "^13.10.0",
-    "@types/node": "^20.11.0"
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": "18"
