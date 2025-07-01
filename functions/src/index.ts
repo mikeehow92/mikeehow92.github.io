@@ -5,14 +5,14 @@ import * as paypal from '@paypal/checkout-server-sdk';
 admin.initializeApp();
 const db = admin.firestore();
 
-// Configura PayPal
+// Configurar entorno PayPal
 const environment = new paypal.core.SandboxEnvironment(
   functions.config().paypal.client_id,
   functions.config().paypal.client_secret
 );
 const paypalClient = new paypal.core.PayPalHttpClient(environment);
 
-// Estado simple
+// Estado de la API
 export const api = functions.https.onRequest((_req, res) => {
   res.json({
     status: 'online',
