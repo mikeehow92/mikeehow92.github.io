@@ -4,7 +4,8 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "**/README.md"
     ],
     "rewrites": [
       {
@@ -14,11 +15,13 @@
       },
       {
         "source": "/create-order",
-        "function": "createOrder"
+        "function": "createOrder",
+        "region": "us-central1"
       },
       {
         "source": "/process-payment",
-        "function": "processPayment"
+        "function": "processPayment",
+        "region": "us-central1"
       },
       {
         "source": "**",
@@ -32,6 +35,19 @@
           {
             "key": "Cache-Control",
             "value": "public, max-age=31536000, immutable"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(jpg|jpeg|png|gif|svg|webp|ico)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
           }
         ]
       }
@@ -44,7 +60,12 @@
     "runtime": "nodejs18",
     "region": "us-central1",
     "predeploy": [
+      "npm --prefix functions install",
       "npm --prefix functions run build"
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
 }
