@@ -1,0 +1,35 @@
+{
+  "name": "tu-proyecto-paypal",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "functions",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "serve": "cd frontend && npm run serve",
+    "deploy": "firebase deploy",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:functions": "firebase deploy --only functions",
+    "emulators": "firebase emulators:start",
+    "format": "prettier --write \"**/*.{js,ts,html,css,json}\"",
+    "lint": "eslint . --ext .js,.ts",
+    "prepare": "husky install",
+    "postinstall": "npm run install:all",
+    "install:all": "cd functions && npm install && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "firebase-tools": "^13.10.0",
+    "husky": "^9.0.11",
+    "prettier": "^3.2.5",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
