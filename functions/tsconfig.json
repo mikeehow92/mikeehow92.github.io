@@ -26,7 +26,8 @@
     "paths": {
       "@paypal/*": ["node_modules/@paypal/*"],
       "@firebase/*": ["node_modules/@firebase/*"]
-    }
+    },
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   },
   "include": ["src/**/*.ts"],
   "exclude": [
