@@ -2,116 +2,160 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as paypal from '@paypal/paypal-server-sdk';
 
-// Inicialización
+// Inicialización optimizada
 admin.initializeApp();
 const db = admin.firestore();
+db.settings({ ignoreUndefinedProperties: true }); // Evita errores con campos undefined
 
-// Configura PayPal
-const paypalClient = new paypal.core.PayPalHttpClient(
-  new paypal.core.SandboxEnvironment(
-    functions.config().paypal.client_id,
-    functions.config().paypal.client_secret
-  )
-);
+// Configura PayPal con validación
+const getPaypalClient = () => {
+  const clientId = functions.config().paypal?.client_id;
+  const clientSecret = functions.config().paypal?.client_secret;
+  
+  if (!clientId || !clientSecret) {
+    throw new Error('PayPal credentials missing in Firebase config');
+  }
 
-// Middleware para parsear JSON
-const handleJson = (handler: (req: functions.Request, res: functions.Response) => Promise<void>) => {
-  return async (req: functions.Request, res: functions.Response) => {
+  return new paypal.core.PayPalHttpClient(
+    new paypal.core.SandboxEnvironment(clientId, clientSecret)
+  );
+};
+
+const paypalClient = getPaypalClient();
+
+// Middleware mejorado
+const handleJson = (handler: functions.HttpsFunction) => {
+  return functions.https.onRequest(async (req, res) => {
     try {
-      if (req.method === 'POST' && !req.body) {
+      if (req.method === 'POST' && !req.body && req.rawBody) {
         req.body = JSON.parse(req.rawBody.toString());
       }
-      await handler(req, res);
+      return handler(req, res);
     } catch (error) {
-      functions.logger.error('Middleware error:', error);
-      res.status(400).json({ error: 'Invalid JSON' });
+      functions.logger.error('Middleware error:', { error });
+      return res.status(400).json({ error: 'Invalid request format' });
     }
-  };
+  });
 };
 
 // API de estado
-export const api = functions.region('us-central1').https.onRequest(async (req, res) => {
+export const api = functions.https.onRequest(async (req, res) => {
   res.json({ 
     status: 'online',
-    timestamp: admin.firestore.Timestamp.now().toMillis() 
+    timestamp: admin.firestore.Timestamp.now().toMillis(),
+    environment: 'sandbox' // ← Útil para debugging
   });
 });
 
-// Crear orden (HTTP)
-export const createOrder = functions.region('us-central1').https.onRequest(handleJson(async (req, res) => {
+// Crear orden
+export const createOrder = handleJson(async (req, res) => {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     const { amount, userId } = req.body;
 
-    // Validación manual (reemplazo de Callable)
-    if (!userId) {
-      return res.status(401).json({ error: 'Usuario no autenticado' });
+    if (!userId || !amount) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Lógica de PayPal
     const request = new paypal.orders.OrdersCreateRequest();
     request.requestBody({
       intent: 'CAPTURE',
       purchase_units: [{
-        amount: { currency_code: 'USD', value: amount.toFixed(2) }
+        amount: { 
+          currency_code: 'USD', 
+          value: parseFloat(amount).toFixed(2) 
+        }
       }]
     });
 
     const paypalResponse = await paypalClient.execute(request);
     const orderId = paypalResponse.result.id;
 
-    // Firestore
     await db.collection('orders').doc(orderId).set({
       userId,
-      amount,
+      amount: parseFloat(amount),
       status: 'CREATED',
+      paypalOrderId: orderId,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    res.json({ orderId });
-  } catch (error) {
-    functions.logger.error('CreateOrder error:', error);
-    res.status(500).json({ 
-      error: 'Error al crear orden',
-      debugId: error.headers?.['paypal-debug-id'] 
+    return res.json({ 
+      success: true,
+      orderId,
+      paypalStatus: paypalResponse.result.status
+    });
+
+  } catch (error: any) {
+    functions.logger.error('CreateOrder error:', { 
+      error: error.message,
+      debugId: error.headers?.['paypal-debug-id']
+    });
+    
+    return res.status(500).json({ 
+      error: 'Order creation failed',
+      details: error.message,
+      paypalDebugId: error.headers?.['paypal-debug-id']
     });
   }
-}));
+});
 
-// Procesar pago (HTTP)
-export const processPayment = functions.region('us-central1').https.onRequest(handleJson(async (req, res) => {
+// Procesar pago
+export const processPayment = handleJson(async (req, res) => {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     const { orderId, userId } = req.body;
 
-    // Validación
-    if (!userId) {
-      return res.status(401).json({ error: 'Usuario no autenticado' });
+    if (!orderId || !userId) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Capturar en PayPal
+    // Verificar existencia en Firestore primero
+    const orderRef = db.collection('orders').doc(orderId);
+    const doc = await orderRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
     const captureRequest = new paypal.orders.OrdersCaptureRequest(orderId);
     const captureResponse = await paypalClient.execute(captureRequest);
+    const captureId = captureResponse.result.id;
 
-    // Actualizar Firestore
-    await db.collection('orders').doc(orderId).update({
+    await orderRef.update({
       status: 'COMPLETED',
-      captureId: captureResponse.result.id,
+      captureId,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    res.json({ success: true });
-  } catch (error) {
-    functions.logger.error('ProcessPayment error:', error);
-    res.status(500).json({ 
-      error: 'Error al procesar pago',
-      details: error.message 
+    return res.json({ 
+      success: true,
+      captureId,
+      paypalStatus: captureResponse.result.status
+    });
+
+  } catch (error: any) {
+    functions.logger.error('ProcessPayment error:', {
+      orderId: req.body?.orderId,
+      error: error.message
+    });
+
+    return res.status(500).json({
+      error: 'Payment processing failed',
+      details: error.message,
+      paypalDebugId: error.headers?.['paypal-debug-id']
     });
   }
-}));
+});
+
+// Exporta TODAS las funciones como módulo
+module.exports = {
+  api,
+  createOrder,
+  processPayment
+};
