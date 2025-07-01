@@ -2,17 +2,11 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as paypal from '@paypal/paypal-server-sdk';
 
-// 1. Inicialización de Firebase
+// Inicialización
 admin.initializeApp();
-
-// 2. Configuración de Firestore optimizada
 const db = admin.firestore();
-db.settings({
-  preferRest: true,
-  timeout: 5000
-});
 
-// 3. Configuración de PayPal
+// Configura PayPal
 const paypalClient = new paypal.core.PayPalHttpClient(
   new paypal.core.SandboxEnvironment(
     functions.config().paypal.client_id,
@@ -20,118 +14,104 @@ const paypalClient = new paypal.core.PayPalHttpClient(
   )
 );
 
-// 4. Función API HTTP (para rewrites)
+// Middleware para parsear JSON
+const handleJson = (handler: (req: functions.Request, res: functions.Response) => Promise<void>) => {
+  return async (req: functions.Request, res: functions.Response) => {
+    try {
+      if (req.method === 'POST' && !req.body) {
+        req.body = JSON.parse(req.rawBody.toString());
+      }
+      await handler(req, res);
+    } catch (error) {
+      functions.logger.error('Middleware error:', error);
+      res.status(400).json({ error: 'Invalid JSON' });
+    }
+  };
+};
+
+// API de estado
 export const api = functions.region('us-central1').https.onRequest(async (req, res) => {
-  try {
-    res.json({
-      status: 'success',
-      country: 'SV',
-      currency: 'USD',
-      timestamp: admin.firestore.Timestamp.now().toMillis()
-    });
-  } catch (error) {
-    functions.logger.error('API Error:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+  res.json({ 
+    status: 'online',
+    timestamp: admin.firestore.Timestamp.now().toMillis() 
+  });
 });
 
-// 5. Función para crear órdenes (Callable)
-export const createOrder = functions.region('us-central1').https.onCall(async (data, context) => {
-  // Validación de autenticación
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'Debes iniciar sesión para crear órdenes',
-      { code: 'UNAUTHENTICATED' }
-    );
+// Crear orden (HTTP)
+export const createOrder = functions.region('us-central1').https.onRequest(handleJson(async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método no permitido' });
   }
 
   try {
-    // Lógica de creación de orden en PayPal
+    const { amount, userId } = req.body;
+
+    // Validación manual (reemplazo de Callable)
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    // Lógica de PayPal
     const request = new paypal.orders.OrdersCreateRequest();
     request.requestBody({
       intent: 'CAPTURE',
       purchase_units: [{
-        amount: {
-          currency_code: 'USD',
-          value: data.amount.toFixed(2)
-        }
+        amount: { currency_code: 'USD', value: amount.toFixed(2) }
       }]
     });
 
     const paypalResponse = await paypalClient.execute(request);
     const orderId = paypalResponse.result.id;
 
-    // Guardar en Firestore
+    // Firestore
     await db.collection('orders').doc(orderId).set({
-      userId: context.auth.uid,
-      amount: data.amount,
-      currency: 'USD',
+      userId,
+      amount,
       status: 'CREATED',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      paypalOrderId: orderId
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    return { 
-      success: true,
-      orderId: orderId
-    };
-
+    res.json({ orderId });
   } catch (error) {
-    functions.logger.error('CreateOrder Error:', { 
-      userId: context.auth?.uid, 
-      error: error.message 
+    functions.logger.error('CreateOrder error:', error);
+    res.status(500).json({ 
+      error: 'Error al crear orden',
+      debugId: error.headers?.['paypal-debug-id'] 
     });
-    throw new functions.https.HttpsError(
-      'internal',
-      'Error al crear la orden',
-      { paypalDebugId: error.headers?.['paypal-debug-id'] }
-    );
   }
-});
+}));
 
-// 6. Función para procesar pagos (Callable)
-export const processPayment = functions.region('us-central1').https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'Autenticación requerida',
-      { code: 'AUTH_REQUIRED' }
-    );
+// Procesar pago (HTTP)
+export const processPayment = functions.region('us-central1').https.onRequest(handleJson(async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método no permitido' });
   }
 
   try {
-    // Capturar pago en PayPal
-    const captureRequest = new paypal.orders.OrdersCaptureRequest(data.orderId);
+    const { orderId, userId } = req.body;
+
+    // Validación
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    // Capturar en PayPal
+    const captureRequest = new paypal.orders.OrdersCaptureRequest(orderId);
     const captureResponse = await paypalClient.execute(captureRequest);
-    const captureId = captureResponse.result.id;
 
     // Actualizar Firestore
-    await db.collection('orders').doc(data.orderId).update({
+    await db.collection('orders').doc(orderId).update({
       status: 'COMPLETED',
-      captureId: captureId,
+      captureId: captureResponse.result.id,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    return {
-      success: true,
-      captureId: captureId
-    };
-
+    res.json({ success: true });
   } catch (error) {
-    await db.collection('payment_errors').add({
-      orderId: data.orderId,
-      error: error.message,
-      timestamp: admin.firestore.FieldValue.serverTimestamp()
+    functions.logger.error('ProcessPayment error:', error);
+    res.status(500).json({ 
+      error: 'Error al procesar pago',
+      details: error.message 
     });
-    
-    throw new functions.https.HttpsError(
-      'failed-precondition',
-      'Error al procesar el pago',
-      { 
-        paypalError: error.message,
-        orderId: data.orderId
-      }
-    );
   }
-});
+}));
