@@ -4,14 +4,13 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**",
-      "**/README.md"
+      "**/node_modules/**"
     ],
     "rewrites": [
       {
         "source": "/api/**",
         "function": "api",
-        "region": "southamerica-east1"
+        "region": "us-central1"  // ¡Consistente con tu servidor!
       },
       {
         "source": "/pago",
@@ -41,66 +40,19 @@
           {
             "key": "Cache-Control",
             "value": "public, max-age=31536000, immutable"
-          },
-          {
-            "key": "X-Content-Type-Options",
-            "value": "nosniff"
-          }
-        ]
-      },
-      {
-        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|ico)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=604800, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "**",
-        "headers": [
-          {
-            "key": "Strict-Transport-Security",
-            "value": "max-age=63072000; includeSubdomains; preload"
-          },
-          {
-            "key": "X-Frame-Options",
-            "value": "SAMEORIGIN"
-          },
-          {
-            "key": "Referrer-Policy",
-            "value": "strict-origin-when-cross-origin"
           }
         ]
       }
     ],
-    "i18n": {
-      "root": "/es-SV"
-    },
     "cleanUrls": true,
-    "trailingSlash": false,
-    "appAssociation": "AUTO"
+    "trailingSlash": false
   },
   "functions": {
     "predeploy": [
-      "npm --prefix functions install",
       "npm --prefix functions run build"
     ],
     "source": "functions",
     "runtime": "nodejs18",
-    "region": "southamerica-east1",
-    "ignore": [
-      "**/node_modules/**",
-      "**/tests/**",
-      "**/.*"
-    ]
-  },
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
-  "storage": {
-    "rules": "storage.rules"
+    "region": "us-central1"  // Misma región que tu Firestore
   }
 }
