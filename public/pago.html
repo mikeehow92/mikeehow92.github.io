@@ -186,7 +186,22 @@
     
     // Inicializar el sistema de pago
     document.addEventListener('DOMContentLoaded', () => {
-      initializePayment();
+      if (typeof initializePayment === 'function') {
+        initializePayment();
+      } else {
+        console.error('initializePayment no está definido en pago.js');
+        // Fallback para navegadores que no soportan módulos completamente
+        const script = document.createElement('script');
+        script.src = '/js/pago.js';
+        script.onload = () => {
+          if (window.initializePayment) {
+            window.initializePayment();
+          } else {
+            console.error('No se pudo inicializar el sistema de pago');
+          }
+        };
+        document.head.appendChild(script);
+      }
     });
   </script>
 </body>
