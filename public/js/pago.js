@@ -30,7 +30,7 @@ let checkoutData = null;
 // ==================== FUNCIONES PAYPAL CON BACKEND ====================
 async function createPayPalOrder() {
   try {
-    const response = await fetch('https://us-central1-mitienda-c2609.cloudfunctions.net/api/create-order', {
+    const response = await fetch('https://us-central1-mitienda-c2609.cloudfunctions.net/api/create-paypal-order', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ async function createPayPalOrder() {
 
 async function capturePayPalOrder(orderID) {
   try {
-    const response = await fetch('https://us-central1-mitienda-c2609.cloudfunctions.net/api/capture-order', {
+    const response = await fetch('https://us-central1-mitienda-c2609.cloudfunctions.net/api/capture-paypal-order', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
