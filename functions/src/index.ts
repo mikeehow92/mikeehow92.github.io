@@ -1,39 +1,39 @@
 import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
-import express from 'express';
+import * as express from 'express';
 import cors from 'cors';
-
-admin.initializeApp();
 
 const app = express();
 
-// Middleware CORS
-const corsHandler = cors({ origin: true });
-app.use(corsHandler);
+// Habilitar CORS para todas las rutas
+app.use(cors({ origin: true }));
+app.use(express.json());
 
-// Ruta: Crear orden de PayPal
+// Ruta para crear la orden de PayPal
 app.post('/create-paypal-order', async (req, res) => {
   try {
-    // Simulación lógica (reemplaza con tu lógica real)
-    const orderId = 'fake-order-id';
-    return res.status(200).json({ orderId });
-  } catch (error: any) {
-    console.error('Error creando orden:', error);
-    return res.status(500).json({ error: error.message });
+    // Lógica para crear la orden aquí
+    const orderId = 'fake_order_id'; // reemplaza con la lógica real
+    res.status(200).json({ orderId });
+  } catch (error) {
+    console.error('Error al crear orden:', error);
+    res.status(500).send('Error al crear orden');
   }
 });
 
-// Ruta: Capturar orden de PayPal
+// Ruta para capturar la orden de PayPal
 app.post('/capture-paypal-order', async (req, res) => {
   try {
-    // Simulación lógica (reemplaza con tu lógica real)
-    const status = 'captured';
-    return res.status(200).json({ status });
-  } catch (error: any) {
-    console.error('Error capturando orden:', error);
-    return res.status(500).json({ error: error.message });
+    // Lógica para capturar la orden aquí
+    const captureResult = { success: true }; // reemplaza con la lógica real
+    res.status(200).json(captureResult);
+  } catch (error) {
+    console.error('Error al capturar orden:', error);
+    res.status(500).send('Error al capturar orden');
   }
 });
 
-// Exportar como función de Firebase
-export const api = functions.https.onRequest(app);
+// Exportar como función HTTP en la región us-central1 (1st Gen)
+export const api = functions
+  .region('us-central1')
+  .https
+  .onRequest(app);
