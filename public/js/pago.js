@@ -17,7 +17,20 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Datos de municipios (Ejemplo para El Salvador)
+// ==================== ESTRUCTURA DE CHECKOUT ====================
+const checkoutStructure = {
+  items: [],       // Array de productos
+  total: 0,        // Total a pagar
+  subtotal: 0,     // Subtotal (sin impuestos)
+  tax: 0,          // Impuestos
+  shipping: 0,     // Costo de envío
+  isGuest: false,  // Si es usuario invitado
+  timestamp: null  // Fecha/hora del checkout
+};
+
+let checkoutData = null;
+
+// ==================== DATOS GEOGRÁFICOS ====================
 const municipiosPorDepartamento = {
   'Ahuachapán': ['Ahuachapán', 'Apaneca', 'Atiquizaya', 'Concepción de Ataco', 'El Refugio', 
                 'Guaymango', 'Jujutla', 'San Francisco Menéndez', 'San Lorenzo', 'San Pedro Puxtla',
@@ -145,6 +158,9 @@ async function saveTransaction(paymentDetails, orderId) {
     await setDoc(doc(db, "transactions", orderId), {
       orderId: orderId,
       amount: checkoutData.total,
+      subtotal: checkoutData.subtotal,
+      tax: checkoutData.tax,
+      shipping: checkoutData.shipping,
       items: checkoutData.items,
       customer: {
         userId: user?.uid || "guest",
@@ -160,7 +176,8 @@ async function saveTransaction(paymentDetails, orderId) {
       paymentMethod: 'paypal',
       status: paymentDetails.status,
       paypalData: paymentDetails,
-      timestamp: serverTimestamp()
+      timestamp: serverTimestamp(),
+      isGuest: checkoutData.isGuest
     });
   } catch (error) {
     console.error("Error guardando transacción:", error);
@@ -319,14 +336,38 @@ function renderCartItems() {
     html += `
       <div class="order-item">
         <img src="${item.image || 'assets/default-product.png'}" alt="${item.name}" width="50">
-        <span>${item.name}</span>
-        <span>${item.quantity} × $${item.price.toFixed(2)}</span>
+        <div class="item-details">
+          <span class="item-name">${item.name}</span>
+          <span class="item-price">${item.quantity} × $${item.price.toFixed(2)}</span>
+          <span class="item-total">$${(item.price * item.quantity).toFixed(2)}</span>
+        </div>
       </div>
     `;
   });
   
+  // Agregar resumen de totales
+  html += `
+    <div class="order-summary">
+      <div class="summary-row">
+        <span>Subtotal:</span>
+        <span>$${checkoutData.subtotal.toFixed(2)}</span>
+      </div>
+      <div class="summary-row">
+        <span>Impuestos (${(checkoutData.tax/checkoutData.subtotal*100).toFixed(0)}%):</span>
+        <span>$${checkoutData.tax.toFixed(2)}</span>
+      </div>
+      <div class="summary-row">
+        <span>Envío:</span>
+        <span>$${checkoutData.shipping.toFixed(2)}</span>
+      </div>
+      <div class="summary-row total">
+        <span>Total:</span>
+        <span>$${checkoutData.total.toFixed(2)}</span>
+      </div>
+    </div>
+  `;
+  
   container.innerHTML = html || '<p>No hay productos en el carrito</p>';
-  updateTotals();
 }
 
 function updateTotals() {
@@ -336,10 +377,15 @@ function updateTotals() {
 
 // ==================== INICIALIZACIÓN ====================
 document.addEventListener('DOMContentLoaded', async () => {
-  // Cargar datos del carrito
-  checkoutData = JSON.parse(localStorage.getItem('currentCheckout')) || { items: [], total: 0 };
+  // Cargar datos del carrito con estructura completa
+  checkoutData = JSON.parse(localStorage.getItem('currentCheckout')) || { 
+    ...checkoutStructure
+  };
   
-  if (!checkoutData.items.length) {
+  console.log('Datos del carrito cargados:', checkoutData);
+
+  // Verificar si hay items en el carrito
+  if (!checkoutData.items || checkoutData.items.length === 0) {
     showFeedback('Error', 'No hay productos en el carrito', 'error');
     setTimeout(() => window.location.href = 'productos.html', 2000);
     return;
@@ -348,6 +394,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Inicializar componentes
   setupAddressForm();
   renderCartItems();
+  updateTotals();
   
   // Cargar SDK PayPal dinámicamente
   const script = document.createElement('script');
