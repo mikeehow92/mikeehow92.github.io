@@ -1,66 +1,39 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import express from 'express';
-import cors from 'cors'; // 
-
-import { createOrder, captureOrder } from './paypal';
+import cors from 'cors';
 
 admin.initializeApp();
-const db = admin.firestore();
 
 const app = express();
+
+// Middleware CORS
 const corsHandler = cors({ origin: true });
-
 app.use(corsHandler);
-app.use(express.json());
 
-// Crear orden PayPal
+// Ruta: Crear orden de PayPal
 app.post('/create-paypal-order', async (req, res) => {
   try {
-    const { amount } = req.body;
-
-    if (!amount) {
-      return res.status(400).json({ error: 'Amount is required' });
-    }
-
-    const orderID = await createOrder(amount);
-    return res.status(200).json({ orderID });
-  } catch (err) {
-    console.error('Error creating PayPal order:', err);
-    return res.status(500).json({ error: 'Failed to create PayPal order' });
+    // Simulación lógica (reemplaza con tu lógica real)
+    const orderId = 'fake-order-id';
+    return res.status(200).json({ orderId });
+  } catch (error: any) {
+    console.error('Error creando orden:', error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
-// Capturar orden PayPal
+// Ruta: Capturar orden de PayPal
 app.post('/capture-paypal-order', async (req, res) => {
   try {
-    const { orderID } = req.body;
-
-    if (!orderID) {
-      return res.status(400).json({ error: 'Order ID is required' });
-    }
-
-    const captureData = await captureOrder(orderID);
-
-    await db.collection('pagos').add({
-      orderID,
-      payer: captureData.payer,
-      amount: captureData.purchase_units[0].payments.captures[0].amount,
-      status: captureData.status,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    return res.status(200).json({ success: true, data: captureData });
-  } catch (err) {
-    console.error('Error capturing PayPal order:', err);
-    return res.status(500).json({ error: 'Failed to capture PayPal order' });
+    // Simulación lógica (reemplaza con tu lógica real)
+    const status = 'captured';
+    return res.status(200).json({ status });
+  } catch (error: any) {
+    console.error('Error capturando orden:', error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
-// Obtener client ID de forma segura
-app.get('/paypal-client-id', async (_req, res) => {
-  const clientId = functions.config().paypal.client_id;
-  return res.status(200).json({ clientId });
-});
-
+// Exportar como función de Firebase
 export const api = functions.https.onRequest(app);
