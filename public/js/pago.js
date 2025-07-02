@@ -1,6 +1,21 @@
-import { auth, db } from '../shared/firebase-config.js';
-import { serverTimestamp } from 'firebase/firestore';
-import { CartService } from '../cart/cart.js';
+// ==================== CONFIGURACIÓN INICIAL ====================
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
+  authDomain: "mitienda-c2609.firebaseapp.com",
+  databaseURL: "https://mitienda-c2609-default-rtdb.firebaseio.com",
+  projectId: "mitienda-c2609",
+  storageBucket: "mitienda-c2609.firebasestorage.app",
+  messagingSenderId: "536746062790",
+  appId: "1:536746062790:web:6e545efbc8f037e36538c7"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
 // Datos de municipios (Ejemplo para El Salvador)
 const municipiosPorDepartamento = {
@@ -67,16 +82,15 @@ const municipiosPorDepartamento = {
               'Santa Rosa de Lima', 'Yayantique', 'Yucuaiquín']
 };
 
+
 let checkoutData = null;
 
-// ==================== FUNCIONES PAYPAL ====================
-async function createPayPalOrder() {
-  if (!validateForm()) {
-    throw new Error('Complete todos los campos requeridos');
-  }
+// ==================== FUNCIONES PAYPAL CON BACKEND ====================
+const API_BASE = "https://api-id2wh2idaa-uc.a.run.app";
 
+async function createPayPalOrder() {
   try {
-    const response = await fetch('https://us-central1-mitienda-c2609.cloudfunctions.net/api/create-paypal-order', {
+    const response = await fetch(`${API_BASE}/create-paypal-order`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -100,42 +114,36 @@ async function createPayPalOrder() {
         }
       })
     });
-
-    if (!response.ok) throw new Error('Error en la respuesta del servidor');
     return await response.json();
   } catch (error) {
     console.error("Error creando orden PayPal:", error);
-    showFeedback('Error', 'No se pudo iniciar el pago con PayPal', 'error');
     throw error;
   }
 }
 
 async function capturePayPalOrder(orderID) {
   try {
-    const response = await fetch('https://us-central1-mitienda-c2609.cloudfunctions.net/api/capture-paypal-order', {
+    const response = await fetch(`${API_BASE}/capture-paypal-order`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ orderID })
     });
-
-    if (!response.ok) throw new Error('Error en la respuesta del servidor');
     return await response.json();
   } catch (error) {
     console.error("Error capturando orden PayPal:", error);
-    showFeedback('Error', 'Error al procesar el pago', 'error');
     throw error;
   }
 }
 
-// ==================== FUNCIONES FIRESTORE ====================
+// ==================== FUNCIONES DE FIRESTORE ====================
 async function saveTransaction(paymentDetails, orderId) {
   try {
     const user = auth.currentUser;
     
-    const transactionData = {
-      orderId,
+    await setDoc(doc(db, "transactions", orderId), {
+      orderId: orderId,
       amount: checkoutData.total,
       items: checkoutData.items,
       customer: {
@@ -153,25 +161,21 @@ async function saveTransaction(paymentDetails, orderId) {
       status: paymentDetails.status,
       paypalData: paymentDetails,
       timestamp: serverTimestamp()
-    };
-
-    await setDoc(doc(db, "transactions", orderId), transactionData);
-    await CartService.clearCart(); // Limpiar carrito después de pago exitoso
+    });
   } catch (error) {
     console.error("Error guardando transacción:", error);
     throw error;
   }
 }
 
-// ==================== INTEGRACIÓN PAYPAL ====================
+// ==================== INTEGRACIÓN PAYPAL BUTTON ====================
 function setupPayPalButton() {
   if (!window.paypal) {
     console.error("PayPal SDK no cargado");
-    document.getElementById('alternativePayment').style.display = 'block';
     return;
   }
 
-  paypal.Buttons({
+  window.paypal.Buttons({
     style: {
       layout: 'vertical',
       color: 'blue',
@@ -179,20 +183,35 @@ function setupPayPalButton() {
       label: 'paypal',
       height: 40
     },
-    createOrder: createPayPalOrder,
-    onApprove: async (data) => {
+    createOrder: async function() {
+      if (!validateForm()) {
+        throw new Error('Complete todos los campos requeridos');
+      }
+      try {
+        const order = await createPayPalOrder();
+        return order.id;
+      } catch (error) {
+        showFeedback('Error', 'No se pudo iniciar el pago', 'error');
+        throw error;
+      }
+    },
+    onApprove: async function(data) {
       try {
         const details = await capturePayPalOrder(data.orderID);
         await saveTransaction(details, data.orderID);
         
-        showFeedback('¡Pago completado!', `Orden #${data.orderID} procesada correctamente`, 'success');
-        setTimeout(() => window.location.href = 'confirmacion.html', 3000);
+        showFeedback('¡Pago completado!', `Orden #${data.orderID} procesada`, 'success');
+        localStorage.removeItem('currentCheckout');
+        
+        setTimeout(() => {
+          window.location.href = 'confirmacion.html';
+        }, 3000);
       } catch (error) {
         console.error("Error en el pago:", error);
         showFeedback('Error', 'Error al procesar el pago', 'error');
       }
     },
-    onError: (err) => {
+    onError: function(err) {
       console.error("Error en PayPal:", err);
       showFeedback('Error', 'Error al procesar pago con PayPal', 'error');
       document.getElementById('alternativePayment').style.display = 'block';
@@ -206,7 +225,7 @@ function setupAlternativePayment() {
   
   altBtn.addEventListener('click', async function() {
     if (!validateForm()) {
-      showFeedback('Error', 'Complete todos los campos requeridos', 'error');
+      showFeedback('Error', 'Complete todos los campos', 'error');
       return;
     }
     
@@ -223,7 +242,11 @@ function setupAlternativePayment() {
       }, orderId);
       
       showFeedback('¡Pago exitoso!', `Orden #${orderId} procesada`, 'success');
-      setTimeout(() => window.location.href = 'confirmacion.html', 3000);
+      localStorage.removeItem('currentCheckout');
+      
+      setTimeout(() => {
+        window.location.href = 'confirmacion.html';
+      }, 3000);
     } catch (error) {
       console.error("Error en pago alternativo:", error);
       showFeedback('Error', 'Error al procesar pago alternativo', 'error');
@@ -265,97 +288,81 @@ function showFeedback(title, message, type = 'success') {
 
 function setupAddressForm() {
   const deptoSelect = document.getElementById('departamento');
-  
+  const muniSelect = document.getElementById('municipio');
+
   deptoSelect.innerHTML = '<option value="">Seleccione departamento...</option>';
   Object.keys(municipiosPorDepartamento).forEach(depto => {
     deptoSelect.innerHTML += `<option value="${depto}">${depto}</option>`;
   });
 
   deptoSelect.addEventListener('change', function() {
-    const muniSelect = document.getElementById('municipio');
-    muniSelect.innerHTML = '<option value="">Seleccione municipio...</option>';
-
-    if (this.value && municipiosPorDepartamento[this.value]) {
-      municipiosPorDepartamento[this.value].forEach(municipio => {
-        muniSelect.innerHTML += `<option value="${municipio}">${municipio}</option>`;
-      });
-    }
+    updateMunicipios(this.value);
   });
+}
+
+function updateMunicipios(departamento) {
+  const muniSelect = document.getElementById('municipio');
+  muniSelect.innerHTML = '<option value="">Seleccione municipio...</option>';
+
+  if (departamento && municipiosPorDepartamento[departamento]) {
+    municipiosPorDepartamento[departamento].forEach(municipio => {
+      muniSelect.innerHTML += `<option value="${municipio}">${municipio}</option>`;
+    });
+  }
 }
 
 function renderCartItems() {
   const container = document.getElementById('orderItems');
+  let html = '';
   
-  if (!checkoutData?.items?.length) {
-    container.innerHTML = '<p>No hay productos en el carrito</p>';
-    return;
-  }
-
-  container.innerHTML = checkoutData.items.map(item => `
-    <div class="order-item">
-      <img src="${item.image || 'assets/default-product.png'}" alt="${item.name}" width="50">
-      <span>${item.name}</span>
-      <span>${item.quantity} × $${item.price.toFixed(2)}</span>
-    </div>
-  `).join('');
-
+  checkoutData.items.forEach(item => {
+    html += `
+      <div class="order-item">
+        <img src="${item.image || 'assets/default-product.png'}" alt="${item.name}" width="50">
+        <span>${item.name}</span>
+        <span>${item.quantity} × $${item.price.toFixed(2)}</span>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html || '<p>No hay productos en el carrito</p>';
   updateTotals();
 }
 
 function updateTotals() {
-  if (!checkoutData) return;
-  
   document.getElementById('orderTotal').textContent = checkoutData.total.toFixed(2);
   document.getElementById('paymentTotal').textContent = checkoutData.total.toFixed(2);
 }
 
 // ==================== INICIALIZACIÓN ====================
-async function initializePayment() {
-  try {
-    // Cargar datos del carrito
-    const savedCheckout = localStorage.getItem('currentCheckout');
-    if (!savedCheckout) {
-      showFeedback('Error', 'No se encontraron datos del carrito', 'error');
-      setTimeout(() => window.location.href = 'productos.html', 2000);
-      return;
-    }
-
-    checkoutData = JSON.parse(savedCheckout);
-    if (!checkoutData?.items?.length) {
-      showFeedback('Error', 'El carrito está vacío', 'error');
-      setTimeout(() => window.location.href = 'productos.html', 2000);
-      return;
-    }
-
-    // Inicializar componentes
-    setupAddressForm();
-    renderCartItems();
-    
-    // Cargar SDK PayPal dinámicamente
-    const script = document.createElement('script');
-    script.src = `https://www.paypal.com/sdk/js?client-id=${import.meta.env.VITE_PAYPAL_CLIENT_ID}&currency=USD`;
-    script.onload = setupPayPalButton;
-    script.onerror = () => {
-      console.error("Error cargando PayPal SDK");
-      document.getElementById('alternativePayment').style.display = 'block';
-    };
-    document.head.appendChild(script);
-    
-    setupAlternativePayment();
-    
-    // Cerrar modal de feedback
-    document.getElementById('feedbackClose').addEventListener('click', () => {
-      document.getElementById('feedbackModal').classList.remove('active');
-    });
-
-  } catch (error) {
-    console.error("Error inicializando pago:", error);
-    showFeedback('Error', 'Error al cargar la página de pago', 'error');
+document.addEventListener('DOMContentLoaded', async () => {
+  // Cargar datos del carrito
+  checkoutData = JSON.parse(localStorage.getItem('currentCheckout')) || { items: [], total: 0 };
+  
+  if (!checkoutData.items.length) {
+    showFeedback('Error', 'No hay productos en el carrito', 'error');
     setTimeout(() => window.location.href = 'productos.html', 2000);
+    return;
   }
-}
 
-// Exportar para pago.html
-export function initPayment() {
-  document.addEventListener('DOMContentLoaded', initializePayment);
-}
+  // Inicializar componentes
+  setupAddressForm();
+  renderCartItems();
+  
+  // Cargar SDK PayPal dinámicamente
+  const script = document.createElement('script');
+  script.src = 'https://www.paypal.com/sdk/js?client-id=SB&currency=USD'; // SB para sandbox
+  script.onload = () => setupPayPalButton();
+  script.onerror = () => {
+    console.error("Error cargando PayPal SDK");
+    document.getElementById('alternativePayment').style.display = 'block';
+  };
+  document.head.appendChild(script);
+  
+  setupAlternativePayment();
+  
+  // Cerrar modal de feedback
+  document.getElementById('feedbackClose').addEventListener('click', () => {
+    document.getElementById('feedbackModal').classList.remove('active');
+  });
+});
