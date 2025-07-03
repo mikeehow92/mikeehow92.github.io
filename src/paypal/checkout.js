@@ -1,194 +1,161 @@
 import { loadScript } from './utils.js';
+import { paypalService } from './service.js';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { app } from '../firebase/firebase-client.js';
 
-// Configuración base de la API
-const API_BASE = "https://api-id2wh2idaa-uc.a.run.app";
+// Configuración de Firebase
+const db = getFirestore(app);
+const auth = getAuth(app);
 
 /**
  * Inicializa el sistema de pago PayPal
+ * @param {Object} config - Configuración opcional
+ * @param {boolean} [config.enableCardFields=true] - Habilitar campos de tarjeta
  */
-export async function initPayPalCheckout() {
+export async function initPayPalCheckout(config = {}) {
   try {
-    // 1. Cargar datos del carrito
+    // 1. Cargar y validar datos del carrito
     const checkoutData = loadCheckoutData();
     validateCheckoutData(checkoutData);
 
-    // 2. Renderizar resumen del pedido
+    // 2. Renderizar UI
     renderCartItems(checkoutData);
     updateTotals(checkoutData);
-
-    // 3. Configurar formulario de dirección
     setupAddressForm();
 
-    // 4. Cargar SDK de PayPal
-    await loadPayPalSDK();
+    // 3. Cargar SDK PayPal
+    await loadPayPalSDK(config.clientId || 'SB'); // SB para sandbox
 
-    // 5. Configurar botón de PayPal
-    setupPayPalButton(checkoutData);
+    // 4. Configurar botón de PayPal
+    setupPayPalButton(checkoutData, config);
 
-    // 6. Configurar método alternativo
-    setupAlternativePayment(checkoutData);
+    // 5. Configurar método alternativo si es necesario
+    if (config.alternativePayment !== false) {
+      setupAlternativePayment(checkoutData);
+    }
 
-    // 7. Configurar cierre del modal
+    // 6. Configurar cierre del modal
     setupModalClose();
 
   } catch (error) {
-    console.error('Error inicializando pago:', error);
-    showFeedback('Error', error.message, 'error');
-    
-    // Redirigir si no hay productos
-    if (error.message.includes('carrito')) {
-      setTimeout(() => window.location.href = 'productos.html', 2000);
-    }
+    handleInitializationError(error);
   }
 }
 
-// ==================== FUNCIONES PRINCIPALES ====================
+// ==================== CORE FUNCTIONS ====================
 
-async function loadPayPalSDK() {
+async function loadPayPalSDK(clientId) {
   if (!window.paypal) {
     await loadScript(
-      'https://www.paypal.com/sdk/js?client-id=SB&currency=USD&components=buttons,card-fields'
+      `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&components=buttons${config.enableCardFields ? ',card-fields' : ''}`
     );
   }
 }
 
-function setupPayPalButton(checkoutData) {
-  window.paypal.Buttons({
+function setupPayPalButton(checkoutData, config) {
+  const buttons = window.paypal.Buttons({
     style: {
       layout: 'vertical',
       color: 'blue',
       shape: 'rect',
       label: 'paypal',
-      height: 40
+      height: 40,
+      ...config.buttonStyle
     },
     
     createOrder: async () => {
       if (!validateForm()) {
         throw new Error('Complete todos los campos requeridos');
       }
-      
-      try {
-        const order = await createPayPalOrder(checkoutData);
-        return order.id;
-      } catch (error) {
-        showFeedback('Error', 'No se pudo iniciar el pago', 'error');
-        throw error;
-      }
+      return await paypalService.createOrder(checkoutData);
     },
     
     onApprove: async (data) => {
       try {
-        const details = await capturePayPalOrder(data.orderID);
-        await saveTransaction(details, data.orderID, checkoutData);
-        
+        const details = await paypalService.captureOrder(data.orderID, checkoutData);
         showFeedback('¡Pago completado!', `Orden #${data.orderID} procesada`, 'success');
-        localStorage.removeItem('currentCheckout');
+        clearCart();
         
         setTimeout(() => {
-          window.location.href = 'confirmacion.html';
+          config.onSuccess?.(details) || window.location.href = 'confirmacion.html';
         }, 3000);
       } catch (error) {
-        console.error("Error en el pago:", error);
-        showFeedback('Error', 'Error al procesar el pago', 'error');
+        handlePaymentError(error, config);
       }
     },
     
     onError: (err) => {
-      console.error("Error en PayPal:", err);
-      showFeedback('Error', 'Error al procesar pago con PayPal', 'error');
-      document.getElementById('alternativePayment').style.display = 'block';
+      handlePaymentError(err, config);
     }
-    
-  }).render('#paypal-button-container');
-}
-
-// ==================== FUNCIONES DE PAYPAL ====================
-
-async function createPayPalOrder(checkoutData) {
-  const response = await fetch(`${API_BASE}/create-paypal-order`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      amount: checkoutData.total,
-      items: checkoutData.items.map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity
-      })),
-      customer: {
-        email: document.getElementById('customerEmail').value,
-        name: document.getElementById('customerName').value
-      },
-      shipping: {
-        address: document.getElementById('shippingAddress').value,
-        department: document.getElementById('departamento').value,
-        municipality: document.getElementById('municipio').value
-      }
-    })
   });
-  return await response.json();
-}
 
-async function capturePayPalOrder(orderID) {
-  const response = await fetch(`${API_BASE}/capture-paypal-order`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ orderID })
-  });
-  return await response.json();
-}
-
-// ==================== FUNCIONES DE FIRESTORE ====================
-
-async function saveTransaction(paymentDetails, orderId, checkoutData) {
-  const user = auth.currentUser;
+  buttons.render('#paypal-button-container');
   
-  await setDoc(doc(db, "transactions", orderId), {
-    orderId: orderId,
-    amount: checkoutData.total,
-    subtotal: checkoutData.subtotal,
-    tax: checkoutData.tax,
-    shipping: checkoutData.shipping,
-    items: checkoutData.items,
-    customer: {
-      userId: user?.uid || "guest",
-      email: document.getElementById('customerEmail').value,
-      name: document.getElementById('customerName').value,
-      phone: document.getElementById('customerPhone').value
-    },
-    shipping: {
-      address: document.getElementById('shippingAddress').value,
-      department: document.getElementById('departamento').value,
-      municipality: document.getElementById('municipio').value
-    },
-    paymentMethod: 'paypal',
-    status: paymentDetails.status,
-    paypalData: paymentDetails,
-    timestamp: serverTimestamp(),
-    isGuest: !user
+  if (config.enableCardFields) {
+    renderCardFields(checkoutData, config);
+  }
+}
+
+function renderCardFields(checkoutData, config) {
+  if (!window.paypal.CardFields?.isEligible()) {
+    console.warn('Campos de tarjeta no disponibles');
+    return;
+  }
+
+  const cardFields = window.paypal.CardFields({
+    createOrder: () => paypalService.createOrder(checkoutData),
+    onApprove: async (data) => {
+      try {
+        const details = await paypalService.captureOrder(data.orderID, checkoutData);
+        config.onSuccess?.(details) || showSuccessFeedback(data.orderID);
+      } catch (error) {
+        handlePaymentError(error, config);
+      }
+    }
+  });
+
+  // Renderizar campos individuales
+  cardFields.NameField().render('#card-name-field');
+  cardFields.NumberField().render('#card-number-field');
+  cardFields.CVVField().render('#card-cvv-field');
+  cardFields.ExpiryField().render('#card-expiry-field');
+
+  // Configurar envío manual
+  document.querySelector('#card-submit-button')?.addEventListener('click', () => {
+    cardFields.submit({
+      billingAddress: getBillingAddress()
+    }).catch(error => handlePaymentError(error, config));
   });
 }
 
-// ==================== FUNCIONES AUXILIARES ====================
+// ==================== HELPER FUNCTIONS ====================
 
 function loadCheckoutData() {
-  const data = JSON.parse(localStorage.getItem('currentCheckout')) || { 
-    items: [],
-    total: 0,
-    subtotal: 0,
-    tax: 0,
-    shipping: 0,
-    isGuest: false
+  const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+  const shippingCost = parseFloat(localStorage.getItem('shippingCost')) || 0;
+  const taxRate = 0.13; // 13% de impuestos
+
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const tax = subtotal * taxRate;
+  const total = subtotal + tax + shippingCost;
+
+  return {
+    items: cartItems,
+    subtotal,
+    tax,
+    shipping: shippingCost,
+    total,
+    currency: 'USD'
   };
-  
-  console.log('Datos del carrito cargados:', data);
-  return data;
 }
 
-function validateCheckoutData(checkoutData) {
-  if (!checkoutData.items || checkoutData.items.length === 0) {
+function validateCheckoutData(data) {
+  if (!data.items || data.items.length === 0) {
     throw new Error('No hay productos en el carrito');
+  }
+  if (data.total <= 0) {
+    throw new Error('El total debe ser mayor que cero');
   }
 }
 
@@ -202,7 +169,7 @@ function validateForm() {
   
   requiredFields.forEach(fieldId => {
     const field = document.getElementById(fieldId);
-    if (!field.value.trim()) {
+    if (!field?.value?.trim()) {
       isValid = false;
       field.style.borderColor = '#ff0000';
     } else {
@@ -213,86 +180,33 @@ function validateForm() {
   return isValid;
 }
 
-function setupAlternativePayment(checkoutData) {
-  const altBtn = document.getElementById('alternativePayment');
-  
-  altBtn.addEventListener('click', async function() {
-    if (!validateForm()) {
-      showFeedback('Error', 'Complete todos los campos', 'error');
-      return;
-    }
-    
-    try {
-      const orderId = 'ALT-' + Math.random().toString(36).substring(2, 10).toUpperCase();
-      
-      await saveTransaction({
-        status: 'completed',
-        id: orderId,
-        payer: {
-          name: { given_name: document.getElementById('customerName').value },
-          email_address: document.getElementById('customerEmail').value
-        }
-      }, orderId, checkoutData);
-      
-      showFeedback('¡Pago exitoso!', `Orden #${orderId} procesada`, 'success');
-      localStorage.removeItem('currentCheckout');
-      
-      setTimeout(() => {
-        window.location.href = 'confirmacion.html';
-      }, 3000);
-    } catch (error) {
-      console.error("Error en pago alternativo:", error);
-      showFeedback('Error', 'Error al procesar pago alternativo', 'error');
-    }
-  });
+function getBillingAddress() {
+  return {
+    addressLine1: document.getElementById('billing-address-line1')?.value || '',
+    addressLine2: document.getElementById('billing-address-line2')?.value || '',
+    adminArea1: document.getElementById('billing-state')?.value || '',
+    adminArea2: document.getElementById('billing-city')?.value || '',
+    countryCode: document.getElementById('billing-country')?.value || 'SV',
+    postalCode: document.getElementById('billing-zip')?.value || ''
+  };
 }
 
-function setupAddressForm() {
-  const deptoSelect = document.getElementById('departamento');
-  const muniSelect = document.getElementById('municipio');
-
-  // Llenar departamentos
-  deptoSelect.innerHTML = '<option value="">Seleccione departamento...</option>';
-  Object.keys(municipiosPorDepartamento).forEach(depto => {
-    deptoSelect.innerHTML += `<option value="${depto}">${depto}</option>`;
-  });
-
-  // Actualizar municipios al cambiar departamento
-  deptoSelect.addEventListener('change', function() {
-    updateMunicipios(this.value);
-  });
-}
-
-function updateMunicipios(departamento) {
-  const muniSelect = document.getElementById('municipio');
-  muniSelect.innerHTML = '<option value="">Seleccione municipio...</option>';
-
-  if (departamento && municipiosPorDepartamento[departamento]) {
-    municipiosPorDepartamento[departamento].forEach(municipio => {
-      muniSelect.innerHTML += `<option value="${municipio}">${municipio}</option>`;
-    });
-  }
-}
+// ==================== UI FUNCTIONS ====================
 
 function renderCartItems(checkoutData) {
   const container = document.getElementById('orderItems');
-  let html = '';
-  
-  checkoutData.items.forEach(item => {
-    html += `
-      <div class="order-item">
-        <img src="${item.image || 'assets/default-product.png'}" alt="${item.name}" width="50">
-        <div class="item-details">
-          <span class="item-name">${item.name}</span>
-          <span class="item-price">${item.quantity} × $${item.price.toFixed(2)}</span>
-          <span class="item-total">$${(item.price * item.quantity).toFixed(2)}</span>
-        </div>
+  if (!container) return;
+
+  container.innerHTML = checkoutData.items.map(item => `
+    <div class="order-item">
+      <img src="${item.image || 'assets/default-product.png'}" alt="${item.name}" width="50">
+      <div class="item-details">
+        <span class="item-name">${item.name}</span>
+        <span class="item-price">${item.quantity} × $${item.price.toFixed(2)}</span>
+        <span class="item-total">$${(item.price * item.quantity).toFixed(2)}</span>
       </div>
-    `;
-  });
-  
-  // Resumen de totales
-  html += `
+    </div>
+  `).join('') + `
     <div class="order-summary">
       <div class="summary-row">
         <span>Subtotal:</span>
@@ -312,32 +226,147 @@ function renderCartItems(checkoutData) {
       </div>
     </div>
   `;
-  
-  container.innerHTML = html;
 }
 
 function updateTotals(checkoutData) {
-  document.getElementById('orderTotal').textContent = checkoutData.total.toFixed(2);
-  document.getElementById('paymentTotal').textContent = checkoutData.total.toFixed(2);
+  const totalElements = [
+    document.getElementById('orderTotal'),
+    document.getElementById('paymentTotal')
+  ];
+  
+  totalElements.forEach(el => {
+    if (el) el.textContent = checkoutData.total.toFixed(2);
+  });
+}
+
+function setupAddressForm() {
+  const deptoSelect = document.getElementById('departamento');
+  if (!deptoSelect) return;
+
+  deptoSelect.innerHTML = '<option value="">Seleccione departamento...</option>' +
+    Object.keys(municipiosPorDepartamento).map(depto => 
+      `<option value="${depto}">${depto}</option>`
+    ).join('');
+
+  deptoSelect.addEventListener('change', function() {
+    updateMunicipios(this.value);
+  });
+}
+
+function updateMunicipios(departamento) {
+  const muniSelect = document.getElementById('municipio');
+  if (!muniSelect) return;
+
+  muniSelect.innerHTML = '<option value="">Seleccione municipio...</option>';
+  
+  if (departamento && municipiosPorDepartamento[departamento]) {
+    muniSelect.innerHTML += municipiosPorDepartamento[departamento]
+      .map(muni => `<option value="${muni}">${muni}</option>`)
+      .join('');
+  }
+}
+
+function setupAlternativePayment(checkoutData) {
+  const altBtn = document.getElementById('alternativePayment');
+  if (!altBtn) return;
+
+  altBtn.style.display = 'block';
+  
+  altBtn.addEventListener('click', async () => {
+    if (!validateForm()) {
+      showFeedback('Error', 'Complete todos los campos', 'error');
+      return;
+    }
+    
+    try {
+      const orderId = 'ALT-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+      await paypalService.saveTransactionDetails({
+        id: orderId,
+        status: 'completed',
+        amount: checkoutData.total,
+        payer: {
+          name: { given_name: document.getElementById('customerName').value },
+          email_address: document.getElementById('customerEmail').value
+        }
+      });
+      
+      showSuccessFeedback(orderId);
+    } catch (error) {
+      handlePaymentError(error);
+    }
+  });
+}
+
+// ==================== FEEDBACK HANDLERS ====================
+
+function showSuccessFeedback(orderId) {
+  showFeedback('¡Pago exitoso!', `Orden #${orderId} procesada`, 'success');
+  clearCart();
+  
+  setTimeout(() => {
+    window.location.href = 'confirmacion.html';
+  }, 3000);
+}
+
+function handleInitializationError(error) {
+  console.error('Error inicializando pago:', error);
+  showFeedback('Error', error.message, 'error');
+  
+  if (error.message.includes('carrito')) {
+    setTimeout(() => window.location.href = 'productos.html', 2000);
+  }
+}
+
+function handlePaymentError(error, config) {
+  console.error("Error en el pago:", error);
+  const message = config?.onError?.(error) || parsePayPalError(error);
+  showFeedback('Error', message, 'error');
+  
+  if (isRecoverableError(error)) {
+    document.getElementById('alternativePayment')?.style.display = 'block';
+  }
 }
 
 function showFeedback(title, message, type = 'success') {
   const modal = document.getElementById('feedbackModal');
-  const icon = document.getElementById('feedbackIcon');
+  if (!modal) return;
+
+  modal.querySelector('.feedback-icon').innerHTML = 
+    `<i class="fas fa-${type === 'success' ? 'check-circle' : 'times-circle'} ${type}"></i>`;
   
-  icon.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'times-circle'} ${type}"></i>`;
-  document.getElementById('feedbackTitle').textContent = title;
-  document.getElementById('feedbackMessage').textContent = message;
+  modal.querySelector('#feedbackTitle').textContent = title;
+  modal.querySelector('#feedbackMessage').textContent = message;
   modal.classList.add('active');
 }
 
 function setupModalClose() {
-  document.getElementById('feedbackClose').addEventListener('click', () => {
-    document.getElementById('feedbackModal').classList.remove('active');
+  document.getElementById('feedbackClose')?.addEventListener('click', () => {
+    document.getElementById('feedbackModal')?.classList.remove('active');
   });
 }
 
-// Datos geográficos (deberían importarse de un archivo aparte)
+function clearCart() {
+  localStorage.removeItem('cartItems');
+  localStorage.removeItem('shippingCost');
+}
+
+// ==================== UTILITIES ====================
+
+function parsePayPalError(error) {
+  if (error.details) return error.details.message || 'Error en el servidor';
+  if (error.message.includes('PAYPAL')) {
+    const match = error.message.match(/"message":"([^"]+)"/);
+    return match ? match[1] : 'Error al procesar el pago con PayPal';
+  }
+  return error.message || 'Error desconocido';
+}
+
+function isRecoverableError(error) {
+  return error.message.includes('INSTRUMENT_DECLINED') || 
+         error.message.includes('PAYER_ACTION_REQUIRED');
+}
+
+// Datos geográficos (mejor en un archivo aparte)
 const municipiosPorDepartamento = {
   'Ahuachapán': ['Ahuachapán', 'Apaneca', 'Atiquizaya', 'Concepción de Ataco', 'El Refugio', 
                 'Guaymango', 'Jujutla', 'San Francisco Menéndez', 'San Lorenzo', 'San Pedro Puxtla',
@@ -401,17 +430,3 @@ const municipiosPorDepartamento = {
               'Nueva Esparta', 'Pasaquina', 'Polorós', 'San Alejo', 'San José',
               'Santa Rosa de Lima', 'Yayantique', 'Yucuaiquín']
 };
-// Inicialización de Firebase (debería importarse)
-const firebaseConfig = {
-  apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
-  authDomain: "mitienda-c2609.firebaseapp.com",
-  databaseURL: "https://mitienda-c2609-default-rtdb.firebaseio.com",
-  projectId: "mitienda-c2609",
-  storageBucket: "mitienda-c2609.firebasestorage.app",
-  messagingSenderId: "536746062790",
-  appId: "1:536746062790:web:6e545efbc8f037e36538c7"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
