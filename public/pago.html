@@ -6,7 +6,7 @@
   <title>Pago - MiTienda</title>
   
   <!-- Firebase SDK (versión modular) -->
-  <script type="module" src="/src/shared/firebase-config.js"></script>
+  <script type="module" src="/js/firebase-client.js"></script>
   
   <!-- PayPal SDK (se carga dinámicamente desde pago.js) -->
   
@@ -190,7 +190,7 @@
 
   <!-- Scripts -->
   <script type="module">
-    import { initPayment } from '/src/paypal/checkout.js';
+    import { initPayment } from '/js/paypal/checkout.js';
     
     // Inicializar el sistema de pago
     document.addEventListener('DOMContentLoaded', () => {
