@@ -1,16 +1,17 @@
 /**
- * Configuración pública de Firebase para el cliente (versión modular v9+)
- * ¡No incluye credenciales sensibles!
+ * Configuración de Firebase para el cliente (SDK Modular v9+)
+ * Ubicación: /public/js/firebase-client.js
+ * Seguro para frontend - No incluye credenciales sensibles
  */
 
-// Importaciones desde el SDK modular
+// Importaciones modulares de Firebase v9
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-// import { getAnalytics } from "firebase/analytics"; // Opcional
+// import { getAnalytics } from "firebase/analytics"; // Descomenta si necesitas Analytics
 
-// Configuración pública (segura para exponer en el frontend)
+// Configuración pública (puedes exponerla en el frontend)
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
   authDomain: "mitienda-c2609.firebaseapp.com",
@@ -21,17 +22,26 @@ const firebaseConfig = {
   measurementId: "G-XXXXXXXXXX" // Opcional para Analytics
 };
 
-// Inicialización de servicios con Firebase v9+
+// Inicialización de Firebase
 const app = initializeApp(firebaseConfig);
+
+// Inicialización de servicios
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
-// const analytics = getAnalytics(app); // Opcional
+// const analytics = getAnalytics(app); // Descomenta si necesitas Analytics
 
-// Exportaciones seguras para el cliente
+// Configuración adicional para Auth (sesión persistente)
+auth.setPersistence(browserLocalPersistence)
+  .catch((error) => {
+    console.error("Error configurando persistencia de auth:", error);
+  });
+
+// Exporta solo lo necesario (seguridad y optimización)
 export { 
   app,
-  auth, 
-  db, 
+  auth,
+  db,
   storage
+  // No exportes 'firebase' completo en v9+
 };
