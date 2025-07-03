@@ -33,16 +33,17 @@
         ]
       },
       {
-        "source": "/js/paypal/**",
+        "source": "/js/**",
         "headers": [
           {
-            "key": "Content-Type",
-            "value": "application/javascript"
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
           }
         ]
       }
     ],
-    "cleanUrls": true
+    "cleanUrls": true,
+    "trailingSlash": false
   },
   "functions": {
     "source": "functions",
@@ -52,5 +53,9 @@
       "npm --prefix functions install",
       "npm --prefix functions run build"
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
 }
