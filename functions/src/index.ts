@@ -2,38 +2,37 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import express from 'express';
 import cors from 'cors';
+import { createOrder, captureOrder } from './paypal';
 
 admin.initializeApp();
 
 const app = express();
+app.use(cors({ origin: true }));
+app.use(express.json());
 
-// Middleware CORS
-const corsHandler = cors({ origin: true });
-app.use(corsHandler);
-
-// Ruta: Crear orden de PayPal
+// Endpoint: Crear orden
 app.post('/create-paypal-order', async (req, res) => {
   try {
-    // Simulación lógica (reemplaza con tu lógica real)
-    const orderId = 'fake-order-id';
-    return res.status(200).json({ orderId });
+    const amount = req.body.amount?.toString() || '0.00';
+    const result = await createOrder(amount);
+    res.status(200).json({ orderId: result.id });
   } catch (error: any) {
-    console.error('Error creando orden:', error);
-    return res.status(500).json({ error: error.message });
+    console.error('Error al crear la orden PayPal:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Ruta: Capturar orden de PayPal
+// Endpoint: Capturar orden
 app.post('/capture-paypal-order', async (req, res) => {
   try {
-    // Simulación lógica (reemplaza con tu lógica real)
-    const status = 'captured';
-    return res.status(200).json({ status });
+    const orderID = req.body.orderID;
+    const result = await captureOrder(orderID);
+    res.status(200).json(result);
   } catch (error: any) {
-    console.error('Error capturando orden:', error);
-    return res.status(500).json({ error: error.message });
+    console.error('Error al capturar la orden PayPal:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Exportar como función de Firebase
-export const api = functions.https.onRequest(app);
+// Exportar como función Firebase 1st Gen
+export const api = functions.region('us-central1').https.onRequest(app);

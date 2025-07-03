@@ -952,7 +952,7 @@
       sendPasswordResetEmail: (email) => auth.sendPasswordResetEmail(email)
     };
 
-    // Servicio del carrito - Versión corregida
+    // Servicio del carrito - Versión corregida con estructura consistente
     const CART_STORAGE_KEY = 'guest_cart';
     
     const CartService = (function() {
@@ -1117,7 +1117,7 @@
       // Delegación de eventos para botones dinámicos
       document.querySelector('#cart-items')?.addEventListener('click', handleCartActions);
       
-      // Checkout
+      // Checkout con nueva estructura
       document.querySelector('#checkout-btn')?.addEventListener('click', handleCheckout);
 
       // Botones "Añadir al carrito"
@@ -1231,6 +1231,7 @@
       }
     };
 
+    // Función handleCheckout actualizada con nueva estructura
     const handleCheckout = async () => {
       const cart = await CartService.getCart();
       
@@ -1240,12 +1241,27 @@
       }
 
       try {
-        // Guardar carrito para el proceso de pago
-        localStorage.setItem('currentCheckout', JSON.stringify({
+        // Calcular totales con estructura consistente
+        const subtotal = CartService.getTotal(cart);
+        const taxRate = 0.12; // 12% de impuestos
+        const tax = subtotal * taxRate;
+        const total = subtotal + tax;
+        const user = AuthService.getCurrentUser();
+
+        // Crear objeto checkout con estructura completa
+        const checkoutData = {
           items: cart,
-          total: CartService.getTotal(cart),
-          isGuest: !auth.currentUser // Indicar si es un checkout como invitado
-        }));
+          subtotal: subtotal,
+          tax: tax,
+          total: total,
+          shipping: 0, // Se puede calcular después
+          isGuest: !user,
+          timestamp: new Date().toISOString(),
+          userId: user ? user.uid : null
+        };
+
+        // Guardar en localStorage para usar en pago.html
+        localStorage.setItem('currentCheckout', JSON.stringify(checkoutData));
         
         // Redirigir a página de pago
         window.location.href = 'pago.html';

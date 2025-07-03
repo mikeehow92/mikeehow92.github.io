@@ -1,45 +1,39 @@
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { app } from '../firebase/firebase-client.js';
 
-/**
- * Servicio para manejar operaciones con PayPal
- */
 export const paypalService = {
   /**
    * Crea una orden de PayPal y la registra en Firestore
-   * @param {Object} cart - Carrito de compras
-   * @param {Array} cart.items - Productos en el carrito
-   * @param {number} cart.total - Total del carrito
+   * @param {Object} checkoutData - Datos completos del checkout
    * @returns {Promise<string>} ID de la orden PayPal
    */
-  createOrder: async (cart) => {
+  createOrder: async (checkoutData) => {
     try {
-      // 1. Crear orden en PayPal via Cloud Functions
       const functions = getFunctions(app);
-      const createPayPalOrder = httpsCallable(functions, 'createPayPalOrder');
+      const createOrder = httpsCallable(functions, 'createPayPalOrder');
       
-      const { data } = await createPayPalOrder({
-        cart: {
-          items: cart.items.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity
-          })),
-          total: cart.total
+      const { data } = await createOrder({
+        amount: checkoutData.total,
+        items: checkoutData.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        })),
+        customer: {
+          email: document.getElementById('customerEmail')?.value || '',
+          name: document.getElementById('customerName')?.value || ''
+        },
+        shipping: {
+          address: document.getElementById('shippingAddress')?.value || '',
+          department: document.getElementById('departamento')?.value || '',
+          municipality: document.getElementById('municipio')?.value || ''
         }
       });
 
-      // 2. Guardar en Firestore (opcional)
-      const db = getFirestore(app);
-      await setDoc(doc(db, 'orderAttempts', data.id), {
-        status: 'CREATED',
-        userId: cart.userId, // Asegúrate de pasar el userId desde el frontend
-        createdAt: new Date().toISOString(),
-        amount: cart.total
-      });
-
+      await saveOrderAttempt(data.id, checkoutData);
       return data.id;
 
     } catch (error) {
@@ -51,52 +45,72 @@ export const paypalService = {
   /**
    * Captura un pago de PayPal
    * @param {string} orderId - ID de la orden PayPal
+   * @param {Object} checkoutData - Datos completos del checkout
    * @returns {Promise<Object>} Resultado de la transacción
    */
-  captureOrder: async (orderId) => {
+  captureOrder: async (orderId, checkoutData) => {
     try {
       const functions = getFunctions(app);
-      const capturePayPalOrder = httpsCallable(functions, 'capturePayPalOrder');
+      const captureOrder = httpsCallable(functions, 'capturePayPalOrder');
       
-      const { data } = await capturePayPalOrder({ orderId });
-
-      // Registrar en Firestore
-      const db = getFirestore(app);
-      await setDoc(doc(db, 'transactions', data.transactionId), {
-        orderId,
-        status: data.status,
-        amount: data.amount,
-        completedAt: new Date().toISOString()
-      }, { merge: true });
-
+      const { data } = await captureOrder({ orderId });
+      await saveTransaction(data, orderId, checkoutData);
+      
       return data;
 
     } catch (error) {
       console.error('Error al capturar orden:', error);
       throw new Error(parsePayPalError(error));
     }
-  },
-
-  /**
-   * Guarda los detalles de la transacción en Firestore
-   * @param {Object} transaction - Datos de la transacción
-   */
-  saveTransactionDetails: async (transaction) => {
-    const db = getFirestore(app);
-    await setDoc(doc(db, 'transactions', transaction.id), {
-      ...transaction,
-      processedAt: new Date().toISOString()
-    });
   }
 };
 
-// ==================== Helpers ====================
+// ==================== Helpers Internos ====================
 
-/**
- * Parsea errores de PayPal/Firebase
- * @param {Error} error 
- * @returns {string}
- */
+async function saveOrderAttempt(orderId, checkoutData) {
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  
+  await setDoc(doc(db, 'orderAttempts', orderId), {
+    status: 'CREATED',
+    userId: auth.currentUser?.uid || 'guest',
+    createdAt: serverTimestamp(),
+    amount: checkoutData.total,
+    items: checkoutData.items.length,
+    isGuest: !auth.currentUser
+  });
+}
+
+async function saveTransaction(paymentData, orderId, checkoutData) {
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  
+  await setDoc(doc(db, 'transactions', orderId), {
+    orderId,
+    status: paymentData.status,
+    amount: checkoutData.total,
+    subtotal: checkoutData.subtotal,
+    tax: checkoutData.tax,
+    shipping: checkoutData.shipping,
+    items: checkoutData.items,
+    customer: {
+      userId: auth.currentUser?.uid || 'guest',
+      email: document.getElementById('customerEmail')?.value || '',
+      name: document.getElementById('customerName')?.value || '',
+      phone: document.getElementById('customerPhone')?.value || ''
+    },
+    shipping: {
+      address: document.getElementById('shippingAddress')?.value || '',
+      department: document.getElementById('departamento')?.value || '',
+      municipality: document.getElementById('municipio')?.value || ''
+    },
+    paymentMethod: 'paypal',
+    paypalData: paymentData,
+    timestamp: serverTimestamp(),
+    isGuest: !auth.currentUser
+  });
+}
+
 function parsePayPalError(error) {
   // Error de Firebase Functions
   if (error.details) {
@@ -113,11 +127,6 @@ function parsePayPalError(error) {
   return error.message || 'Error desconocido';
 }
 
-/**
- * Verifica si el error es recuperable
- * @param {Error} error 
- * @returns {boolean}
- */
 export function isRecoverableError(error) {
   return error.message.includes('INSTRUMENT_DECLINED') || 
          error.message.includes('PAYER_ACTION_REQUIRED');

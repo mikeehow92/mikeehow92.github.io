@@ -4,17 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pago - MiTienda</title>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+  
+  <!-- Firebase SDK (versión modular) -->
+  <script type="module" src="/src/shared/firebase-config.js"></script>
+  
+  <!-- PayPal SDK (se carga dinámicamente desde pago.js) -->
+  
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <!-- Estilos -->
   <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="stylesheet" href="/assets/css/auth.css">
+  
   <style>
     .paypal-button-container {
       margin: 20px 0;
+      min-height: 40px;
     }
     #alternativePayment {
       display: none;
@@ -26,6 +32,7 @@
       cursor: pointer;
       font-size: 16px;
       width: 100%;
+      margin-top: 15px;
     }
     .feedback-overlay {
       display: none;
@@ -48,6 +55,7 @@
       border-radius: 8px;
       text-align: center;
       max-width: 400px;
+      width: 90%;
     }
     .success {
       color: #28a745;
@@ -55,8 +63,21 @@
     .error {
       color: #dc3545;
     }
-    .info {
-      color: #17a2b8;
+    .loading-items {
+      padding: 20px;
+      text-align: center;
+    }
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0,0,0,.1);
+      border-radius: 50%;
+      border-top-color: #0070ba;
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -65,7 +86,7 @@
   <header class="header">
     <div class="container header-container">
       <div class="logo">
-        <a href="index.html"><img src="assets/logo.png" alt="MiTienda"></a>
+        <a href="index.html"><img src="assets/imagenes/logo.png" alt="MiTienda"></a>
       </div>
       <div class="cart-icon">
         <i class="fas fa-shopping-cart"></i>
@@ -82,7 +103,6 @@
       <div class="order-summary">
         <h2>Resumen de tu Pedido</h2>
         <div id="orderItems">
-          <!-- Los productos se cargarán dinámicamente -->
           <div class="loading-items">
             <span class="loading"></span> Cargando productos...
           </div>
@@ -142,7 +162,11 @@
           <!-- Método de Pago -->
           <div class="form-group">
             <h3>Método de Pago</h3>
-            <div id="paypal-button-container"></div>
+            <div id="paypal-button-container" class="paypal-button-container">
+              <div class="loading-items">
+                <span class="loading"></span> Cargando métodos de pago...
+              </div>
+            </div>
             <button type="button" id="alternativePayment" class="submit-payment">
               <i class="fas fa-lock"></i> Confirmar Pago $<span id="paymentTotal">0.00</span>
             </button>
@@ -166,25 +190,23 @@
 
   <!-- Scripts -->
   <script type="module">
-    // Configuración de Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
-      authDomain: "mitienda-c2609.firebaseapp.com",
-      projectId: "mitienda-c2609",
-      storageBucket: "mitienda-c2609.appspot.com",
-      messagingSenderId: "536746062790",
-      appId: "1:536746062790:web:6e545efbc8f037e36538c7"
-    };
-
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
-    
-    // Importar el módulo de pago
-    import { initializePayment } from '/js/pago.js';
+    import { initPayment } from '/src/paypal/checkout.js';
     
     // Inicializar el sistema de pago
     document.addEventListener('DOMContentLoaded', () => {
-      initializePayment();
+      try {
+        if (typeof initPayment === 'function') {
+          initPayment();
+        } else {
+          console.error('initPayment no está definido');
+          document.getElementById('orderItems').innerHTML = 
+            '<p class="error">Error al cargar el sistema de pago. Recargue la página.</p>';
+        }
+      } catch (error) {
+        console.error('Error inicializando pago:', error);
+        document.getElementById('orderItems').innerHTML = 
+          `<p class="error">Error crítico: ${error.message}</p>`;
+      }
     });
   </script>
 </body>
