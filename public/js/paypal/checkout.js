@@ -2,7 +2,7 @@ import { loadScript } from './utils.js';
 import { paypalService } from './service.js';
 import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { app } from '../shared/firebase-config.js';
+import { app } from '../firebase-client.js'; 
 
 // Configuración de Firebase
 const db = getFirestore(app);
