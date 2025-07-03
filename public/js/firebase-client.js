@@ -1,7 +1,14 @@
 /**
- * Configuración pública de Firebase para el cliente
+ * Configuración pública de Firebase para el cliente (versión modular v9+)
  * ¡No incluye credenciales sensibles!
  */
+
+// Importaciones desde el SDK modular
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+// import { getAnalytics } from "firebase/analytics"; // Opcional
 
 // Configuración pública (segura para exponer en el frontend)
 const firebaseConfig = {
@@ -14,20 +21,17 @@ const firebaseConfig = {
   measurementId: "G-XXXXXXXXXX" // Opcional para Analytics
 };
 
-// Inicialización básica de Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
-
-// Opcional: Inicialización de Analytics
-// const analytics = firebase.analytics();
+// Inicialización de servicios con Firebase v9+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+// const analytics = getAnalytics(app); // Opcional
 
 // Exportaciones seguras para el cliente
 export { 
   app,
   auth, 
   db, 
-  storage,
-  firebase // Exportar firebase completo si necesitas funciones específicas
+  storage
 };
