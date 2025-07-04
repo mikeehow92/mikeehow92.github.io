@@ -315,17 +315,7 @@ function renderCartItems() {
 function updateTotals() {
   document.getElementById('orderTotal').textContent = checkoutData.total.toFixed(2);
   document.getElementById('paymentTotal').textContent = checkoutData.total.toFixed(2);
-}
-
-// ==================== INICIALIZACIÓN ====================
-document.addEventListener('DOMContentLoaded', async () => {
-  checkoutData = JSON.parse(localStorage.getItem('currentCheckout')) || { ...checkoutStructure };
-
-  if (!checkoutData.items || checkoutData.items.length === 0) {
-    showFeedback('Error', 'No hay productos en el carrito', 'error');
-    setTimeout(() => window.location.href = 'productos.html', 2000);
-    return;
-  }
+} 
 
   setupAddressForm();
   renderCartItems();
