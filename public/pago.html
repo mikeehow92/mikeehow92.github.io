@@ -276,9 +276,12 @@ function renderCartItems() {
   let html = '';
 
   checkoutData.items.forEach(item => {
+    const imagePath = item.image ? item.image : 'assets/default-product.png';
+    const imageUrl = imagePath.startsWith('http') ? imagePath : `/${imagePath}`;
+    
     html += `
       <div class="order-item">
-        <img src="${item.image || 'assets/default-product.png'}" alt="${item.name}" width="50">
+        <img src="${imageUrl}" alt="${item.name}" width="50" onerror="this.src='/assets/default-product.png'">
         <div class="item-details">
           <span class="item-name">${item.name}</span>
           <span class="item-price">${item.quantity} × $${item.price.toFixed(2)}</span>
@@ -315,14 +318,25 @@ function renderCartItems() {
 function updateTotals() {
   document.getElementById('orderTotal').textContent = checkoutData.total.toFixed(2);
   document.getElementById('paymentTotal').textContent = checkoutData.total.toFixed(2);
-} 
+}
+
+// ==================== INICIALIZACIÓN ====================
+document.addEventListener('DOMContentLoaded', async () => {
+  checkoutData = JSON.parse(localStorage.getItem('currentCheckout')) || { ...checkoutStructure };
+
+  if (!checkoutData.items || checkoutData.items.length === 0) {
+    showFeedback('Error', 'No hay productos en el carrito', 'error');
+    setTimeout(() => window.location.href = 'productos.html', 2000);
+    return;
+  }
 
   setupAddressForm();
   renderCartItems();
   updateTotals();
 
+  // Carga el SDK de PayPal desde tu backend para mayor seguridad
   const script = document.createElement('script');
-  script.src = 'https://www.paypal.com/sdk/js?client-id=SB&currency=USD';
+  script.src = `${API_BASE}/get-paypal-sdk`; // Endpoint que devuelve el script del SDK con tu client ID
   script.onload = () => setupPayPalButton();
   script.onerror = () => {
     console.error("Error cargando PayPal SDK");
