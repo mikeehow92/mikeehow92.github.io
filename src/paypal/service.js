@@ -4,13 +4,12 @@ import { getAuth } from 'firebase/auth';
 import { app } from '../firebase/firebase-client.js';
 
 export const paypalService = {
-  /**
-   * Crea una orden de PayPal y la registra en Firestore
-   * @param {Object} checkoutData - Datos completos del checkout
-   * @returns {Promise<string>} ID de la orden PayPal
-   */
   createOrder: async (checkoutData) => {
     try {
+      if (!checkoutData?.total || checkoutData.total <= 0) {
+        throw new Error('Monto total inválido');
+      }
+
       const functions = getFunctions(app);
       const createOrder = httpsCallable(functions, 'createPayPalOrder');
       
@@ -22,108 +21,102 @@ export const paypalService = {
           price: item.price,
           quantity: item.quantity
         })),
-        customer: {
-          email: document.getElementById('customerEmail')?.value || '',
-          name: document.getElementById('customerName')?.value || ''
-        },
-        shipping: {
-          address: document.getElementById('shippingAddress')?.value || '',
-          department: document.getElementById('departamento')?.value || '',
-          municipality: document.getElementById('municipio')?.value || ''
-        }
+        customer: _getCustomerData(),
+        shipping: _getShippingData()
       });
 
-      await saveOrderAttempt(data.id, checkoutData);
+      await _saveToFirestore('orderAttempts', {
+        id: data.id,
+        status: 'CREATED',
+        userId: getAuth(app).currentUser?.uid || 'guest',
+        amount: checkoutData.total,
+        items: checkoutData.items.length,
+        createdAt: serverTimestamp()
+      });
+
       return data.id;
 
     } catch (error) {
-      console.error('Error al crear orden:', error);
       throw new Error(parsePayPalError(error));
     }
   },
 
-  /**
-   * Captura un pago de PayPal
-   * @param {string} orderId - ID de la orden PayPal
-   * @param {Object} checkoutData - Datos completos del checkout
-   * @returns {Promise<Object>} Resultado de la transacción
-   */
   captureOrder: async (orderId, checkoutData) => {
     try {
       const functions = getFunctions(app);
       const captureOrder = httpsCallable(functions, 'capturePayPalOrder');
       
       const { data } = await captureOrder({ orderId });
-      await saveTransaction(data, orderId, checkoutData);
+      await _saveTransaction(data, orderId, checkoutData);
       
       return data;
 
     } catch (error) {
-      console.error('Error al capturar orden:', error);
       throw new Error(parsePayPalError(error));
     }
   }
 };
 
-// ==================== Helpers Internos ====================
-
-async function saveOrderAttempt(orderId, checkoutData) {
-  const db = getFirestore(app);
-  const auth = getAuth(app);
+// ===== Funciones Auxiliares =====
+async function _saveTransaction(paymentData, orderId, checkoutData) {
+  const user = getAuth(app).currentUser;
   
-  await setDoc(doc(db, 'orderAttempts', orderId), {
-    status: 'CREATED',
-    userId: auth.currentUser?.uid || 'guest',
-    createdAt: serverTimestamp(),
-    amount: checkoutData.total,
-    items: checkoutData.items.length,
-    isGuest: !auth.currentUser
-  });
-}
-
-async function saveTransaction(paymentData, orderId, checkoutData) {
-  const db = getFirestore(app);
-  const auth = getAuth(app);
-  
-  await setDoc(doc(db, 'transactions', orderId), {
-    orderId,
+  await _saveToFirestore('transactions', {
+    id: orderId,
     status: paymentData.status,
     amount: checkoutData.total,
     subtotal: checkoutData.subtotal,
     tax: checkoutData.tax,
-    shipping: checkoutData.shipping,
+    shippingCost: checkoutData.shipping,
     items: checkoutData.items,
-    customer: {
-      userId: auth.currentUser?.uid || 'guest',
-      email: document.getElementById('customerEmail')?.value || '',
-      name: document.getElementById('customerName')?.value || '',
-      phone: document.getElementById('customerPhone')?.value || ''
-    },
-    shipping: {
-      address: document.getElementById('shippingAddress')?.value || '',
-      department: document.getElementById('departamento')?.value || '',
-      municipality: document.getElementById('municipio')?.value || ''
-    },
+    customer: _getCustomerData(),
+    shippingDetails: _getShippingData(),
     paymentMethod: 'paypal',
     paypalData: paymentData,
     timestamp: serverTimestamp(),
-    isGuest: !auth.currentUser
+    isGuest: !user
   });
 }
 
+function _getCustomerData() {
+  const email = document.getElementById('customerEmail')?.value.trim();
+  if (!email?.includes('@')) throw new Error('Email inválido');
+
+  return {
+    userId: getAuth(app).currentUser?.uid || 'guest',
+    email,
+    name: document.getElementById('customerName')?.value.trim() || '',
+    phone: document.getElementById('customerPhone')?.value.trim() || ''
+  };
+}
+
+function _getShippingData() {
+  return {
+    address: document.getElementById('shippingAddress')?.value.trim() || '',
+    department: document.getElementById('departamento')?.value || '',
+    municipality: document.getElementById('municipio')?.value || ''
+  };
+}
+
+async function _saveToFirestore(collection, data) {
+  try {
+    await setDoc(doc(getFirestore(app), collection, data.id), data);
+  } catch (error) {
+    console.error(`Error guardando en ${collection}:`, error);
+    throw error;
+  }
+}
+
 function parsePayPalError(error) {
-  // Error de Firebase Functions
-  if (error.details) {
-    return error.details.message || 'Error en el servidor';
+  // Errores de Firebase Functions
+  if (error.details?.code === 'PAYMENT_ERROR') {
+    return 'Error al procesar el pago. Verifica tus datos.';
   }
 
-  // Error de PayPal
-  if (error.message.includes('PAYPAL')) {
-    const match = error.message.match(/"message":"([^"]+)"/);
-    return match ? match[1] : 'Error al procesar el pago con PayPal';
-  }
+  // Errores de PayPal
+  const paypalError = error.message.match(/"message":"([^"]+)"/);
+  if (paypalError) return paypalError[1];
 
-  // Error genérico
   return error.message || 'Error desconocido';
 }
 
