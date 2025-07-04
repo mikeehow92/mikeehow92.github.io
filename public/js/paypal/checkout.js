@@ -1,9 +1,47 @@
-/**
- * Integración segura PayPal + Firebase (Credenciales en servidor)
- * Ubicación: /public/js/paypal/checkout.js
- * Versión 2.0 - Credenciales manejadas por backend
- */
+import { loadScript } from './utils.js';
+import { paypalService } from './service.js';
+import { doc, setDoc } from 'firebase/firestore'; // Importa funciones de Firestore
+import { db } from '../firebase-client.js'; // Importa la instancia de db
 
+// ==================== FUNCIÓN PARA GUARDAR ÓRDENES ====================
+async function saveOrder(orderData) {
+  try {
+    await setDoc(doc(db, "orders", orderData.id), orderData);
+    console.log("Orden guardada en Firestore con ID:", orderData.id);
+    return true;
+  } catch (error) {
+    console.error("Error al guardar la orden:", error);
+    return false;
+  }
+}
+
+// ==================== FUNCIÓN PRINCIPAL ====================
+export async function initPayPalCheckout(config = {}) {
+  try {
+    // 1. Cargar datos del carrito
+    const checkoutData = loadCheckoutData();
+    
+    // 2. Configurar PayPal
+    await loadPayPalSDK(config.clientId || 'SB');
+    setupPayPalButton(checkoutData, config);
+
+    // 3. Ejemplo de uso al completar el pago
+    const paymentSuccess = async (orderID) => {
+      const orderData = {
+        id: orderID,
+        items: checkoutData.items,
+        total: checkoutData.total,
+        timestamp: new Date()
+      };
+      
+      await saveOrder(orderData); // Guarda en Firestore
+      clearCart();
+    };
+
+  } catch (error) {
+    console.error("Error inicializando PayPal:", error);
+  }
+}
 import { loadScript } from './utils.js';
 
 // ==================== CONFIGURACIÓN INICIAL ====================
