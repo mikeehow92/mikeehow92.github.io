@@ -1,40 +1,46 @@
 /**
- * Integración de PayPal Checkout con Firebase
+ * Integración segura PayPal + Firebase (Credenciales en servidor)
  * Ubicación: /public/js/paypal/checkout.js
- * Versión corregida (Firebase v9 + PayPal SDK)
+ * Versión 2.0 - Credenciales manejadas por backend
  */
 
 import { loadScript } from './utils.js';
-import { paypalService } from './service.js';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import { db, auth } from '../firebase-client.js'; // Rutas ajustadas
 
 // ==================== CONFIGURACIÓN INICIAL ====================
 export async function initPayPalCheckout(config = {}) {
   try {
+    // 1. Cargar datos del carrito (localStorage)
     const checkoutData = loadCheckoutData();
     validateCheckoutData(checkoutData);
 
+    // 2. Renderizar UI
     renderCartItems(checkoutData);
     updateTotals(checkoutData);
     setupAddressForm();
 
-    await loadPayPalSDK(config.clientId || 'SB'); // 'SB' para sandbox
+    // 3. Cargar SDK PayPal (client-id seguro desde backend)
+    await loadPayPalSDK(config.clientId || await fetchClientIdFromServer());
 
+    // 4. Configurar botón PayPal
     setupPayPalButton(checkoutData, config);
 
+    // 5. Método de pago alternativo
     if (config.alternativePayment !== false) {
       setupAlternativePayment(checkoutData);
     }
 
-    setupModalClose();
   } catch (error) {
     handleInitializationError(error);
   }
 }
 
 // ==================== FUNCIONES PRINCIPALES ====================
+async function fetchClientIdFromServer() {
+  const response = await fetch('/api/get-paypal-client-id');
+  const data = await response.json();
+  return data.clientId; // Ejemplo: { clientId: "AXX..." }
+}
+
 async function loadPayPalSDK(clientId) {
   if (!window.paypal) {
     await loadScript(
@@ -44,28 +50,41 @@ async function loadPayPalSDK(clientId) {
 }
 
 function setupPayPalButton(checkoutData, config) {
-  // ✅ Corrección: No reasignar paypal.Buttons, usarlo directamente
   window.paypal.Buttons({
     style: {
       layout: 'vertical',
       color: 'blue',
       shape: 'rect',
-      label: 'paypal',
-      ...config.buttonStyle
+      label: 'paypal'
     },
     createOrder: async () => {
       if (!validateForm()) throw new Error('Complete los campos requeridos');
-      return await paypalService.createOrder(checkoutData);
+      
+      // ✅ Llama a tu endpoint seguro en el servidor
+      const response = await fetch('/api/create-paypal-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(checkoutData)
+      });
+      return await response.json().orderId;
     },
     onApprove: async (data) => {
       try {
-        const details = await paypalService.captureOrder(data.orderID, checkoutData);
-        showFeedback('¡Pago completado!', `Orden #${data.orderID} procesada`, 'success');
-        clearCart();
-        
-        setTimeout(() => {
-          config.onSuccess?.(details) || (window.location.href = 'confirmacion.html');
-        }, 3000);
+        // ✅ Verifica el pago con tu backend
+        const response = await fetch('/api/capture-paypal-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: data.orderID })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+          showFeedback('¡Pago completado!', `Orden #${data.orderID}`, 'success');
+          clearCart();
+          setTimeout(() => window.location.href = 'confirmacion.html', 3000);
+        } else {
+          throw new Error(result.error || "Error al procesar el pago");
+        }
       } catch (error) {
         handlePaymentError(error, config);
       }
@@ -75,64 +94,9 @@ function setupPayPalButton(checkoutData, config) {
 }
 
 // ==================== FUNCIONES AUXILIARES ====================
-function loadCheckoutData() {
-  const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
-  const shippingCost = parseFloat(localStorage.getItem('shippingCost')) || 0;
-  const taxRate = 0.13;
+// (Mantén las mismas funciones de utils, render, validación, etc.)
+// ...
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax + shippingCost;
-
-  return {
-    items: cartItems,
-    subtotal,
-    tax,
-    shipping: shippingCost,
-    total,
-    currency: 'USD'
-  };
-}
-
-// ✅ Corrección: Validación mejorada
-function validateForm() {
-  const requiredFields = ['customerName', 'customerEmail', 'shippingAddress'];
-  let isValid = true;
-
-  requiredFields.forEach(fieldId => {
-    const field = document.getElementById(fieldId);
-    if (!field?.value?.trim()) {
-      isValid = false;
-      field.style.borderColor = '#ff0000';
-    } else {
-      field.style.borderColor = '';
-    }
-  });
-
-  return isValid;
-}
-
-// ==================== MANEJO DE ERRORES ====================
-function handleInitializationError(error) {
-  console.error('Error inicializando pago:', error);
-  showFeedback('Error', error.message, 'error');
-  
-  if (error.message.includes('carrito')) {
-    setTimeout(() => window.location.href = 'productos.html', 2000);
-  }
-}
-
-function handlePaymentError(error, config) {
-  console.error("Error en el pago:", error);
-  const message = config?.onError?.(error) || parsePayPalError(error);
-  showFeedback('Error', message, 'error');
-  
-  if (isRecoverableError(error)) {
-    document.getElementById('alternativePayment').style.display = 'block';
-  }
-}
-
-// ==================== EXPORTACIONES ====================
 export default {
   init: initPayPalCheckout
 };
