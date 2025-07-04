@@ -4,38 +4,26 @@ import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { app } from '../shared/firebase-config.js';
 
-// Configuración de Firebase
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-/**
- * Inicializa el sistema de pago PayPal
- * @param {Object} config - Configuración opcional
- * @param {boolean} [config.enableCardFields=true] - Habilitar campos de tarjeta
- */
 export async function initPayPalCheckout(config = {}) {
   try {
-    // 1. Cargar y validar datos del carrito
     const checkoutData = loadCheckoutData();
     validateCheckoutData(checkoutData);
 
-    // 2. Renderizar UI
     renderCartItems(checkoutData);
     updateTotals(checkoutData);
     setupAddressForm();
 
-    // 3. Cargar SDK PayPal
-    await loadPayPalSDK(config.clientId || 'SB'); // SB para sandbox
+    await loadPayPalSDK(config.clientId || 'SB', config);
 
-    // 4. Configurar botón de PayPal
     setupPayPalButton(checkoutData, config);
 
-    // 5. Configurar método alternativo si es necesario
     if (config.alternativePayment !== false) {
       setupAlternativePayment(checkoutData);
     }
 
-    // 6. Configurar cierre del modal
     setupModalClose();
 
   } catch (error) {
@@ -43,9 +31,7 @@ export async function initPayPalCheckout(config = {}) {
   }
 }
 
-// ==================== CORE FUNCTIONS ====================
-
-async function loadPayPalSDK(clientId) {
+async function loadPayPalSDK(clientId, config = {}) {
   if (!window.paypal) {
     await loadScript(
       `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&components=buttons${config.enableCardFields ? ',card-fields' : ''}`
@@ -92,17 +78,12 @@ function setupPayPalButton(checkoutData, config) {
 
   buttons.render('#paypal-button-container');
   
-  if (config.enableCardFields) {
+  if (config.enableCardFields && window.paypal.CardFields?.isEligible()) {
     renderCardFields(checkoutData, config);
   }
 }
 
 function renderCardFields(checkoutData, config) {
-  if (!window.paypal.CardFields?.isEligible()) {
-    console.warn('Campos de tarjeta no disponibles');
-    return;
-  }
-
   const cardFields = window.paypal.CardFields({
     createOrder: () => paypalService.createOrder(checkoutData),
     onApprove: async (data) => {
@@ -115,13 +96,11 @@ function renderCardFields(checkoutData, config) {
     }
   });
 
-  // Renderizar campos individuales
   cardFields.NameField().render('#card-name-field');
   cardFields.NumberField().render('#card-number-field');
   cardFields.CVVField().render('#card-cvv-field');
   cardFields.ExpiryField().render('#card-expiry-field');
 
-  // Configurar envío manual
   document.querySelector('#card-submit-button')?.addEventListener('click', () => {
     cardFields.submit({
       billingAddress: getBillingAddress()
@@ -129,22 +108,20 @@ function renderCardFields(checkoutData, config) {
   });
 }
 
-// ==================== HELPER FUNCTIONS ====================
-
 function loadCheckoutData() {
-  const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
-  const shippingCost = parseFloat(localStorage.getItem('shippingCost')) || 0;
-  const taxRate = 0.13; // 13% de impuestos
+  const storedData = JSON.parse(localStorage.getItem('currentCheckout')) || {
+    items: JSON.parse(localStorage.getItem('cartItems')) || [],
+    shippingCost: parseFloat(localStorage.getItem('shippingCost')) || 0
+  };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax + shippingCost;
+  const subtotal = storedData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const tax = subtotal * 0.13;
+  const total = subtotal + tax + (storedData.shippingCost || 0);
 
   return {
-    items: cartItems,
+    ...storedData,
     subtotal,
     tax,
-    shipping: shippingCost,
     total,
     currency: 'USD'
   };
@@ -154,9 +131,14 @@ function validateCheckoutData(data) {
   if (!data.items || data.items.length === 0) {
     throw new Error('No hay productos en el carrito');
   }
-  if (data.total <= 0) {
+  if (data.total <= 0 || isNaN(data.total)) {
     throw new Error('El total debe ser mayor que cero');
   }
+  data.items.forEach(item => {
+    if (!item.price || !item.quantity) {
+      throw new Error('Productos con datos inválidos');
+    }
+  });
 }
 
 function validateForm() {
@@ -191,8 +173,6 @@ function getBillingAddress() {
   };
 }
 
-// ==================== UI FUNCTIONS ====================
-
 function renderCartItems(checkoutData) {
   const container = document.getElementById('orderItems');
   if (!container) return;
@@ -218,7 +198,7 @@ function renderCartItems(checkoutData) {
       </div>
       <div class="summary-row">
         <span>Envío:</span>
-        <span>$${checkoutData.shipping.toFixed(2)}</span>
+        <span>$${checkoutData.shippingCost.toFixed(2)}</span>
       </div>
       <div class="summary-row total">
         <span>Total:</span>
@@ -297,8 +277,6 @@ function setupAlternativePayment(checkoutData) {
   });
 }
 
-// ==================== FEEDBACK HANDLERS ====================
-
 function showSuccessFeedback(orderId) {
   showFeedback('¡Pago exitoso!', `Orden #${orderId} procesada`, 'success');
   clearCart();
@@ -319,7 +297,16 @@ function handleInitializationError(error) {
 
 function handlePaymentError(error, config) {
   console.error("Error en el pago:", error);
-  const message = config?.onError?.(error) || parsePayPalError(error);
+  let message = 'Error desconocido';
+  
+  if (error.message.includes('INSTRUMENT_DECLINED')) {
+    message = 'Tarjeta rechazada. Intente otro método de pago';
+  } else if (error.message.includes('PAYER_ACTION_REQUIRED')) {
+    message = 'Complete la verificación en PayPal';
+  } else {
+    message = config?.onError?.(error) || error.message;
+  }
+
   showFeedback('Error', message, 'error');
   
   if (isRecoverableError(error)) {
@@ -348,9 +335,8 @@ function setupModalClose() {
 function clearCart() {
   localStorage.removeItem('cartItems');
   localStorage.removeItem('shippingCost');
+  localStorage.removeItem('currentCheckout');
 }
-
-// ==================== UTILITIES ====================
 
 function parsePayPalError(error) {
   if (error.details) return error.details.message || 'Error en el servidor';
@@ -366,7 +352,6 @@ function isRecoverableError(error) {
          error.message.includes('PAYER_ACTION_REQUIRED');
 }
 
-// Datos geográficos (mejor en un archivo aparte)
 const municipiosPorDepartamento = {
   'Ahuachapán': ['Ahuachapán', 'Apaneca', 'Atiquizaya', 'Concepción de Ataco', 'El Refugio', 
                 'Guaymango', 'Jujutla', 'San Francisco Menéndez', 'San Lorenzo', 'San Pedro Puxtla',
@@ -430,3 +415,5 @@ const municipiosPorDepartamento = {
               'Nueva Esparta', 'Pasaquina', 'Polorós', 'San Alejo', 'San José',
               'Santa Rosa de Lima', 'Yayantique', 'Yucuaiquín']
 };
+
+export { initPayPalCheckout };
