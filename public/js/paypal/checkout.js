@@ -1,53 +1,21 @@
-import { loadScript } from './utils.js';
-import { paypalService } from './service.js';
-import { doc, setDoc } from 'firebase/firestore'; // Importa funciones de Firestore
-import { db } from '../firebase-client.js'; // Importa la instancia de db
+/**
+ * Integración de PayPal Checkout con Firebase Firestore
+ * Ubicación: /public/js/paypal/checkout.js
+ * Versión segura y modular (Firebase v9 + PayPal SDK)
+ */
 
-// ==================== FUNCIÓN PARA GUARDAR ÓRDENES ====================
-async function saveOrder(orderData) {
-  try {
-    await setDoc(doc(db, "orders", orderData.id), orderData);
-    console.log("Orden guardada en Firestore con ID:", orderData.id);
-    return true;
-  } catch (error) {
-    console.error("Error al guardar la orden:", error);
-    return false;
-  }
-}
+import { loadScript } from './utils.js';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase-client.js'; // Conexión a Firestore
+
+// ==================== CONSTANTES ====================
+const PAYPAL_SDK_URL = 'https://www.paypal.com/sdk/js?client-id=';
+const DEFAULT_CURRENCY = 'USD';
 
 // ==================== FUNCIÓN PRINCIPAL ====================
 export async function initPayPalCheckout(config = {}) {
   try {
     // 1. Cargar datos del carrito
-    const checkoutData = loadCheckoutData();
-    
-    // 2. Configurar PayPal
-    await loadPayPalSDK(config.clientId || 'SB');
-    setupPayPalButton(checkoutData, config);
-
-    // 3. Ejemplo de uso al completar el pago
-    const paymentSuccess = async (orderID) => {
-      const orderData = {
-        id: orderID,
-        items: checkoutData.items,
-        total: checkoutData.total,
-        timestamp: new Date()
-      };
-      
-      await saveOrder(orderData); // Guarda en Firestore
-      clearCart();
-    };
-
-  } catch (error) {
-    console.error("Error inicializando PayPal:", error);
-  }
-}
-import { loadScript } from './utils.js';
-
-// ==================== CONFIGURACIÓN INICIAL ====================
-export async function initPayPalCheckout(config = {}) {
-  try {
-    // 1. Cargar datos del carrito (localStorage)
     const checkoutData = loadCheckoutData();
     validateCheckoutData(checkoutData);
 
@@ -56,13 +24,11 @@ export async function initPayPalCheckout(config = {}) {
     updateTotals(checkoutData);
     setupAddressForm();
 
-    // 3. Cargar SDK PayPal (client-id seguro desde backend)
-    await loadPayPalSDK(config.clientId || await fetchClientIdFromServer());
-
-    // 4. Configurar botón PayPal
+    // 3. Inicializar PayPal
+    await loadPayPalSDK(config.clientId || 'SB'); // 'SB' = Sandbox
     setupPayPalButton(checkoutData, config);
 
-    // 5. Método de pago alternativo
+    // 4. Método de pago alternativo
     if (config.alternativePayment !== false) {
       setupAlternativePayment(checkoutData);
     }
@@ -72,18 +38,25 @@ export async function initPayPalCheckout(config = {}) {
   }
 }
 
-// ==================== FUNCIONES PRINCIPALES ====================
-async function fetchClientIdFromServer() {
-  const response = await fetch('/api/get-paypal-client-id');
-  const data = await response.json();
-  return data.clientId; // Ejemplo: { clientId: "AXX..." }
+// ==================== FUNCIONES DE FIRESTORE ====================
+async function saveOrderToFirestore(orderData) {
+  try {
+    await setDoc(doc(db, "orders", orderData.id), {
+      ...orderData,
+      status: 'completed',
+      timestamp: serverTimestamp()
+    });
+    return true;
+  } catch (error) {
+    console.error("Error saving order to Firestore:", error);
+    return false;
+  }
 }
 
+// ==================== FUNCIONES DE PAYPAL ====================
 async function loadPayPalSDK(clientId) {
   if (!window.paypal) {
-    await loadScript(
-      `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`
-    );
+    await loadScript(`${PAYPAL_SDK_URL}${clientId}&currency=${DEFAULT_CURRENCY}`);
   }
 }
 
@@ -92,37 +65,33 @@ function setupPayPalButton(checkoutData, config) {
     style: {
       layout: 'vertical',
       color: 'blue',
-      shape: 'rect',
-      label: 'paypal'
+      shape: 'rect'
     },
     createOrder: async () => {
       if (!validateForm()) throw new Error('Complete los campos requeridos');
-      
-      // ✅ Llama a tu endpoint seguro en el servidor
-      const response = await fetch('/api/create-paypal-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(checkoutData)
-      });
-      return await response.json().orderId;
+      return await createPayPalOrder(checkoutData);
     },
     onApprove: async (data) => {
       try {
-        // ✅ Verifica el pago con tu backend
-        const response = await fetch('/api/capture-paypal-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId: data.orderID })
-        });
-        const result = await response.json();
+        const captureResult = await capturePayPalOrder(data.orderID);
+        
+        // Guardar en Firestore
+        const orderData = {
+          id: data.orderID,
+          items: checkoutData.items,
+          total: checkoutData.total,
+          payer: captureResult.payer
+        };
+        
+        await saveOrderToFirestore(orderData);
+        
+        showFeedback('¡Pago completado!', `Orden #${data.orderID}`, 'success');
+        clearCart();
+        
+        setTimeout(() => {
+          config.onSuccess?.(captureResult) || (window.location.href = 'confirmacion.html');
+        }, 3000);
 
-        if (result.success) {
-          showFeedback('¡Pago completado!', `Orden #${data.orderID}`, 'success');
-          clearCart();
-          setTimeout(() => window.location.href = 'confirmacion.html', 3000);
-        } else {
-          throw new Error(result.error || "Error al procesar el pago");
-        }
       } catch (error) {
         handlePaymentError(error, config);
       }
@@ -132,8 +101,63 @@ function setupPayPalButton(checkoutData, config) {
 }
 
 // ==================== FUNCIONES AUXILIARES ====================
-// (Mantén las mismas funciones de utils, render, validación, etc.)
-// ...
+function loadCheckoutData() {
+  const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const tax = subtotal * 0.13;
+  const shipping = parseFloat(localStorage.getItem('shippingCost')) || 0;
+
+  return {
+    items: cartItems,
+    subtotal,
+    tax,
+    shipping,
+    total: subtotal + tax + shipping,
+    currency: DEFAULT_CURRENCY
+  };
+}
+
+function validateForm() {
+  const requiredFields = ['customerName', 'customerEmail', 'shippingAddress'];
+  return requiredFields.every(field => {
+    const value = document.getElementById(field)?.value?.trim();
+    if (!value) {
+      document.getElementById(field).style.borderColor = 'red';
+      return false;
+    }
+    return true;
+  });
+}
+
+// ==================== MANEJO DE ERRORES ====================
+function handlePaymentError(error, config) {
+  console.error("Payment error:", error);
+  const message = error.message || 'Error al procesar el pago';
+  showFeedback('Error', message, 'error');
+  config.onError?.(error);
+}
+
+function handleInitializationError(error) {
+  console.error("Initialization error:", error);
+  showFeedback('Error', 'No se pudo iniciar el pago', 'error');
+}
+
+// ==================== UI FUNCTIONS ====================
+function renderCartItems(data) {
+  const container = document.getElementById('orderItems');
+  if (!container) return;
+
+  container.innerHTML = data.items.map(item => `
+    <div class="cart-item">
+      <span>${item.name} x${item.quantity}</span>
+      <span>$${(item.price * item.quantity).toFixed(2)}</span>
+    </div>
+  `).join('');
+}
+
+function showFeedback(title, message, type) {
+  // Implementa tu lógica de visualización de feedback
+}
 
 export default {
   init: initPayPalCheckout
