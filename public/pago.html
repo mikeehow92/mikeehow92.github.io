@@ -5,15 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pago - MiTienda</title>
   
-  <!-- Firebase SDK (versión modular) -->
   <script type="module" src="/src/shared/firebase-config.js"></script>
   
-  <!-- PayPal SDK (se carga dinámicamente desde pago.js) -->
-  
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Estilos -->
   <link rel="stylesheet" href="/assets/css/styles.css">
   <link rel="stylesheet" href="/assets/css/auth.css">
   
@@ -34,140 +29,238 @@
       width: 100%;
       margin-top: 15px;
     }
+    .payment-options button {
+      margin-top: 10px;
+    }
+    .payment-options .button-paypal {
+      background-color: #0070ba; /* PayPal blue */
+      color: white;
+    }
     .feedback-overlay {
-      display: none;
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-      align-items: center;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
       justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
     }
     .feedback-overlay.active {
-      display: flex;
+      opacity: 1;
+      visibility: visible;
     }
     .feedback-content {
-      background: white;
+      background-color: white;
       padding: 30px;
       border-radius: 8px;
       text-align: center;
       max-width: 400px;
       width: 90%;
+      box-shadow: var(--shadow);
+      animation: slideIn 0.3s ease-out;
     }
-    .success {
+    .feedback-icon {
+      font-size: 4em;
+      margin-bottom: 20px;
+    }
+    .feedback-icon .success {
       color: #28a745;
     }
-    .error {
+    .feedback-icon .error {
       color: #dc3545;
     }
-    .loading-items {
-      padding: 20px;
-      text-align: center;
+    .feedback-title {
+      font-size: 1.8em;
+      margin-bottom: 10px;
+      color: #333;
     }
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(0,0,0,.1);
+    .feedback-message {
+      font-size: 1.1em;
+      color: #666;
+      margin-bottom: 25px;
+    }
+    .feedback-content button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: background-color 0.3s ease;
+    }
+    .feedback-content button:hover {
+      background-color: var(--primary-dark);
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1001;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .loading-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .loading-spinner {
+      border: 8px solid rgba(255, 255, 255, 0.3);
+      border-top: 8px solid #fff;
       border-radius: 50%;
-      border-top-color: #0070ba;
-      animation: spin 1s ease-in-out infinite;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
     }
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    /* Estilos para el resumen del pedido */
+    .order-summary {
+      background-color: var(--white);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-top: 20px;
+    }
+    .order-summary h3 {
+      font-size: 1.5em;
+      color: var(--secondary);
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--gray-light);
+      padding-bottom: 10px;
+    }
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--gray-light);
+      font-size: 0.95em;
+    }
+    .order-item:last-child {
+      border-bottom: none;
+    }
+    .order-totals {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid var(--gray-light);
+    }
+    .order-totals div {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 1em;
+    }
+    .order-totals .total-amount {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .error {
+      color: var(--primary);
+      text-align: center;
+      margin-top: 20px;
+    }
+    .error a {
+      color: var(--secondary);
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <!-- Header -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+  </div>
+
   <header class="header">
-    <div class="container header-container">
-      <div class="logo">
-        <a href="index.html"><img src="assets/imagenes/logo.png" alt="MiTienda"></a>
-      </div>
-      <div class="cart-icon">
-        <i class="fas fa-shopping-cart"></i>
-        <span id="cart-counter">0</span>
-      </div>
-    </div>
+    <nav class="navbar container">
+      <a href="index.html" class="logo">MiTienda<span>503</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="productos.html">Productos</a></li>
+        <li><a href="perfil.html">Perfil</a></li>
+        <li><a href="registro.html">Regístrate</a></li>
+      </ul>
+    </nav>
   </header>
 
-  <main class="container">
-    <h1><i class="fas fa-credit-card"></i> Finalizar Compra</h1>
-    
-    <div class="checkout-grid">
-      <!-- Resumen del Pedido -->
+  <main class="container page-content">
+    <div class="auth-card">
+      <h2 class="auth-title">Confirmar tu Pedido</h2>
+      
       <div class="order-summary">
-        <h2>Resumen de tu Pedido</h2>
+        <h3>Tu Carrito</h3>
         <div id="orderItems">
-          <div class="loading-items">
-            <span class="loading"></span> Cargando productos...
-          </div>
+          <p>Cargando carrito...</p>
         </div>
-        <div class="order-total">
-          Total: $<span id="orderTotal">0.00</span>
+        <div class="order-totals">
+          <div>
+            <span>Subtotal:</span>
+            <span>$<span id="subtotal">0.00</span></span>
+          </div>
+          <div>
+            <span>Envío:</span>
+            <span>$0.00</span> </div>
+          <div class="total-amount">
+            <span>Total a pagar:</span>
+            <span>$<span id="finalTotal">0.00</span></span>
+          </div>
         </div>
       </div>
-      
-      <!-- Formulario de Pago -->
-      <div class="payment-form">
-        <h2>Información de Envío y Pago</h2>
-        <form id="paymentForm">
-          <!-- Información del Cliente -->
+
+      <div class="auth-form-container">
+        <form id="paymentForm" class="auth-form">
           <div class="form-group">
-            <label for="customerName">Nombre Completo*</label>
-            <input type="text" id="customerName" required>
-            <div class="error-message">Este campo es requerido</div>
+            <label for="customerName">Nombre Completo</label>
+            <input type="text" id="customerName" placeholder="Tu nombre" required>
           </div>
-          
           <div class="form-group">
-            <label for="customerEmail">Correo Electrónico*</label>
-            <input type="email" id="customerEmail" required>
-            <div class="error-message">Ingrese un correo válido</div>
+            <label for="customerEmail">Correo Electrónico</label>
+            <input type="email" id="customerEmail" placeholder="tu@ejemplo.com" required>
           </div>
-          
           <div class="form-group">
-            <label for="customerPhone">Teléfono*</label>
-            <input type="tel" id="customerPhone" required>
-            <div class="error-message">Este campo es requerido</div>
+            <label for="customerPhone">Teléfono</label>
+            <input type="tel" id="customerPhone" placeholder="Ej: 7123-4567" required>
           </div>
-          
-          <!-- Dirección de Envío -->
           <div class="form-group">
-            <label for="shippingAddress">Dirección Exacta*</label>
-            <input type="text" id="shippingAddress" required placeholder="Calle, número, colonia, referencia">
-            <div class="error-message">Este campo es requerido</div>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="departamento">Departamento*</label>
-              <select id="departamento" required>
-                <option value="">Seleccione...</option>
-                <!-- Los departamentos se cargarán dinámicamente -->
+            <label for="departamento">Departamento</label>
+            <select id="departamento" required>
+              <option value="">Selecciona tu departamento</option>
               </select>
-            </div>
+          </div>
+          <div class="form-group">
+            <label for="municipio">Municipio</label>
+            <select id="municipio" required disabled>
+              <option value="">Selecciona tu municipio</option>
+              </select>
+          </div>
+          <div class="form-group">
+            <label for="shippingAddress">Dirección Exacta</label>
+            <textarea id="shippingAddress" rows="3" placeholder="Calle, número de casa, colonia, etc." required></textarea>
+          </div>
+
+          <div class="payment-options">
+            <div id="paypal-button-container"></div>
             
-            <div class="form-group">
-              <label for="municipio">Municipio*</label>
-              <select id="municipio" required>
-                <option value="">Seleccione departamento primero</option>
-              </select>
-            </div>
-          </div>
-          
-          <!-- Método de Pago -->
-          <div class="form-group">
-            <h3>Método de Pago</h3>
-            <div id="paypal-button-container" class="paypal-button-container">
-              <div class="loading-items">
-                <span class="loading"></span> Cargando métodos de pago...
-              </div>
-            </div>
-            <button type="button" id="alternativePayment" class="submit-payment">
+            <button type="submit" id="alternativePayment" class="submit-payment">
               <i class="fas fa-lock"></i> Confirmar Pago $<span id="paymentTotal">0.00</span>
             </button>
           </div>
@@ -176,7 +269,6 @@
     </div>
   </main>
 
-  <!-- Modal de Feedback -->
   <div class="feedback-overlay" id="feedbackModal">
     <div class="feedback-content">
       <div class="feedback-icon" id="feedbackIcon">
@@ -188,26 +280,63 @@
     </div>
   </div>
 
-  <!-- Scripts -->
   <script type="module">
-    import { initPayment } from '/src/paypal/checkout.js';
+    // CORRECCIÓN: Cambiado de initPayment a initPayPalCheckout
+    import { initPayPalCheckout } from '/src/paypal/checkout.js'; 
     
     // Inicializar el sistema de pago
     document.addEventListener('DOMContentLoaded', () => {
       try {
-        if (typeof initPayment === 'function') {
-          initPayment();
+        // CORRECCIÓN: Llamada a initPayPalCheckout
+        if (typeof initPayPalCheckout === 'function') { 
+          initPayPalCheckout();
         } else {
-          console.error('initPayment no está definido');
+          console.error('initPayPalCheckout no está definido'); // Mensaje de error actualizado
           document.getElementById('orderItems').innerHTML = 
             '<p class="error">Error al cargar el sistema de pago. Recargue la página.</p>';
         }
       } catch (error) {
         console.error('Error inicializando pago:', error);
         document.getElementById('orderItems').innerHTML = 
-          `<p class="error">Error crítico: ${error.message}</p>`;
+          `<p class="error">Error al cargar tu pedido. Recargue la página o <a href="productos.html">vuelve a productos</a>.</p>`;
       }
     });
+
+    // Código para el manejo de feedbackModal y loadingOverlay (si lo tenías en tu pago.html original)
+    const feedbackModal = document.getElementById('feedbackModal');
+    const feedbackClose = document.getElementById('feedbackClose');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    if (feedbackClose) {
+      feedbackClose.addEventListener('click', () => {
+        if (feedbackModal) feedbackModal.classList.remove('active');
+        window.location.href = 'index.html'; // Redirigir a inicio después del pago
+      });
+    }
+
+    // Funciones para mostrar/ocultar el feedback y el spinner
+    window.showFeedback = (title, message, type = 'success') => {
+      const iconElement = document.getElementById('feedbackIcon');
+      const titleElement = document.getElementById('feedbackTitle');
+      const messageElement = document.getElementById('feedbackMessage');
+
+      if (iconElement) {
+        iconElement.innerHTML = type === 'success' ? '<i class="fas fa-check-circle success"></i>' : '<i class="fas fa-times-circle error"></i>';
+      }
+      if (titleElement) titleElement.textContent = title;
+      if (messageElement) messageElement.textContent = message;
+      if (feedbackModal) feedbackModal.classList.add('active');
+    };
+
+    window.showLoading = (show) => {
+      if (loadingOverlay) {
+        if (show) {
+          loadingOverlay.classList.add('active');
+        } else {
+          loadingOverlay.classList.remove('active');
+        }
+      }
+    };
   </script>
 </body>
 </html>
