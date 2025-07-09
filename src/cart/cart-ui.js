@@ -1,215 +1,237 @@
-import { CartService } from './cart-service';
-import { AuthService } from '../auth/auth';
-import { showFeedback } from '../shared/feedback';
+// src/cart/cart-ui.js
 
-// Selectores del DOM
+import { CartService } from './cart.js';
+// Asumiendo que tienes una función global showFeedback
+// Si no, necesitarías importarla o definirla aquí.
+// import { showFeedback } from '../shared/feedback.js'; // Ejemplo de importación
+
 const SELECTORS = {
-  CART_CONTAINER: '#cart-container',
-  CART_TOGGLE: '#cart-toggle',
-  CART_OVERLAY: '#cart-overlay',
-  CART_ITEMS: '#cart-items',
-  CART_TOTAL: '#cart-total',
-  CART_COUNT: '#cart-count',
-  CHECKOUT_BTN: '#checkout-btn',
-  EMPTY_CART: '#empty-cart'
-};
-
-// Clases CSS
-const CLASSES = {
-  ACTIVE: 'active',
-  HIDDEN: 'hidden'
+  CART_MODAL: '#cartModal',
+  CART_ITEMS_CONTAINER: '#cartItems',
+  CART_TOTAL_ELEMENT: '#cartTotal',
+  CART_COUNT_ELEMENT: '#cartCount',
+  ADD_TO_CART_BUTTON: '.add-to-cart-btn',
+  OPEN_CART_BUTTON: '#openCartBtn',
+  CLOSE_CART_BUTTON: '.close-button',
+  CLEAR_CART_BUTTON: '#clearCartBtn',
+  CHECKOUT_BTN: '#checkoutBtn',
+  QUANTITY_INPUT: '.cart-item-quantity',
+  REMOVE_ITEM_BUTTON: '.remove-item-btn',
 };
 
 /**
- * Inicializa la UI del carrito
+ * Muestra u oculta el modal del carrito.
+ * @param {boolean} show - True para mostrar, false para ocultar.
  */
-export const initCartUI = () => {
-  setupEventListeners();
-  renderCart();
-  setupAuthListener();
-};
-
-/**
- * Configura los event listeners
- */
-const setupEventListeners = () => {
-  // Toggle del carrito
-  document.querySelector(SELECTORS.CART_TOGGLE)?.addEventListener('click', toggleCart);
-  document.querySelector(SELECTORS.CART_OVERLAY)?.addEventListener('click', closeCart);
-
-  // Delegación de eventos para botones dinámicos
-  document.querySelector(SELECTORS.CART_ITEMS)?.addEventListener('click', handleCartActions);
-  
-  // Checkout - modificado para redirigir a pago.html
-  document.querySelector(SELECTORS.CHECKOUT_BTN)?.addEventListener('click', handleCheckout);
-};
-
-/**
- * Configura el listener de cambios de autenticación
- */
-const setupAuthListener = () => {
-  AuthService.onAuthStateChanged(() => {
-    renderCart();
-  });
-};
-
-/**
- * Renderiza el carrito
- */
-const renderCart = async () => {
-  const cart = await CartService.getCart();
-  updateCartCount(cart);
-  renderCartItems(cart);
-  updateCartTotal(cart);
-  toggleEmptyState(cart);
-};
-
-/**
- * Renderiza los items del carrito
- * @param {Array} cart 
- */
-const renderCartItems = (cart) => {
-  const container = document.querySelector(SELECTORS.CART_ITEMS);
-  if (!container) return;
-
-  container.innerHTML = cart.map(item => `
-    <div class="cart-item" data-id="${item.id}">
-      <img src="${item.image}" alt="${item.name}" class="cart-item-image">
-      <div class="cart-item-details">
-        <h4 class="cart-item-title">${item.name}</h4>
-        <p class="cart-item-price">$${item.price.toFixed(2)}</p>
-      </div>
-      <div class="cart-item-actions">
-        <button class="btn-quantity" data-action="decrease">−</button>
-        <span class="cart-item-quantity">${item.quantity}</span>
-        <button class="btn-quantity" data-action="increase">+</button>
-        <button class="btn-remove" data-action="remove">
-          <i class="fas fa-trash"></i>
-        </button>
-      </div>
-    </div>
-  `).join('');
-};
-
-/**
- * Maneja las acciones del carrito
- * @param {Event} e 
- */
-const handleCartActions = async (e) => {
-  const itemElement = e.target.closest('.cart-item');
-  if (!itemElement) return;
-
-  const productId = itemElement.dataset.id;
-  const action = e.target.closest('[data-action]')?.dataset.action;
-
-  try {
-    switch (action) {
-      case 'increase':
-        await CartService.addItem({ id: productId }, 1);
-        break;
-      case 'decrease':
-        const quantityElement = itemElement.querySelector('.cart-item-quantity');
-        const currentQty = parseInt(quantityElement.textContent);
-        await CartService.updateQuantity(productId, currentQty - 1);
-        break;
-      case 'remove':
-        await CartService.removeItem(productId);
-        showFeedback('Producto eliminado', 'success');
-        break;
-    }
-    await renderCart();
-  } catch (error) {
-    showFeedback('Error al actualizar carrito', 'error');
+const toggleCartModal = (show) => {
+  const cartModal = document.querySelector(SELECTORS.CART_MODAL);
+  if (cartModal) {
+    cartModal.style.display = show ? 'block' : 'none';
   }
 };
 
 /**
- * Maneja el proceso de checkout - MODIFICADO PARA REDIRIGIR A PAGO.HTML
+ * Renderiza los ítems del carrito en el modal.
+ * @param {Array} cart - El array del carrito.
  */
-const handleCheckout = async () => {
-  const user = AuthService.getCurrentUser();
-  const cart = await CartService.getCart();
+const renderCart = (cart) => {
+  const cartItemsContainer = document.querySelector(SELECTORS.CART_ITEMS_CONTAINER);
+  const cartTotalElement = document.querySelector(SELECTORS.CART_TOTAL_ELEMENT);
+  const cartCountElement = document.querySelector(SELECTORS.CART_COUNT_ELEMENT);
 
-  if (cart.length === 0) {
-    showFeedback('El carrito está vacío', 'error');
+  if (!cartItemsContainer || !cartTotalElement || !cartCountElement) {
+    console.error('Elementos del DOM del carrito no encontrados.');
     return;
   }
 
-  // Preparar datos para el checkout
-  const checkoutData = {
-    items: cart,
-    total: CartService.getTotal(cart),
-    subtotal: CartService.getTotal(cart) * 0.88, // Ejemplo con IVA del 12%
-    tax: CartService.getTotal(cart) * 0.12
+  cartItemsContainer.innerHTML = ''; // Limpiar ítems existentes
+
+  if (cart.length === 0) {
+    cartItemsContainer.innerHTML = '<p class="empty-cart-message">Tu carrito está vacío.</p>';
+  } else {
+    cart.forEach(item => {
+      const itemElement = document.createElement('div');
+      itemElement.classList.add('cart-item');
+      itemElement.innerHTML = `
+        <img src="${item.imageUrl || '/assets/images/placeholder.png'}" alt="${item.name}">
+        <div class="item-details">
+          <h4>${item.name}</h4>
+          <p>Precio: $${item.price.toFixed(2)}</p>
+          <div class="quantity-controls">
+            <button class="quantity-minus" data-id="${item.id}">-</button>
+            <input type="number" class="cart-item-quantity" value="${item.quantity}" min="1" data-id="${item.id}">
+            <button class="quantity-plus" data-id="${item.id}">+</button>
+          </div>
+        </div>
+        <button class="remove-item-btn" data-id="${item.id}">
+          <i class="fas fa-trash"></i>
+        </button>
+      `;
+      cartItemsContainer.appendChild(itemElement);
+    });
+  }
+
+  const total = CartService.getTotal(cart);
+  const itemCount = CartService.getItemCount(cart);
+
+  cartTotalElement.textContent = total.toFixed(2);
+  cartCountElement.textContent = itemCount;
+};
+
+/**
+ * Maneja la adición de un producto al carrito.
+ * @param {Event} event - El evento de click.
+ */
+const handleAddToCart = async (event) => {
+  const button = event.target.closest(SELECTORS.ADD_TO_CART_BUTTON);
+  if (!button) return;
+
+  const productId = button.dataset.id;
+  const productName = button.dataset.name;
+  const productPrice = parseFloat(button.dataset.price);
+  const productImageUrl = button.dataset.image; // Asegúrate de que este data-attribute exista en tu HTML
+
+  if (!productId || !productName || isNaN(productPrice)) {
+    console.error('Datos de producto incompletos para añadir al carrito.');
+    return;
+  }
+
+  const product = {
+    id: productId,
+    name: productName,
+    price: productPrice,
+    imageUrl: productImageUrl
   };
 
-  // Guardar en localStorage para usar en pago.html
-  localStorage.setItem('currentCheckout', JSON.stringify(checkoutData));
-  
-  // Redirigir a la página de pago
+  await CartService.addItem(product, 1); // Añade una unidad por defecto
+  const updatedCart = await CartService.getCart();
+  renderCart(updatedCart);
+  toggleCartModal(true); // Abrir el carrito automáticamente
+  if (typeof window.showFeedback === 'function') {
+    window.showFeedback('Producto Añadido', `${productName} ha sido añadido al carrito.`, 'success');
+  }
+};
+
+/**
+ * Maneja la actualización de la cantidad de un ítem en el carrito.
+ * @param {Event} event - El evento de input o click.
+ */
+const handleQuantityChange = async (event) => {
+  const target = event.target;
+  const productId = target.dataset.id;
+  let newQuantity;
+
+  if (target.classList.contains('quantity-minus')) {
+    const input = target.nextElementSibling;
+    newQuantity = parseInt(input.value) - 1;
+  } else if (target.classList.contains('quantity-plus')) {
+    const input = target.previousElementSibling;
+    newQuantity = parseInt(input.value) + 1;
+  } else if (target.classList.contains('cart-item-quantity')) {
+    newQuantity = parseInt(target.value);
+  } else {
+    return;
+  }
+
+  if (isNaN(newQuantity) || newQuantity < 0) newQuantity = 0;
+
+  await CartService.updateItemQuantity(productId, newQuantity);
+  const updatedCart = await CartService.getCart();
+  renderCart(updatedCart);
+};
+
+/**
+ * Maneja la eliminación de un ítem del carrito.
+ * @param {Event} event - El evento de click.
+ */
+const handleRemoveItem = async (event) => {
+  const button = event.target.closest(SELECTORS.REMOVE_ITEM_BUTTON);
+  if (!button) return;
+
+  const productId = button.dataset.id;
+  await CartService.removeItem(productId);
+  const updatedCart = await CartService.getCart();
+  renderCart(updatedCart);
+  if (typeof window.showFeedback === 'function') {
+    window.showFeedback('Producto Eliminado', 'El producto ha sido eliminado del carrito.', 'info');
+  }
+};
+
+/**
+ * Maneja la limpieza completa del carrito.
+ */
+const handleClearCart = async () => {
+  if (confirm('¿Estás seguro de que quieres vaciar el carrito?')) {
+    await CartService.clearCart();
+    const updatedCart = await CartService.getCart();
+    renderCart(updatedCart);
+    if (typeof window.showFeedback === 'function') {
+      window.showFeedback('Carrito Vaciado', 'Todos los productos han sido eliminados del carrito.', 'info');
+    }
+  }
+};
+
+/**
+ * Maneja el click en el botón "Proceder al Pago".
+ */
+const handleCheckout = async () => {
+  const cart = await CartService.getCart(); // Obtén el carrito actual
+
+  if (cart.length === 0) {
+    if (typeof window.showFeedback === 'function') {
+      window.showFeedback('Carrito Vacío', 'No puedes proceder al pago con un carrito vacío.', 'info');
+    }
+    return;
+  }
+
+  // Si el carrito no está vacío, simplemente redirige a la página de pago.
+  // La lógica de "compra realizada" se manejará en la página de pago después de PayPal.
   window.location.href = 'pago.html';
 };
 
 /**
- * Actualiza el contador del carrito
- * @param {Array} cart 
+ * Configura todos los event listeners para el carrito.
  */
-const updateCartCount = (cart) => {
-  const countElement = document.querySelector(SELECTORS.CART_COUNT);
-  if (!countElement) return;
+const setupEventListeners = () => {
+  // Abrir carrito
+  document.querySelector(SELECTORS.OPEN_CART_BUTTON)?.addEventListener('click', () => toggleCartModal(true));
+  
+  // Cerrar carrito
+  document.querySelector(SELECTORS.CLOSE_CART_BUTTON)?.addEventListener('click', () => toggleCartModal(false));
+  
+  // Añadir al carrito (delegación de eventos para botones dinámicos)
+  document.addEventListener('click', handleAddToCart);
 
-  const count = CartService.getItemCount(cart);
-  countElement.textContent = count;
-  countElement.classList.toggle(CLASSES.HIDDEN, count === 0);
+  // Actualizar cantidad y eliminar ítem (delegación de eventos)
+  document.querySelector(SELECTORS.CART_ITEMS_CONTAINER)?.addEventListener('click', (event) => {
+    if (event.target.classList.contains('quantity-minus') || event.target.classList.contains('quantity-plus')) {
+      handleQuantityChange(event);
+    } else if (event.target.closest(SELECTORS.REMOVE_ITEM_BUTTON)) {
+      handleRemoveItem(event);
+    }
+  });
+
+  document.querySelector(SELECTORS.CART_ITEMS_CONTAINER)?.addEventListener('change', (event) => {
+    if (event.target.classList.contains('cart-item-quantity')) {
+      handleQuantityChange(event);
+    }
+  });
+
+  // Vaciar carrito
+  document.querySelector(SELECTORS.CLEAR_CART_BUTTON)?.addEventListener('click', handleClearCart);
+
+  // Checkout
+  document.querySelector(SELECTORS.CHECKOUT_BTN)?.addEventListener('click', handleCheckout);
 };
 
 /**
- * Actualiza el total del carrito
- * @param {Array} cart 
+ * Inicializa la UI del carrito.
  */
-const updateCartTotal = (cart) => {
-  const totalElement = document.querySelector(SELECTORS.CART_TOTAL);
-  if (totalElement) {
-    totalElement.textContent = `$${CartService.getTotal(cart).toFixed(2)}`;
-  }
+export const initCartUI = async () => {
+  setupEventListeners();
+  const initialCart = await CartService.getCart();
+  renderCart(initialCart);
 };
 
-/**
- * Muestra/oculta el estado de carrito vacío
- * @param {Array} cart 
- */
-const toggleEmptyState = (cart) => {
-  const emptyElement = document.querySelector(SELECTORS.EMPTY_CART);
-  const itemsElement = document.querySelector(SELECTORS.CART_ITEMS);
-  if (!emptyElement || !itemsElement) return;
-
-  if (cart.length === 0) {
-    emptyElement.classList.remove(CLASSES.HIDDEN);
-    itemsElement.classList.add(CLASSES.HIDDEN);
-  } else {
-    emptyElement.classList.add(CLASSES.HIDDEN);
-    itemsElement.classList.remove(CLASSES.HIDDEN);
-  }
-};
-
-/**
- * Abre/cierra el carrito
- */
-const toggleCart = () => {
-  document.querySelector(SELECTORS.CART_CONTAINER)?.classList.toggle(CLASSES.ACTIVE);
-  document.querySelector(SELECTORS.CART_OVERLAY)?.classList.toggle(CLASSES.ACTIVE);
-  document.body.style.overflow = 'hidden';
-};
-
-const closeCart = () => {
-  document.querySelector(SELECTORS.CART_CONTAINER)?.classList.remove(CLASSES.ACTIVE);
-  document.querySelector(SELECTORS.CART_OVERLAY)?.classList.remove(CLASSES.ACTIVE);
-  document.body.style.overflow = '';
-};
-
-// Auto-inicialización si existe el contenedor del carrito
-document.addEventListener('DOMContentLoaded', () => {
-  if (document.querySelector(SELECTORS.CART_CONTAINER)) {
-    initCartUI();
-  }
-});
+// Auto-inicializar la UI del carrito cuando el DOM esté cargado
+document.addEventListener('DOMContentLoaded', initCartUI);
