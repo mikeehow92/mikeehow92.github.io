@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pago - MiTienda</title>
   
-  <script type="module" src="/src/shared/firebase-config.js"></script>
+  <script type="module" src="../src/shared/firebase-config.js"></script>
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -282,7 +282,8 @@
 
   <script type="module">
     // CORRECCIÓN: Cambiado de initPayment a initPayPalCheckout
-    import { initPayPalCheckout } from '/src/paypal/checkout.js'; 
+    // CORRECCIÓN: Ajustada la ruta del script de checkout.js
+    import { initPayPalCheckout } from '../src/paypal/checkout.js'; 
     
     // Inicializar el sistema de pago
     document.addEventListener('DOMContentLoaded', () => {
