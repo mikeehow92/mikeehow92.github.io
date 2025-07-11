@@ -13,6 +13,7 @@ export const ProductService = {
    * @returns {Promise<Array>} Lista de productos
    */
   getAllProducts: async (maxResults = 12) => {
+    console.log('6. ProductService.getAllProducts() iniciado'); // <-- CONSOLE.LOG
     try {
       const productsRef = collection(db, 'products');
       const q = query(
@@ -21,13 +22,15 @@ export const ProductService = {
         limit(maxResults)
       );
       
+      console.log('7. Realizando getDocs(q)...'); // <-- CONSOLE.LOG
       const snapshot = await getDocs(q);
+      console.log('8. getDocs(q) completado. Snapshot docs:', snapshot.docs.length); // <-- CONSOLE.LOG
       return snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("ERROR EN ProductService.getAllProducts:", error); // <-- CONSOLE.ERROR MODIFICADO
       if (typeof showFeedback === 'function') {
         showFeedback('Error al cargar productos', 'No se pudieron cargar los productos.', 'error');
       }
@@ -70,19 +73,12 @@ export const ProductService = {
       const productsRef = collection(db, 'products');
       let q;
       if (searchTerm) {
-        // Implementación simple de búsqueda. Para búsquedas más robustas
-        // se requerirían índices de texto completo (ej. Algolia, o Cloud Functions).
-        // Aquí se asume una búsqueda básica por inicio del nombre.
-        // Ojo: Firestore no soporta búsquedas "LIKE %term%" nativamente en el frontend.
-        // Se puede hacer una búsqueda por rango si el término es un prefijo.
-        // Para una búsqueda que no sea por prefijo, tendrías que cargar todos los productos
-        // y filtrarlos en el cliente, lo cual no es escalable para muchos productos.
         q = query(
           productsRef,
           where('nombre', '>=', searchTerm), // CORRECCIÓN: Usar 'nombre'
           where('nombre', '<=', searchTerm + '\uf8ff'), // CORRECCIÓN: Usar 'nombre'
           orderBy('nombre'), // CORRECCIÓN: Usar 'nombre'
-          limit(50) // Limitar resultados para evitar carga excesiva
+          limit(50) 
         );
       } else {
         q = query(
@@ -98,10 +94,9 @@ export const ProductService = {
         ...doc.data()
       }));
 
-      // Filtrado adicional en el cliente si la búsqueda no es por prefijo exacto
       const lowerCaseSearchTerm = searchTerm.toLowerCase();
       return results.filter(product => 
-        product.nombre.toLowerCase().includes(lowerCaseSearchTerm) || // CORRECCIÓN: Usar 'nombre'
+        product.nombre.toLowerCase().includes(lowerCaseSearchTerm) || 
         product.descripcion.toLowerCase().includes(lowerCaseSearchTerm)
       );
 
@@ -155,9 +150,7 @@ export const ProductService = {
    */
   getRelatedProducts: async (productId, category, maxResults = 4) => {
     try {
-      // Obtenemos un poco más para poder filtrar el producto actual
       const products = await ProductService.getProductsByCategory(category, maxResults + 1); 
-      // Filtramos el producto actual y limitamos los resultados
       return products.filter(product => product.id !== productId).slice(0, maxResults);
     } catch (error) {
       console.error("Error fetching related products:", error);

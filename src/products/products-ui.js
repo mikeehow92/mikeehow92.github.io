@@ -5,14 +5,14 @@ import { showFeedback } from '../shared/feedback.js'; // Asegúrate de tener sho
 // Selectores del DOM
 const SELECTORS = {
   PRODUCTS_GRID: '#products-grid',
-  PRODUCT_DETAIL: '#product-detail', // Para una página de detalle de producto, si la tienes
+  PRODUCT_DETAIL: '#product-detail', 
   SEARCH_INPUT: '#search-input',
   SEARCH_BUTTON: '#search-button',
   CATEGORY_FILTERS: '[data-category]',
-  PAGINATION: '#pagination', // Si implementas paginación
-  PRODUCT_TEMPLATE: '#product-template', // Si usas plantillas HTML
-  RELATED_PRODUCTS: '#related-products', // Para una sección de productos relacionados
-  ADD_TO_CART_BUTTON: '.add-to-cart-btn', // Para los botones de añadir al carrito en las tarjetas de producto
+  PAGINATION: '#pagination', 
+  PRODUCT_TEMPLATE: '#product-template', 
+  RELATED_PRODUCTS: '#related-products', 
+  ADD_TO_CART_BUTTON: '.add-to-cart-btn', 
 };
 
 // Clases CSS
@@ -26,9 +26,11 @@ const CLASSES = {
  * Inicializa la UI de productos
  */
 export const initProductsUI = () => {
+  console.log('1. initProductsUI iniciado'); // <-- CONSOLE.LOG
   renderProductsGrid();
   setupEventListeners();
   // setupProductDetailPage(); // Descomentar si tienes una página de detalle de producto
+  console.log('2. initProductsUI terminado'); // <-- CONSOLE.LOG
 };
 
 /**
@@ -36,6 +38,7 @@ export const initProductsUI = () => {
  * @param {Array<Object>} products - Opcional, lista de productos a renderizar. Si no se provee, los obtiene todos.
  */
 const renderProductsGrid = async (products) => {
+  console.log('3. renderProductsGrid iniciado'); // <-- CONSOLE.LOG
   const productsGrid = document.querySelector(SELECTORS.PRODUCTS_GRID);
   if (!productsGrid) {
     console.error('Elemento #products-grid no encontrado.');
@@ -45,7 +48,9 @@ const renderProductsGrid = async (products) => {
   productsGrid.innerHTML = '<p>Cargando productos...</p>'; // Mensaje de carga inicial
 
   try {
+    console.log('4. Llamando a ProductService.getAllProducts()'); // <-- CONSOLE.LOG
     const productsToRender = products || await ProductService.getAllProducts();
+    console.log('5. ProductService.getAllProducts() regresó:', productsToRender); // <-- CONSOLE.LOG
     
     if (productsToRender.length === 0) {
       productsGrid.innerHTML = '<p>No se encontraron productos.</p>';
@@ -101,11 +106,9 @@ const handleCategoryFilter = async (event) => {
   const filterButton = event.target.closest(SELECTORS.CATEGORY_FILTERS);
   if (!filterButton) return;
 
-  // Remover clase 'active' de todos los botones de categoría
   document.querySelectorAll(SELECTORS.CATEGORY_FILTERS).forEach(btn => {
     btn.classList.remove(CLASSES.ACTIVE);
   });
-  // Añadir clase 'active' al botón clickeado
   filterButton.classList.add(CLASSES.ACTIVE);
 
   const category = filterButton.dataset.category;
@@ -156,7 +159,6 @@ const setupEventListeners = () => {
         if (typeof showFeedback === 'function') {
           showFeedback('¡Añadido!', `${productName} se añadió al carrito.`, 'success');
         }
-        // Actualizar el contador del carrito en la UI
         const currentCart = await CartService.getCart();
         document.getElementById('cartCount').textContent = CartService.getItemCount(currentCart);
 
@@ -200,8 +202,7 @@ const setupEventListeners = () => {
 //           </div>
 //         </div>
 //       `;
-//       // Renderizar productos relacionados
-//       renderRelatedProducts(product.id, product.categoria); // Usa categoria
+//       renderRelatedProducts(product.id, product.categoria); 
 //     } else {
 //       productDetailContainer.innerHTML = '<p>Producto no encontrado.</p>';
 //     }
