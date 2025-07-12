@@ -6,8 +6,11 @@
   <title>Productos - MiTienda503</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
+  <!-- Estilos de la aplicación, ahora referenciados correctamente -->
   <link rel="stylesheet" href="/assets/css/styles.css">
-  <link rel="stylesheet" href="/assets/css/auth.css"> <style>
+  <link rel="stylesheet" href="/assets/css/auth.css"> 
+
+  <style>
     /* Variables CSS (ya definidas en styles.css, pero las mantengo por si es una plantilla) */
     :root {
       --primary: #e63946;
@@ -109,8 +112,9 @@
 
     .product-card img {
       width: 100%;
-      height: 200px;
-      object-fit: cover;
+      height: 200px; /* Mantener una altura fija para el contenedor */
+      object-fit: contain; /* CAMBIADO: 'cover' a 'contain' */
+      background-color: #f8f8f8; /* Fondo claro para espacios vacíos */
     }
 
     .product-info {
@@ -130,7 +134,7 @@
     .product-info p {
       color: #555;
       margin-bottom: 10px;
-      flex-grow: 1; /* Permite que la descripción empuje el precio y botón hacia abajo */
+      flex-grow: 1; 
     }
 
     .product-price {
@@ -226,15 +230,15 @@
 
     /* Cart Modal Styles */
     .cart-modal-overlay {
-        display: none; /* Hidden by default */
-        position: fixed; /* Stay in place */
-        z-index: 999; /* Sit on top */
+        display: none; 
+        position: fixed; 
+        z-index: 999; 
         left: 0;
         top: 0;
-        width: 100%; /* Full width */
-        height: 100%; /* Full height */
-        overflow: auto; /* Enable scroll if needed */
-        background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        width: 100%; 
+        height: 100%; 
+        overflow: auto; 
+        background-color: rgba(0,0,0,0.4); 
         justify-content: center;
         align-items: center;
     }
@@ -244,7 +248,7 @@
         margin: auto;
         padding: 20px;
         border: 1px solid #888;
-        width: 80%; /* Could be responsive */
+        width: 80%; 
         max-width: 500px;
         border-radius: 10px;
         box-shadow: 0 5px 15px rgba(0,0,0,0.3);
@@ -440,8 +444,11 @@
       <ul class="nav-links">
         <li><a href="index.html">Inicio</a></li>
         <li><a href="productos.html">Productos</a></li>
-        <li><a href="perfil.html">Perfil</a></li>
-        <li><a href="registro.html">Regístrate</a></li>
+        <!-- Enlaces solo para usuarios logueados -->
+        <li id="profile-link" style="display:none;"><a href="perfil.html"><i class="fas fa-user"></i> Perfil</a></li>
+        <li id="orders-link" style="display:none;"><a href="perfil.html#compras"><i class="fas fa-shopping-cart"></i> Mis Compras</a></li>
+        <!-- Enlace para registrarse (visible si no hay usuario logueado) -->
+        <li id="register-link"><a href="registro.html">Regístrate</a></li>
         <li>
           <a href="#" id="openCartBtn" class="open-cart-wrapper">
             <i class="fas fa-shopping-cart"></i> Carrito
@@ -465,21 +472,25 @@
         <button data-category="electronicos">Electrónicos</button>
         <button data-category="ropa">Ropa</button>
         <button data-category="hogar">Hogar</button>
-        </div>
+        <!-- Añade más categorías según sea necesario -->
+      </div>
     </section>
 
     <section id="products-grid" class="products-grid">
+      <!-- Los productos se cargarán aquí dinámicamente -->
       <p>Cargando productos...</p>
     </section>
 
   </main>
 
+  <!-- Cart Modal -->
   <div id="cartModal" class="cart-modal-overlay">
     <div class="cart-modal-content">
       <span class="close-button">&times;</span>
       <h2>Tu Carrito</h2>
       <div id="cartItems">
-        </div>
+        <!-- Cart items will be loaded here -->
+      </div>
       <div class="cart-summary">
         <span>Total:</span>
         <span>$<span id="cartTotal">0.00</span></span>
@@ -491,9 +502,12 @@
     </div>
   </div>
 
-  <script type="module" src="../src/shared/firebase-config.js"></script>
-  <script type="module" src="../src/products/productos-ui.js"></script>
-  <script type="module" src="../src/cart/cart-ui.js"></script>
+  <!-- Scripts -->
+  <!-- Punto de entrada principal de tu aplicación JavaScript manejado por Vite -->
+  <!-- NOTA: Para las páginas secundarias como productos.html, puedes cargar main.js
+             o un script específico para esta página si su lógica es muy diferente.
+             Por simplicidad, cargaremos main.js que ya inicializa todo. -->
+  <script type="module" src="/src/main.js"></script> 
 
 </body>
 </html>

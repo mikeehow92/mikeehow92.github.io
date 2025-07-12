@@ -1,6 +1,6 @@
 import { getFirestore, collection, getDocs, doc, getDoc, query, where, orderBy, limit } from 'firebase/firestore';
-import { app } from '../shared/firebase-config'; // Asegúrate que esta ruta es correcta
-import { showFeedback } from '../shared/feedback'; // Asegúrate de tener showFeedback
+import { app } from '../firebase-config.js'; 
+import { showFeedback } from '../shared/feedback.js'; 
 
 const db = getFirestore(app);
 
@@ -13,24 +13,24 @@ export const ProductService = {
    * @returns {Promise<Array>} Lista de productos
    */
   getAllProducts: async (maxResults = 12) => {
-    console.log('6. ProductService.getAllProducts() iniciado'); // <-- CONSOLE.LOG
+    console.log('6. ProductService.getAllProducts() iniciado'); 
     try {
-      const productsRef = collection(db, 'products');
+      const productsRef = collection(db, 'productos'); // CORRECCIÓN: 'products' a 'productos'
       const q = query(
         productsRef, 
-        orderBy('fechaCreacion', 'desc'), // CORRECCIÓN: Usar 'fechaCreacion'
+        orderBy('fechaCreacion', 'desc'), 
         limit(maxResults)
       );
       
-      console.log('7. Realizando getDocs(q)...'); // <-- CONSOLE.LOG
+      console.log('7. Realizando getDocs(q)...'); 
       const snapshot = await getDocs(q);
-      console.log('8. getDocs(q) completado. Snapshot docs:', snapshot.docs.length); // <-- CONSOLE.LOG
+      console.log('8. getDocs(q) completado. Snapshot docs:', snapshot.docs.length); 
       return snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
     } catch (error) {
-      console.error("ERROR EN ProductService.getAllProducts:", error); // <-- CONSOLE.ERROR MODIFICADO
+      console.error("ERROR EN ProductService.getAllProducts:", error); 
       if (typeof showFeedback === 'function') {
         showFeedback('Error al cargar productos', 'No se pudieron cargar los productos.', 'error');
       }
@@ -45,7 +45,7 @@ export const ProductService = {
    */
   getProductById: async (productId) => {
     try {
-      const productRef = doc(db, 'products', productId);
+      const productRef = doc(db, 'productos', productId); // CORRECCIÓN: 'products' a 'productos'
       const productSnap = await getDoc(productRef);
 
       if (productSnap.exists()) {
@@ -70,20 +70,20 @@ export const ProductService = {
    */
   searchProducts: async (searchTerm) => {
     try {
-      const productsRef = collection(db, 'products');
+      const productsRef = collection(db, 'productos'); // CORRECCIÓN: 'products' a 'productos'
       let q;
       if (searchTerm) {
         q = query(
           productsRef,
-          where('nombre', '>=', searchTerm), // CORRECCIÓN: Usar 'nombre'
-          where('nombre', '<=', searchTerm + '\uf8ff'), // CORRECCIÓN: Usar 'nombre'
-          orderBy('nombre'), // CORRECCIÓN: Usar 'nombre'
+          where('nombre', '>=', searchTerm), 
+          where('nombre', '<=', searchTerm + '\uf8ff'), 
+          orderBy('nombre'), 
           limit(50) 
         );
       } else {
         q = query(
           productsRef,
-          orderBy('fechaCreacion', 'desc'), // CORRECCIÓN: Usar 'fechaCreacion'
+          orderBy('fechaCreacion', 'desc'), 
           limit(50)
         );
       }
@@ -117,11 +117,11 @@ export const ProductService = {
    */
   getProductsByCategory: async (category, maxResults = 20) => {
     try {
-      const productsRef = collection(db, 'products');
+      const productsRef = collection(db, 'productos'); // CORRECCIÓN: 'products' a 'productos'
       const q = query(
         productsRef,
-        where('categoria', '==', category), // CORRECCIÓN: Usar 'categoria'
-        orderBy('fechaCreacion', 'desc'), // CORRECCIÓN: Usar 'fechaCreacion'
+        where('categoria', '==', category), 
+        orderBy('fechaCreacion', 'desc'), 
         limit(maxResults)
       );
       
@@ -165,11 +165,11 @@ export const ProductService = {
    */
   getFeaturedProducts: async (maxResults = 6) => {
     try {
-      const productsRef = collection(db, 'products');
+      const productsRef = collection(db, 'productos'); // CORRECCIÓN: 'products' a 'productos'
       const q = query(
         productsRef, 
-        where('activo', '==', true), // CORRECCIÓN: Usar 'activo'
-        orderBy('fechaCreacion', 'desc'), // CORRECCIÓN: Usar 'fechaCreacion'
+        where('activo', '==', true), 
+        orderBy('fechaCreacion', 'desc'), 
         limit(maxResults)
       );
       

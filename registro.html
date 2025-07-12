@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Usuario</title>
+    <title>Registro de Usuario - MiTienda503</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Rutas de CSS ajustadas para Vite -->
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/auth.css">
     <style>
+        /* Estilos CSS específicos de registro (se mantienen si no están en styles.css/auth.css) */
         * {
             margin: 0;
             padding: 0;
@@ -272,12 +277,14 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <!-- Script principal de la página de registro -->
+    <script type="module">
+        // Importaciones de módulos
+        import { AuthService } from '/src/auth/auth.js';
+        import { app, auth, db } from '/src/firebase-config.js'; // Importar app, auth, db
+        import { showFeedback } from '/src/shared/feedback.js'; // Importar showFeedback
+        import { doc, setDoc, serverTimestamp } from "firebase/firestore"; // Importar funciones de Firestore directamente
 
-    <script>
         // Datos de departamentos y municipios de El Salvador
         const departamentos = {
             "Ahuachapán": ["Ahuachapán", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Guaymango", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
@@ -295,21 +302,6 @@
             "Sonsonate": ["Sonsonate", "Acajutla", "Armenia", "Caluco", "Cuisnahuat", "Izalco", "Juayúa", "Nahuizalco", "Nahulingo", "Salcoatitán", "San Antonio del Monte", "San Julián", "Santa Catarina Masahuat", "Santa Isabel Ishuatán", "Santo Domingo de Guzmán", "Sonzacate"],
             "Usulután": ["Usulután", "Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán"]
         };
-
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
-            authDomain: "mitienda-c2609.firebaseapp.com",
-            projectId: "mitienda-c2609",
-            storageBucket: "mitienda-c2609.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abc123def456"
-        };
-
-        // Inicializa Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
 
         // Llenar select de departamentos
         const departamentoSelect = document.getElementById('departamento');
@@ -338,7 +330,7 @@
         });
 
         // Registro de usuario
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             // Validación del formulario
@@ -352,40 +344,49 @@
             const municipio = document.getElementById('municipio').value;
             const direccion = document.getElementById('direccion').value.trim();
 
-            // Validar campos requeridos
-            document.querySelectorAll('input[required], select[required]').forEach(input => {
-                const formGroup = input.closest('.form-group');
-                
-                if (!input.value.trim()) {
-                    formGroup.classList.add('error');
-                    valid = false;
-                } else {
-                    formGroup.classList.remove('error');
-                    
-                    if (input.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value)) {
-                        formGroup.classList.add('error');
-                        formGroup.querySelector('.error-message').textContent = 'Por favor ingresa un correo válido';
-                        valid = false;
-                    }
-                    
-                    if (input.id === 'password' && input.value.length < 6) {
-                        formGroup.classList.add('error');
-                        formGroup.querySelector('.error-message').textContent = 'La contraseña debe tener al menos 6 caracteres';
-                        valid = false;
-                    }
+            // Resetear mensajes de error
+            document.querySelectorAll('.form-group.error').forEach(el => el.classList.remove('error'));
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
 
-                    if (input.id === 'telefono' && !/^[0-9]{8,}$/.test(input.value)) {
-                        formGroup.classList.add('error');
-                        formGroup.querySelector('.error-message').textContent = 'Teléfono inválido (mínimo 8 dígitos)';
-                        valid = false;
-                    }
-                }
-            });
-
-            // Validar coincidencia de contraseñas
+            // Validar campos
+            if (!nombre) {
+                document.getElementById('nombre').closest('.form-group').classList.add('error');
+                document.getElementById('nombre').closest('.form-group').querySelector('.error-message').textContent = 'Por favor ingresa tu nombre';
+                valid = false;
+            }
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                document.getElementById('email').closest('.form-group').classList.add('error');
+                document.getElementById('email').closest('.form-group').querySelector('.error-message').textContent = 'Por favor ingresa un correo válido';
+                valid = false;
+            }
+            if (!telefono || !/^[0-9]{8,}$/.test(telefono)) {
+                document.getElementById('telefono').closest('.form-group').classList.add('error');
+                document.getElementById('telefono').closest('.form-group').querySelector('.error-message').textContent = 'Por favor ingrese un teléfono válido (mínimo 8 dígitos)';
+                valid = false;
+            }
+            if (!password || password.length < 6) {
+                document.getElementById('password').closest('.form-group').classList.add('error');
+                document.getElementById('password').closest('.form-group').querySelector('.error-message').textContent = 'La contraseña debe tener al menos 6 caracteres';
+                valid = false;
+            }
             if (password !== confirmPassword) {
                 document.getElementById('confirm-password').closest('.form-group').classList.add('error');
                 document.getElementById('confirm-password').closest('.form-group').querySelector('.error-message').textContent = 'Las contraseñas no coinciden';
+                valid = false;
+            }
+            if (!departamento) {
+                document.getElementById('departamento').closest('.form-group').classList.add('error');
+                document.getElementById('departamento').closest('.form-group').querySelector('.error-message').textContent = 'Por favor seleccione un departamento';
+                valid = false;
+            }
+            if (!municipio) {
+                document.getElementById('municipio').closest('.form-group').classList.add('error');
+                document.getElementById('municipio').closest('.form-group').querySelector('.error-message').textContent = 'Por favor seleccione un municipio';
+                valid = false;
+            }
+            if (!direccion) {
+                document.getElementById('direccion').closest('.form-group').classList.add('error');
+                document.getElementById('direccion').closest('.form-group').querySelector('.error-message').textContent = 'Por favor ingrese su dirección';
                 valid = false;
             }
 
@@ -394,91 +395,81 @@
                 setTimeout(() => {
                     document.querySelector('.register-container').style.animation = '';
                 }, 500);
+                showFeedback('Error de validación', 'Por favor, complete todos los campos correctamente.', 'error');
                 return;
             }
             
-            // Crear usuario con Firebase Auth
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    // Usuario creado con éxito
-                    const user = userCredential.user;
-                    
-                    // Enviar correo de verificación
-                    return user.sendEmailVerification()
-                        .then(() => {
-                            // Guardar datos adicionales en Firestore
-                            return db.collection('users').doc(user.uid).set({
-                                nombre: nombre,
-                                email: email,
-                                telefono: telefono,
-                                direccion: {
-                                    departamento: departamento,
-                                    municipio: municipio,
-                                    direccionExacta: direccion
-                                },
-                                emailVerificado: false,
-                                fechaRegistro: firebase.firestore.FieldValue.serverTimestamp()
-                            });
-                        });
-                })
-                .then(() => {
-                    // Mostrar mensaje de verificación
-                    document.getElementById('user-email-display').textContent = email;
-                    document.getElementById('verification-message').style.display = 'block';
-                    document.getElementById('registerForm').style.display = 'none';
-                    
-                    // Configurar botón de reenvío
-                    document.getElementById('resend-verification').addEventListener('click', function() {
-                        auth.currentUser.sendEmailVerification()
-                            .then(() => {
-                                document.getElementById('verification-status').textContent = '¡Correo de verificación reenviado!';
-                                document.getElementById('verification-status').style.color = '#27ae60';
-                            })
-                            .catch((error) => {
-                                document.getElementById('verification-status').textContent = 'Error: ' + error.message;
-                                document.getElementById('verification-status').style.color = '#e74c3c';
-                            });
-                    });
-                })
-                .catch((error) => {
-                    // Manejar errores
-                    const errorCode = error.code;
-                    const errorMessage = error.message;
-                    
-                    if (errorCode === 'auth/email-already-in-use') {
-                        alert('Este correo electrónico ya está registrado.');
-                    } else if (errorCode === 'auth/weak-password') {
-                        alert('La contraseña es demasiado débil.');
-                    } else {
-                        alert('Error: ' + errorMessage);
-                    }
+            try {
+                // Crear usuario con Firebase Auth
+                const userCredential = await AuthService.register(email, password);
+                const user = userCredential.user;
+                
+                // Enviar correo de verificación
+                await AuthService.sendEmailVerification(user);
+                
+                // Guardar datos adicionales en Firestore
+                await setDoc(doc(db, 'users', user.uid), {
+                    nombre: nombre,
+                    email: email,
+                    telefono: telefono,
+                    direccion: {
+                        departamento: departamento,
+                        municipio: municipio,
+                        direccionExacta: direccion
+                    },
+                    emailVerificado: false, // Inicialmente falso, se actualiza al verificar
+                    fechaRegistro: serverTimestamp() // Usar serverTimestamp
                 });
+
+                // Mostrar mensaje de verificación
+                document.getElementById('user-email-display').textContent = email;
+                document.getElementById('verification-message').style.display = 'block';
+                document.getElementById('registerForm').style.display = 'none';
+                
+                showFeedback('Registro Exitoso', '¡Tu cuenta ha sido creada! Hemos enviado un correo de verificación.', 'success');
+
+            } catch (error) {
+                console.error("Error en el registro:", error);
+                let errorMessage = 'Ocurrió un error inesperado. Intenta de nuevo.';
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMessage = 'Este correo electrónico ya está registrado.';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage = 'La contraseña es demasiado débil (mínimo 6 caracteres).';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'El formato del correo electrónico no es válido.';
+                }
+                showFeedback('Error de Registro', errorMessage, 'error');
+            }
         });
         
-        // Limpiar errores al escribir/seleccionar
-        document.querySelectorAll('input, select').forEach(input => {
-            input.addEventListener('input', function() {
-                this.closest('.form-group').classList.remove('error');
-            });
+        // Reenviar correo de verificación
+        document.getElementById('resend-verification').addEventListener('click', async function() {
+            try {
+                const user = auth.currentUser;
+                if (user) {
+                    await AuthService.sendEmailVerification(user);
+                    document.getElementById('verification-status').textContent = '¡Correo de verificación reenviado!';
+                    document.getElementById('verification-status').style.color = '#27ae60';
+                    showFeedback('Correo Reenviado', 'Se ha reenviado el correo de verificación.', 'info');
+                } else {
+                    showFeedback('Error', 'No hay usuario autenticado para reenviar verificación.', 'error');
+                }
+            } catch (error) {
+                console.error("Error reenviando verificación:", error);
+                document.getElementById('verification-status').textContent = 'Error: ' + error.message;
+                document.getElementById('verification-status').style.color = '#e74c3c';
+                showFeedback('Error', 'No se pudo reenviar el correo de verificación: ' + error.message, 'error');
+            }
         });
         
         // Verificar si el usuario ya está verificado al cargar la página
+        // y redirigir si es el caso
         auth.onAuthStateChanged((user) => {
             if (user && user.emailVerified) {
-                window.location.href = 'configuraciondeusuario.html';
+                // Redirige a la página principal o a perfil.html si ya está logueado y verificado
+                window.location.href = 'index.html'; 
             }
         });
-
-        // Animación de shake
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                20%, 60% { transform: translateX(-5px); }
-                40%, 80% { transform: translateX(5px); }
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>

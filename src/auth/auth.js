@@ -1,4 +1,4 @@
-import { 
+import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -12,8 +12,8 @@ import {
   signInWithPopup
 } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { app } from "../firebase-config.js";
-import { CartService } from "../cart/cart-service.js";
+import { app } from "../firebase-config.js"; // Path is correct as firebase-config.js is in src/
+import { CartService } from "../cart/cart.js"; // CORRECCIÓN: Cambiado a cart.js
 
 // Inicialización de servicios
 const auth = getAuth(app);
@@ -270,7 +270,8 @@ export const AuthService = {
  */
 async function migrateGuestData(userId) {
   try {
-    await CartService.migrateGuestCart(userId);
+    // CORRECCIÓN: CartService.migrateGuestCart es una función de CartService
+    await CartService.migrateGuestCart(userId); 
     // Aquí puedes añadir más migraciones (ej: favoritos, historial)
   } catch (error) {
     console.error("Error migrando datos:", error);

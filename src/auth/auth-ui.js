@@ -1,150 +1,141 @@
-import { AuthService } from './auth.js';
-import { showFeedback } from '../shared/feedback.js';
-import { CartUI } from '../cart/cart-ui.js';
+import { AuthService } from './auth.js'; // Asegúrate de que esta ruta sea correcta
+import { showFeedback } from '../shared/feedback.js'; // Asegúrate de que esta ruta sea correcta
+import { auth } from '../firebase-config.js'; // Importa la instancia de auth directamente
 
-// Selectors and classes
-const SELECTORS = {
-  LOGIN_MODAL: '#login-modal',
-  LOGIN_FORM: '#login-form',
-  LOGOUT_BTN: '#logout-btn',
-  OPEN_LOGIN: '#loginBtn', // Changed to match your HTML button ID
-  FORGOT_PASSWORD: '#forgot-password',
-  USER_NAME: '#user-name',
-  USER_AVATAR: '#user-avatar',
-  GUEST_UI: '#guest-buttons',
-  USER_UI: '#user-info',
-  CLOSE_MODAL: '.close-btn',
-  PROFILE_LINK: '#profile-link',
-  ORDERS_LINK: '#orders-link'
-};
+/**
+ * Configura toda la lógica de la interfaz de usuario relacionada con la autenticación:
+ * - Muestra/oculta botones de login/logout.
+ * - Muestra información del usuario logueado.
+ * - Maneja la apertura y cierre de los modales de login y reseteo de contraseña.
+ * - Procesa los formularios de login y reseteo.
+ * - Actualiza el estado del carrito.
+ */
+export function setupAuthUI() {
+    console.log("Configurando UI de autenticación...");
 
-const CLASSES = {
-  ACTIVE: 'active',
-  HIDDEN: 'hidden'
-};
+    // Elementos del DOM
+    const loginModal = document.getElementById('login-modal');
+    const resetModal = document.getElementById('reset-modal');
+    const openLoginBtn = document.getElementById('open-login-btn');
+    const guestButtons = document.getElementById('guest-buttons');
+    const userInfo = document.getElementById('user-info');
+    const userNameDisplay = document.getElementById('user-name');
+    const userAvatarDisplay = document.getElementById('user-avatar');
+    const logoutBtn = document.getElementById('logout-btn');
+    const loginForm = document.getElementById('login-form');
+    const resetForm = document.getElementById('reset-form');
+    const switchToSignupLink = document.getElementById('switch-to-signup');
+    const switchToLoginFromResetLink = document.getElementById('switch-to-login-from-reset');
+    const profileLink = document.getElementById('profile-link');
+    const ordersLink = document.getElementById('orders-link');
 
-// Initialize auth UI
-export function initAuthUI() {
-  setupEventListeners();
-  setupAuthStateListener();
-}
+    // Funciones para mostrar/ocultar modales
+    const toggleModal = (modal, show) => {
+        if (modal) {
+            modal.classList.toggle('active', show);
+            document.body.style.overflow = show ? 'hidden' : ''; // Previene el scroll del fondo
+        }
+    };
 
-// Set up event listeners
-function setupEventListeners() {
-  // Open login modal
-  document.querySelector(SELECTORS.OPEN_LOGIN)?.addEventListener('click', () => {
-    toggleModal(SELECTORS.LOGIN_MODAL, true);
-  });
+    // Event Listeners para abrir/cerrar modales
+    openLoginBtn?.addEventListener('click', () => toggleModal(loginModal, true));
+    loginModal?.querySelector('.close-modal')?.addEventListener('click', () => toggleModal(loginModal, false));
+    resetModal?.querySelector('.close-modal')?.addEventListener('click', () => toggleModal(resetModal, false));
 
-  // Close modal
-  document.querySelector(SELECTORS.CLOSE_MODAL)?.addEventListener('click', closeAllModals);
+    // Navegación entre modales
+    switchToSignupLink?.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleModal(loginModal, false);
+        // Redirigir a la página de registro
+        window.location.href = 'registro.html'; 
+    });
 
-  // Forgot password
-  document.querySelector(SELECTORS.FORGOT_PASSWORD)?.addEventListener('click', (e) => {
-    e.preventDefault();
-    showFeedback('Contact support to reset your password', 'info');
-  });
+    switchToLoginFromResetLink?.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleModal(resetModal, false);
+        toggleModal(loginModal, true);
+    });
 
-  // Login form submission
-  document.querySelector(SELECTORS.LOGIN_FORM)?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = e.target.querySelector('#email').value;
-    const password = e.target.querySelector('#password').value;
-    await handleLogin(email, password);
-  });
+    document.getElementById('forgot-password')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleModal(loginModal, false);
+        toggleModal(resetModal, true);
+    });
 
-  // Logout
-  document.querySelector(SELECTORS.LOGOUT_BTN)?.addEventListener('click', handleLogout);
-}
+    // Manejo del formulario de Login
+    loginForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = loginForm['login-email'].value;
+        const password = loginForm['login-password'].value;
 
-// Auth state listener
-function setupAuthStateListener() {
-  AuthService.onAuthStateChanged((user) => {
-    updateUI(user);
-    if (user) {
-      CartUI.updateCartUI();
-    }
-  });
-}
+        try {
+            await AuthService.login(email, password);
+            showFeedback('Inicio de Sesión Exitoso', '¡Bienvenido de nuevo!', 'success');
+            toggleModal(loginModal, false);
+            // La función onAuthStateChanged manejará la actualización de la UI
+        } catch (error) {
+            console.error("Error al iniciar sesión:", error);
+            showFeedback('Error de Inicio de Sesión', error.message, 'error');
+        }
+    });
 
-// Update UI based on auth state
-function updateUI(user) {
-  const guestUI = document.querySelector(SELECTORS.GUEST_UI);
-  const userUI = document.querySelector(SELECTORS.USER_UI);
-  const userName = document.querySelector(SELECTORS.USER_NAME);
-  const userAvatar = document.querySelector(SELECTORS.USER_AVATAR);
-  const profileLink = document.querySelector(SELECTORS.PROFILE_LINK);
-  const ordersLink = document.querySelector(SELECTORS.ORDERS_LINK);
+    // Manejo del formulario de Reseteo de Contraseña
+    resetForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = resetForm['reset-email'].value;
 
-  toggleElement(guestUI, !user);
-  toggleElement(userUI, !!user);
-  toggleElement(profileLink, !!user);
-  toggleElement(ordersLink, !!user);
+        try {
+            await AuthService.resetPassword(email);
+            showFeedback('Correo Enviado', 'Se ha enviado un enlace para restablecer tu contraseña a tu correo electrónico.', 'info');
+            toggleModal(resetModal, false);
+        } catch (error) {
+            console.error("Error al restablecer contraseña:", error);
+            showFeedback('Error', error.message, 'error');
+        }
+    });
 
-  if (user) {
-    userName.textContent = user.displayName || user.email.split('@')[0];
-    updateUserAvatar(userAvatar, user);
-  }
-}
+    // Manejo del botón de Logout
+    logoutBtn?.addEventListener('click', async () => {
+        try {
+            await AuthService.logout();
+            showFeedback('Sesión Cerrada', 'Has cerrado tu sesión correctamente.', 'info');
+            // La función onAuthStateChanged manejará la actualización de la UI
+            window.location.href = 'index.html'; // Redirigir a la página de inicio
+        } catch (error) {
+            console.error("Error al cerrar sesión:", error);
+            showFeedback('Error al Cerrar Sesión', error.message, 'error');
+        }
+    });
 
-// Update user avatar
-function updateUserAvatar(element, user) {
-  if (!element) return;
-  
-  if (user.photoURL) {
-    element.src = user.photoURL;
-    element.classList.remove(CLASSES.HIDDEN);
-  } else {
-    const nameInitials = user.displayName 
-      ? user.displayName.split(' ').map(n => n[0]).join('')
-      : user.email[0].toUpperCase();
-    element.src = `https://ui-avatars.com/api/?name=${nameInitials}&background=e63946&color=fff`;
-    element.classList.remove(CLASSES.HIDDEN);
-  }
-}
+    // Listener de cambios de estado de autenticación de Firebase
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            // Usuario logueado
+            guestButtons.style.display = 'none';
+            userInfo.style.display = 'flex';
+            userNameDisplay.textContent = user.displayName || user.email.split('@')[0];
+            
+            // Actualizar avatar en el header
+            if (user.photoURL) {
+                userAvatarDisplay.src = user.photoURL;
+            } else {
+                // Generar avatar por defecto si no hay photoURL
+                const initials = (user.displayName || user.email)[0]?.toUpperCase() || 'U';
+                userAvatarDisplay.src = `https://placehold.co/40x40/e63946/ffffff?text=${initials}`;
+            }
 
-// Handle login
-async function handleLogin(email, password) {
-  try {
-    await AuthService.login(email, password);
-    closeAllModals();
-    showFeedback('Login successful', 'success');
-  } catch (error) {
-    showFeedback(error.message, 'error');
-  }
-}
+            // Mostrar enlaces de perfil y compras
+            if (profileLink) profileLink.style.display = 'block';
+            if (ordersLink) ordersLink.style.display = 'block';
 
-// Handle logout
-async function handleLogout() {
-  try {
-    await AuthService.logout();
-    showFeedback('Logged out successfully', 'success');
-  } catch (error) {
-    showFeedback('Error logging out', 'error');
-  }
-}
-
-// Close all modals
-function closeAllModals() {
-  toggleModal(SELECTORS.LOGIN_MODAL, false);
-}
-
-// Toggle modal visibility
-function toggleModal(selector, show) {
-  const modal = document.querySelector(selector);
-  if (!modal) return;
-  
-  if (show) {
-    modal.classList.add(CLASSES.ACTIVE);
-    document.body.style.overflow = 'hidden';
-  } else {
-    modal.classList.remove(CLASSES.ACTIVE);
-    document.body.style.overflow = '';
-  }
-}
-
-// Toggle element visibility
-function toggleElement(element, show) {
-  if (!element) return;
-  element.style.display = show ? 'flex' : 'none';
+        } else {
+            // Usuario no logueado
+            guestButtons.style.display = 'flex';
+            userInfo.style.display = 'none';
+            
+            // Ocultar enlaces de perfil y compras
+            if (profileLink) profileLink.style.display = 'none';
+            if (ordersLink) ordersLink.style.display = 'none';
+        }
+    });
 }

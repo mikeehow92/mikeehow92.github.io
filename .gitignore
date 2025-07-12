@@ -1,0 +1,38 @@
+# Archivos de configuración de Node.js
+node_modules/
+npm-debug.log
+.env
+.env.local
+
+# Archivos de build de Vite
+dist/
+
+# Archivos y directorios de Firebase CLI
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+# Si tienes un archivo .firebaserc global que no quieres versionar
+#.firebaserc
+
+# Firebase Functions
+functions/lib/         # Salida compilada de TypeScript
+functions/node_modules/
+functions/npm-debug.log
+functions/package-lock.json # Si manejas las dependencias de funciones por separado
+
+# Dependencias de npm
+package-lock.json # Descomenta si prefieres no versionar este archivo (ver nota abajo)
+
+# Editor y IDE específicos
+.vscode/        # VS Code
+.idea/          # WebStorm / IntelliJ
+*.sublime-project
+*.sublime-workspace
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Tu carpeta de empleados (ya que es un repositorio separado y no parte de este proyecto)
+empleados/
+

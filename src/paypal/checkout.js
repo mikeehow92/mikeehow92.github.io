@@ -2,8 +2,8 @@ import { loadScript } from './utils.js';
 import { paypalService } from './service.js';
 import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { app } from '../shared/firebase-config.js'; // Asegúrate que esta ruta sea correcta
-import { CartService } from '../cart/cart.js'; // Importación de CartService
+import { app } from '../firebase-config.js'; // Asegúrate que esta ruta es correcta
+import { CartService } from '../cart/cart.js'; 
 
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -21,11 +21,11 @@ let currentCheckoutData = null;
  */
 export async function initPayPalCheckout(config = {}) {
   try {
-    window.showLoading(true); // Mostrar spinner al iniciar
+    window.showLoading(true); 
 
     // 1. Cargar datos del carrito
     const checkoutData = await loadCheckoutData();
-    currentCheckoutData = checkoutData; // Guardar datos para usar globalmente
+    currentCheckoutData = checkoutData; 
 
     // 2. Validar que hay algo que procesar
     validateCheckoutData(checkoutData);
@@ -35,26 +35,26 @@ export async function initPayPalCheckout(config = {}) {
     updateTotals(checkoutData);
 
     // 4. Configurar el formulario de dirección (si aplica)
-    setupAddressForm(); // Esta función debe existir en otro lugar o ser implementada aquí
+    setupAddressForm(); 
 
     // 5. Cargar el SDK de PayPal
-    await loadPayPalSDK(config.clientId || 'SB', config); // Usar 'SB' para Sandbox si no se provee Client ID
+    await loadPayPalSDK(config.clientId || 'SB', config); 
 
     // 6. Configurar y renderizar el botón de PayPal
     setupPayPalButton(checkoutData, config);
 
     // 7. Configurar botón de pago alternativo (si existe y está habilitado)
     if (config.alternativePayment !== false) {
-      setupAlternativePayment(checkoutData); // Esta función debe existir en otro lugar o ser implementada aquí
+      setupAlternativePayment(checkoutData); 
     }
 
     // 8. Configurar cierre de modal (si aplica)
-    setupModalClose(); // Esta función debe existir en otro lugar o ser implementada aquí
+    setupModalClose(); 
 
   } catch (error) {
     handleInitializationError(error);
   } finally {
-    window.showLoading(false); // Ocultar spinner al finalizar
+    window.showLoading(false); 
   }
 }
 
@@ -65,7 +65,6 @@ export async function initPayPalCheckout(config = {}) {
  */
 async function loadPayPalSDK(clientId, config = {}) {
   if (!window.paypal) {
-    // La URL base del SDK de PayPal debe ser siempre https://www.paypal.com/sdk/js
     const sdkUrl = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&components=buttons${config.enableCardFields ? ',card-fields' : ''}`;
     await loadScript(sdkUrl);
   }
@@ -79,17 +78,17 @@ async function loadPayPalSDK(clientId, config = {}) {
 function setupPayPalButton(checkoutData, config) {
   const buttons = window.paypal.Buttons({
     style: {
-      layout: 'vertical', // 'vertical' o 'horizontal'
-      color: 'blue',      // 'gold', 'blue', 'silver', 'white', 'black'
-      shape: 'rect',      // 'rect' o 'pill'
-      label: 'paypal'     // 'paypal', 'checkout', 'buynow'
+      layout: 'vertical', 
+      color: 'blue',      
+      shape: 'rect',      
+      label: 'paypal'     
     },
     createOrder: async (data, actions) => {
       window.showLoading(true);
       try {
         const customerData = _getCustomerData();
         const shippingData = _getShippingData();
-        validateForm(customerData, shippingData); // Valida el formulario antes de crear la orden
+        validateForm(customerData, shippingData); 
 
         const orderId = await paypalService.createOrder({
           total: checkoutData.total,
@@ -102,16 +101,15 @@ function setupPayPalButton(checkoutData, config) {
       } catch (error) {
         window.showLoading(false);
         handlePaymentError(error);
-        return actions.reject(error); // Rechazar la orden de PayPal
+        return actions.reject(error); 
       }
     },
     onApprove: async (data, actions) => {
       window.showLoading(true);
       try {
         const orderDetails = await paypalService.captureOrder(data.orderID);
-        // Aquí puedes guardar los detalles de la orden en tu base de datos (Firestore)
         await _saveOrderDetailsToFirestore(orderDetails, currentCheckoutData);
-        CartService.clearCart(); // Limpia el carrito después de una compra exitosa
+        CartService.clearCart(); 
         window.showLoading(false);
         window.showFeedback('¡Pago Completado!', 'Tu pedido ha sido procesado correctamente.', 'success');
       } catch (error) {
@@ -129,8 +127,7 @@ function setupPayPalButton(checkoutData, config) {
     }
   });
 
-  if (buttons.is
-Enabled()) {
+  if (buttons.isEnabled()) { 
     buttons.render('#paypal-button-container').catch(err => {
       console.error("Failed to render PayPal Buttons:", err);
       document.getElementById('paypal-button-container').innerHTML =
@@ -183,7 +180,7 @@ function renderCartItems(checkoutData) {
   const orderItemsContainer = document.getElementById('orderItems');
   if (!orderItemsContainer) return;
 
-  orderItemsContainer.innerHTML = ''; // Limpiar items existentes
+  orderItemsContainer.innerHTML = ''; 
 
   checkoutData.items.forEach(item => {
     const itemElement = document.createElement('div');
@@ -245,7 +242,6 @@ function validateForm(customerData, shippingData) {
   if (!customerData.email.includes('@')) {
     throw new Error('El formato del correo electrónico no es válido.');
   }
-  // Puedes añadir más validaciones (ej. formato de teléfono)
 }
 
 /**
@@ -260,7 +256,6 @@ function handleInitializationError(error) {
     error.message || 'No se pudo inicializar el proceso de pago. Intenta recargar la página.',
     'error'
   );
-  // Ocultar botones de pago si la inicialización falla
   const paypalButtonContainer = document.getElementById('paypal-button-container');
   if (paypalButtonContainer) {
     paypalButtonContainer.innerHTML = `<p class="error">${error.message || 'Error al cargar los botones de pago.'}</p>`;
@@ -297,7 +292,7 @@ function handlePaymentError(error) {
 async function _saveOrderDetailsToFirestore(orderDetails, checkoutData) {
   try {
     const user = auth.currentUser;
-    const orderRef = doc(db, 'orders', orderDetails.id); // Usa el ID de la orden de PayPal como ID de documento
+    const orderRef = doc(db, 'ordenes', orderDetails.id); // CORRECCIÓN: Usar 'ordenes' como colección
 
     await setDoc(orderRef, {
       orderId: orderDetails.id,
@@ -316,13 +311,11 @@ async function _saveOrderDetailsToFirestore(orderDetails, checkoutData) {
       paymentStatus: orderDetails.status,
       paypalTransactionId: orderDetails.purchase_units[0].payments.captures[0].id,
       createdAt: serverTimestamp(),
-      // Otros detalles que quieras guardar
-      status: 'completed' // Un estado inicial para tu aplicación
+      status: 'completed' 
     });
     console.log('Orden guardada en Firestore con ID:', orderDetails.id);
   } catch (error) {
     console.error('Error al guardar la orden en Firestore:', error);
-    // Podrías decidir si mostrar un error al usuario aquí o solo registrarlo
   }
 }
 
@@ -360,14 +353,8 @@ function _getShippingData() {
 
 /**
  * Configura la lógica para el formulario de dirección (ej. carga de departamentos/municipios).
- * Asume que tienes un script separado para esto o que lo implementarás aquí.
  */
 function setupAddressForm() {
-    // Implementa aquí la lógica para cargar los departamentos y municipios
-    // Por ejemplo, usando una lista predefinida o fetched desde una API.
-    // Esto es un placeholder; si ya tienes un script para esto, asegúrate
-    // de que se inicialice o llámalo desde aquí.
-
     const departamentos = {
         'San Salvador': ['San Salvador', 'Apopa', 'Ayutuxtepeque', 'Cuscatancingo', 'Delgado', 'El Paisnal', 'Guazapa', 'Ilopango', 'Mejicanos', 'Nejapa', 'Panchimalco', 'Rosario de Mora', 'San Marcos', 'San Martín', 'Santiago Texacuangos', 'Santo Tomás', 'Soyapango', 'Tonacatepeque'],
         'La Libertad': ['Santa Tecla', 'Antiguo Cuscatlán', 'Chiltiupán', 'Ciudad Arce', 'Colón', 'Comasagua', 'Huizúcar', 'Jayaque', 'Jicalapa', 'La Libertad', 'Nuevo Cuscatlán', 'Quezaltepeque', 'Sacacoyo', 'San Juan Opico', 'San Matías', 'San Pablo Tacachico', 'Talnique', 'Tamanique', 'Teotepeque', 'Tepecoyo', 'Zaragoza'],
@@ -388,7 +375,6 @@ function setupAddressForm() {
     const municipioSelect = document.getElementById('municipio');
 
     if (departamentoSelect && municipioSelect) {
-        // Cargar departamentos
         for (const dep in departamentos) {
             const option = document.createElement('option');
             option.value = dep;
@@ -396,10 +382,9 @@ function setupAddressForm() {
             departamentoSelect.appendChild(option);
         }
 
-        // Event listener para cambiar municipios al seleccionar departamento
         departamentoSelect.addEventListener('change', () => {
             const selectedDepartamento = departamentoSelect.value;
-            municipioSelect.innerHTML = '<option value="">Selecciona tu municipio</option>'; // Reset municipios
+            municipioSelect.innerHTML = '<option value="">Selecciona tu municipio</option>'; 
             municipioSelect.disabled = true;
 
             if (selectedDepartamento) {
@@ -422,7 +407,7 @@ function setupAddressForm() {
 function setupAlternativePayment(checkoutData) {
   const alternativePaymentBtn = document.getElementById('alternativePayment');
   if (alternativePaymentBtn) {
-    alternativePaymentBtn.style.display = 'block'; // Mostrar si está habilitado
+    alternativePaymentBtn.style.display = 'block'; 
     alternativePaymentBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       window.showLoading(true);
@@ -431,13 +416,9 @@ function setupAlternativePayment(checkoutData) {
         const shippingData = _getShippingData();
         validateForm(customerData, shippingData);
 
-        // Aquí iría la lógica para tu método de pago alternativo
-        // Por ejemplo, enviar los datos a un backend para procesar con Stripe, u otra pasarela.
-        // Simulamos un pago exitoso:
         console.log("Procesando pago alternativo para:", checkoutData.total);
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simula un retraso de red
+        await new Promise(resolve => setTimeout(resolve, 2000)); 
         
-        // Simular una "orden" para guardar en Firestore
         const simulatedOrderId = 'ALT_' + Date.now();
         await _saveOrderDetailsToFirestore({
             id: simulatedOrderId,
@@ -455,7 +436,7 @@ function setupAlternativePayment(checkoutData) {
             status: 'COMPLETED_ALT'
         }, checkoutData);
         
-        CartService.clearCart(); // Limpia el carrito
+        CartService.clearCart(); 
         window.showLoading(false);
         window.showFeedback('¡Pago Alternativo Completado!', 'Tu pedido ha sido procesado mediante el método alternativo.', 'success');
       } catch (error) {
@@ -479,10 +460,7 @@ function setupModalClose() {
       if (feedbackModal) {
         feedbackModal.classList.remove('active');
       }
-      window.location.href = 'index.html'; // Redirigir a inicio o donde sea apropiado
+      window.location.href = 'index.html'; 
     });
   }
 }
-
-// Puedes exportar funciones si necesitas usarlas fuera de este módulo
-// export { initPayPalCheckout, showLoading, showFeedback }; // showLoading y showFeedback ya están en window

@@ -1,16 +1,12 @@
-// src/cart/cart-ui.js
-
 import { CartService } from './cart.js';
-// Asumiendo que tienes una función global showFeedback
-// Si no, necesitarías importarla o definirla aquí.
-// import { showFeedback } from '../shared/feedback.js'; // Ejemplo de importación
+import { showFeedback } from '../shared/feedback.js'; // Asegúrate de que esta importación sea correcta
 
 const SELECTORS = {
   CART_MODAL: '#cartModal',
   CART_ITEMS_CONTAINER: '#cartItems',
   CART_TOTAL_ELEMENT: '#cartTotal',
   CART_COUNT_ELEMENT: '#cartCount',
-  ADD_TO_CART_BUTTON: '.add-to-cart-btn',
+  ADD_TO_CART_BUTTON: '.add-to-cart-btn', // Selector para los botones de añadir al carrito
   OPEN_CART_BUTTON: '#openCartBtn',
   CLOSE_CART_BUTTON: '.close-button',
   CLEAR_CART_BUTTON: '#clearCartBtn',
@@ -26,7 +22,8 @@ const SELECTORS = {
 const toggleCartModal = (show) => {
   const cartModal = document.querySelector(SELECTORS.CART_MODAL);
   if (cartModal) {
-    cartModal.style.display = show ? 'block' : 'none';
+    cartModal.style.display = show ? 'flex' : 'none'; // Usar 'flex' si el modal usa flexbox para centrado
+    document.body.style.overflow = show ? 'hidden' : ''; // Evita scroll en el body cuando el modal está abierto
   }
 };
 
@@ -80,6 +77,7 @@ const renderCart = (cart) => {
 
 /**
  * Maneja la adición de un producto al carrito.
+ * Este listener ahora es el ÚNICO que añade productos.
  * @param {Event} event - El evento de click.
  */
 const handleAddToCart = async (event) => {
@@ -89,7 +87,7 @@ const handleAddToCart = async (event) => {
   const productId = button.dataset.id;
   const productName = button.dataset.name;
   const productPrice = parseFloat(button.dataset.price);
-  const productImageUrl = button.dataset.image; // Asegúrate de que este data-attribute exista en tu HTML
+  const productImageUrl = button.dataset.image;
 
   if (!productId || !productName || isNaN(productPrice)) {
     console.error('Datos de producto incompletos para añadir al carrito.');
@@ -103,12 +101,12 @@ const handleAddToCart = async (event) => {
     imageUrl: productImageUrl
   };
 
-  await CartService.addItem(product, 1); // Añade una unidad por defecto
+  await CartService.addItem(product, 1); // Siempre añade una unidad
   const updatedCart = await CartService.getCart();
   renderCart(updatedCart);
   toggleCartModal(true); // Abrir el carrito automáticamente
-  if (typeof window.showFeedback === 'function') {
-    window.showFeedback('Producto Añadido', `${productName} ha sido añadido al carrito.`, 'success');
+  if (typeof showFeedback === 'function') { // Usar showFeedback directamente
+    showFeedback('Producto Añadido', `${productName} ha sido añadido al carrito.`, 'success');
   }
 };
 
@@ -138,6 +136,7 @@ const handleQuantityChange = async (event) => {
   await CartService.updateItemQuantity(productId, newQuantity);
   const updatedCart = await CartService.getCart();
   renderCart(updatedCart);
+  // No cerrar el modal aquí, el usuario podría querer seguir ajustando cantidades
 };
 
 /**
@@ -152,8 +151,8 @@ const handleRemoveItem = async (event) => {
   await CartService.removeItem(productId);
   const updatedCart = await CartService.getCart();
   renderCart(updatedCart);
-  if (typeof window.showFeedback === 'function') {
-    window.showFeedback('Producto Eliminado', 'El producto ha sido eliminado del carrito.', 'info');
+  if (typeof showFeedback === 'function') {
+    showFeedback('Producto Eliminado', 'El producto ha sido eliminado del carrito.', 'info');
   }
 };
 
@@ -161,31 +160,32 @@ const handleRemoveItem = async (event) => {
  * Maneja la limpieza completa del carrito.
  */
 const handleClearCart = async () => {
-  if (confirm('¿Estás seguro de que quieres vaciar el carrito?')) {
-    await CartService.clearCart();
-    const updatedCart = await CartService.getCart();
-    renderCart(updatedCart);
-    if (typeof window.showFeedback === 'function') {
-      window.showFeedback('Carrito Vaciado', 'Todos los productos han sido eliminados del carrito.', 'info');
-    }
+  // CORRECCIÓN: Eliminado el confirm() y añadido showFeedback
+  // Se podría implementar un modal de confirmación personalizado aquí si es necesario.
+  await CartService.clearCart();
+  const updatedCart = await CartService.getCart();
+  renderCart(updatedCart);
+  if (typeof showFeedback === 'function') {
+    showFeedback('Carrito Vaciado', 'Todos los productos han sido eliminados del carrito.', 'info');
   }
+  toggleCartModal(false); // CORRECCIÓN: Cerrar el modal del carrito después de vaciarlo
 };
 
 /**
  * Maneja el click en el botón "Proceder al Pago".
  */
 const handleCheckout = async () => {
-  const cart = await CartService.getCart(); // Obtén el carrito actual
+  const cart = await CartService.getCart(); 
 
   if (cart.length === 0) {
-    if (typeof window.showFeedback === 'function') {
-      window.showFeedback('Carrito Vacío', 'No puedes proceder al pago con un carrito vacío.', 'info');
+    if (typeof showFeedback === 'function') {
+      showFeedback('Carrito Vacío', 'No puedes proceder al pago con un carrito vacío.', 'info');
     }
     return;
   }
 
-  // Si el carrito no está vacío, simplemente redirige a la página de pago.
-  // La lógica de "compra realizada" se manejará en la página de pago después de PayPal.
+  // Cierra el modal del carrito antes de redirigir
+  toggleCartModal(false); 
   window.location.href = 'pago.html';
 };
 
@@ -199,10 +199,11 @@ const setupEventListeners = () => {
   // Cerrar carrito
   document.querySelector(SELECTORS.CLOSE_CART_BUTTON)?.addEventListener('click', () => toggleCartModal(false));
   
-  // Añadir al carrito (delegación de eventos para botones dinámicos)
-  document.addEventListener('click', handleAddToCart);
+  // Añadir al carrito (delegación de eventos en el documento para botones dinámicos)
+  // Este es ahora el ÚNICO listener para añadir al carrito
+  document.addEventListener('click', handleAddToCart); 
 
-  // Actualizar cantidad y eliminar ítem (delegación de eventos)
+  // Actualizar cantidad y eliminar ítem (delegación de eventos en el contenedor del carrito)
   document.querySelector(SELECTORS.CART_ITEMS_CONTAINER)?.addEventListener('click', (event) => {
     if (event.target.classList.contains('quantity-minus') || event.target.classList.contains('quantity-plus')) {
       handleQuantityChange(event);

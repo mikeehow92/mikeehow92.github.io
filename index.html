@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MiTienda503 - Electrodomésticos, Ropa y Zapatos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Estilos de la aplicación, ahora referenciados correctamente -->
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/auth.css">
+    
     <style>
+        /* Las variables CSS y estilos generales se mantuvieron aquí por si no están en styles.css */
         :root {
             --primary: #e63946;
             --primary-dark: #c1121f;
@@ -122,7 +128,7 @@
 
         /* Estado logueado */
         #user-info {
-            display: none;
+            display: none; /* Se controla por JS */
             align-items: center;
             gap: 1rem;
         }
@@ -532,6 +538,10 @@
             margin-bottom: 1rem;
         }
 
+        .footer-logo p {
+            font-size: 0.9em;
+        }
+
         .footer-links h3 {
             font-size: 1.2rem;
             margin-bottom: 1rem;
@@ -606,6 +616,7 @@
     <header>
         <div class="header-container">
             <div class="logo">
+                <!-- Ruta ajustada para la imagen del logo -->
                 <img src="/assets/imagenes/logo.png" alt="MiTienda503">
             </div>
             <nav>
@@ -616,7 +627,7 @@
                     <li><a href="#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
                     <!-- Enlaces solo para usuarios logueados -->
                     <li id="profile-link" style="display:none;"><a href="perfil.html"><i class="fas fa-user"></i> Perfil</a></li>
-                    <li id="orders-link" style="display:none;"><a href="perfil.htmml#compras"><i class="fas fa-shopping-cart"></i> Mis Compras</a></li>
+                    <li id="orders-link" style="display:none;"><a href="perfil.html#compras"><i class="fas fa-shopping-cart"></i> Mis Compras</a></li>
                 </ul>
             </nav>
             <div class="auth-section">
@@ -631,12 +642,13 @@
                 <div id="user-info">
                     <div class="user-dropdown">
                         <div style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <img id="user-avatar" class="avatar" src="https://via.placeholder.com/40" alt="Avatar">
+                            <!-- Avatar del usuario, el src será establecido por JavaScript -->
+                            <img id="user-avatar" class="avatar" alt="Avatar">
                             <span id="user-name"></span>
                         </div>
                         <div class="dropdown-content">
-                            <a href="#perfil"><i class="fas fa-user"></i> Mi Perfil</a>
-                            <a href="#compras"><i class="fas fa-shopping-cart"></i> Mis Compras</a>
+                            <a href="perfil.html"><i class="fas fa-user"></i> Mi Perfil</a>
+                            <a href="perfil.html#compras"><i class="fas fa-shopping-cart"></i> Mis Compras</a>
                             <a href="#configuracion"><i class="fas fa-cog"></i> Configuración</a>
                             <button id="logout-btn" style="width: 100%; text-align: left; background: none; border: none; padding: 12px 16px; color: var(--secondary); cursor: pointer;">
                                 <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
@@ -848,7 +860,8 @@
     <footer>
         <div class="footer-container">
             <div class="footer-logo">
-                <img src="https://via.placeholder.com/180x60?text=MiTienda503" alt="MiTienda503 Logo">
+                <!-- Ruta ajustada para la imagen del logo en el footer -->
+                <img src="/assets/imagenes/logo.png" alt="MiTienda503 Logo">
                 <p>Todo lo que necesitas para tu hogar y estilo personal en un solo lugar.</p>
             </div>
             <div class="footer-links">
@@ -875,196 +888,7 @@
         </div>
     </footer>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
-    
-    <script>
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
-            authDomain: "mitienda-c2609.firebaseapp.com",
-            projectId: "mitienda-c2609",
-            storageBucket: "mitienda-c2609.appspot.com",
-            messagingSenderId: "536746062790",
-            appId: "1:536746062790:web:cd39eb0057aac14c6538c7"
-        };
-
-        // Inicializar Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        // Funcionalidad del modal
-        const setupAuthUI = () => {
-            // Selectores
-            const loginBtn = document.getElementById('open-login-btn');
-            const loginModal = document.getElementById('login-modal');
-            const resetModal = document.getElementById('reset-modal');
-            const closeBtns = document.querySelectorAll('.close-modal');
-            const switchToSignup = document.getElementById('switch-to-signup');
-            const switchToLoginFromReset = document.getElementById('switch-to-login-from-reset');
-            const forgotPassword = document.getElementById('forgot-password');
-            const loginForm = document.getElementById('login-form');
-            const resetForm = document.getElementById('reset-form');
-            const logoutBtn = document.getElementById('logout-btn');
-            const guestUI = document.getElementById('guest-buttons');
-            const userUI = document.getElementById('user-info');
-            const userName = document.getElementById('user-name');
-            const userAvatar = document.getElementById('user-avatar');
-            const profileLink = document.getElementById('profile-link');
-            const ordersLink = document.getElementById('orders-link');
-
-            // Mostrar modal
-            const showModal = (modal) => {
-                document.querySelectorAll('.auth-modal').forEach(m => m.classList.remove('active'));
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            };
-
-            // Ocultar modales
-            const hideModals = () => {
-                document.querySelectorAll('.auth-modal').forEach(m => m.classList.remove('active'));
-                document.body.style.overflow = '';
-            };
-
-            // Cambiar a login
-            const showLogin = () => {
-                hideModals();
-                showModal(loginModal);
-            };
-
-            // Cambiar a recuperación
-            const showReset = () => {
-                hideModals();
-                showModal(resetModal);
-            };
-
-            // Manejadores de eventos
-            loginBtn?.addEventListener('click', () => showModal(loginModal));
-            closeBtns.forEach(btn => btn.addEventListener('click', hideModals));
-            switchToSignup?.addEventListener('click', (e) => {
-                e.preventDefault();
-                window.location.href = 'registro.html';
-            });
-            switchToLoginFromReset?.addEventListener('click', (e) => {
-                e.preventDefault();
-                showLogin();
-            });
-            forgotPassword?.addEventListener('click', (e) => {
-                e.preventDefault();
-                showReset();
-            });
-
-            // Cerrar modal al hacer clic fuera
-            document.querySelectorAll('.auth-modal').forEach(modal => {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        hideModals();
-                    }
-                });
-            });
-
-            // Login con email
-            loginForm?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = e.target.email.value;
-                const password = e.target.password.value;
-                
-                try {
-                    await auth.signInWithEmailAndPassword(email, password);
-                    hideModals();
-                    showFeedback('Sesión iniciada correctamente', 'success');
-                } catch (error) {
-                    showFeedback(getAuthErrorMessage(error), 'error');
-                }
-            });
-
-            // Recuperación de contraseña
-            resetForm?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = e.target.email.value;
-                
-                try {
-                    await auth.sendPasswordResetEmail(email);
-                    hideModals();
-                    showFeedback('Se ha enviado un email con instrucciones para restablecer tu contraseña', 'success');
-                } catch (error) {
-                    showFeedback(getAuthErrorMessage(error), 'error');
-                }
-            });
-
-            // Logout
-            logoutBtn?.addEventListener('click', async () => {
-                try {
-                    await auth.signOut();
-                    showFeedback('Sesión cerrada correctamente', 'success');
-                } catch (error) {
-                    showFeedback('Error al cerrar sesión', 'error');
-                }
-            });
-
-            // Escuchar cambios de autenticación
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    // Usuario logueado
-                    guestUI.style.display = 'none';
-                    userUI.style.display = 'flex';
-                    profileLink.style.display = 'block';
-                    ordersLink.style.display = 'block';
-                    
-                    userName.textContent = user.displayName || user.email.split('@')[0];
-                    userAvatar.src = user.photoURL || 'https://via.placeholder.com/40';
-                } else {
-                    // Usuario no logueado
-                    guestUI.style.display = 'flex';
-                    userUI.style.display = 'none';
-                    profileLink.style.display = 'none';
-                    ordersLink.style.display = 'none';
-                }
-            });
-
-            // Mostrar feedback
-            const showFeedback = (message, type) => {
-                // Implementar lógica para mostrar mensajes al usuario
-                console.log(`${type}: ${message}`);
-                alert(`${type}: ${message}`); // Temporal
-            };
-
-            // Manejo de errores de autenticación
-            const getAuthErrorMessage = (error) => {
-                const errorMap = {
-                    'auth/invalid-email': 'El correo electrónico no es válido',
-                    'auth/user-disabled': 'Esta cuenta ha sido deshabilitada',
-                    'auth/user-not-found': 'No existe una cuenta con este correo',
-                    'auth/wrong-password': 'Contraseña incorrecta',
-                    'auth/email-already-in-use': 'Este correo ya está registrado',
-                    'auth/operation-not-allowed': 'Operación no permitida',
-                    'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres',
-                    'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde'
-                };
-                return errorMap[error.code] || 'Ocurrió un error durante la autenticación';
-            };
-        };
-
-        // Inicializar la UI de autenticación cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', () => {
-            setupAuthUI();
-            
-            // Año actual en el footer
-            document.getElementById('current-year').textContent = new Date().getFullYear();
-
-            // Smooth scrolling para enlaces internos
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    document.querySelector(this.getAttribute('href')).scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                });
-            });
-        });
-    </script>
+    <!-- Punto de entrada principal de tu aplicación JavaScript manejado por Vite -->
+    <script type="module" src="/src/main.js"></script> 
 </body>
 </html>

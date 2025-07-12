@@ -1,6 +1,6 @@
-import { ProductService } from './productos.js'; // Asegúrate que esta ruta es correcta
-import { CartService } from '../cart/cart.js'; // Asegúrate que esta ruta es correcta
-import { showFeedback } from '../shared/feedback.js'; // Asegúrate de tener showFeedback
+import { ProductService } from './products.js'; 
+import { CartService } from '../cart/cart.js'; 
+import { showFeedback } from '../shared/feedback.js'; 
 
 // Selectores del DOM
 const SELECTORS = {
@@ -12,7 +12,7 @@ const SELECTORS = {
   PAGINATION: '#pagination', 
   PRODUCT_TEMPLATE: '#product-template', 
   RELATED_PRODUCTS: '#related-products', 
-  ADD_TO_CART_BUTTON: '.add-to-cart-btn', 
+  ADD_TO_CART_BUTTON: '.add-to-cart-btn', // Mantener selector para referencia, pero el listener se moverá
 };
 
 // Clases CSS
@@ -26,11 +26,11 @@ const CLASSES = {
  * Inicializa la UI de productos
  */
 export const initProductsUI = () => {
-  console.log('1. initProductsUI iniciado'); // <-- CONSOLE.LOG
+  console.log('1. initProductsUI iniciado'); 
   renderProductsGrid();
-  setupEventListeners();
-  // setupProductDetailPage(); // Descomentar si tienes una página de detalle de producto
-  console.log('2. initProductsUI terminado'); // <-- CONSOLE.LOG
+  setupEventListeners(); // Aquí se configuran los listeners específicos de productos
+  // setupProductDetailPage(); 
+  console.log('2. initProductsUI terminado'); 
 };
 
 /**
@@ -38,19 +38,19 @@ export const initProductsUI = () => {
  * @param {Array<Object>} products - Opcional, lista de productos a renderizar. Si no se provee, los obtiene todos.
  */
 const renderProductsGrid = async (products) => {
-  console.log('3. renderProductsGrid iniciado'); // <-- CONSOLE.LOG
+  console.log('3. renderProductsGrid iniciado'); 
   const productsGrid = document.querySelector(SELECTORS.PRODUCTS_GRID);
   if (!productsGrid) {
     console.error('Elemento #products-grid no encontrado.');
     return;
   }
 
-  productsGrid.innerHTML = '<p>Cargando productos...</p>'; // Mensaje de carga inicial
+  productsGrid.innerHTML = '<p>Cargando productos...</p>'; 
 
   try {
-    console.log('4. Llamando a ProductService.getAllProducts()'); // <-- CONSOLE.LOG
+    console.log('4. Llamando a ProductService.getAllProducts()'); 
     const productsToRender = products || await ProductService.getAllProducts();
-    console.log('5. ProductService.getAllProducts() regresó:', productsToRender); // <-- CONSOLE.LOG
+    console.log('5. ProductService.getAllProducts() regresó:', productsToRender); 
     
     if (productsToRender.length === 0) {
       productsGrid.innerHTML = '<p>No se encontraron productos.</p>';
@@ -65,17 +65,17 @@ const renderProductsGrid = async (products) => {
           <p>${product.descripcion.substring(0, 100)}${product.descripcion.length > 100 ? '...' : ''}</p>
           <div class="product-price">$${product.precio.toFixed(2)}</div>
           <button class="btn-add-to-cart add-to-cart-btn" 
-                  data-id="${product.id}" 
-                  data-name="${product.nombre}" 
-                  data-price="${product.precio}"
-                  data-image="${product.imagenUrl}">
+                   data-id="${product.id}" 
+                   data-name="${product.nombre}" 
+                   data-price="${product.precio}"
+                   data-image="${product.imagenUrl}">
             <i class="fas fa-shopping-cart"></i> Añadir al Carrito
           </button>
         </div>
       </div>
     `).join('');
   } catch (error) {
-    console.error("Error rendering products grid:", error);
+    console.error("Error rendering products grid:", error); 
     productsGrid.innerHTML = '<p class="error-message">Error al cargar los productos. Inténtalo de nuevo más tarde.</p>';
   }
 };
@@ -138,77 +138,77 @@ const setupEventListeners = () => {
     filterButton.addEventListener('click', handleCategoryFilter);
   });
 
-  // Delegación de eventos para botones "Añadir al Carrito"
-  document.querySelector(SELECTORS.PRODUCTS_GRID)?.addEventListener('click', async (event) => {
-    const addToCartBtn = event.target.closest(SELECTORS.ADD_TO_CART_BUTTON);
-    if (addToCartBtn) {
-      const productId = addToCartBtn.dataset.id;
-      const productName = addToCartBtn.dataset.name;
-      const productPrice = parseFloat(addToCartBtn.dataset.price);
-      const productImageUrl = addToCartBtn.dataset.image;
+  // ELIMINADO: El listener para 'ADD_TO_CART_BUTTON' se manejará ahora exclusivamente en cart-ui.js
+  // document.querySelector(SELECTORS.PRODUCTS_GRID)?.addEventListener('click', async (event) => {
+  //   const addToCartBtn = event.target.closest(SELECTORS.ADD_TO_CART_BUTTON);
+  //   if (addToCartBtn) {
+  //     const productId = addToCartBtn.dataset.id;
+  //     const productName = addToCartBtn.dataset.name;
+  //     const productPrice = parseFloat(addToCartBtn.dataset.price);
+  //     const productImageUrl = addToCartBtn.dataset.image;
 
-      const product = {
-        id: productId,
-        name: productName,
-        price: productPrice,
-        imageUrl: productImageUrl
-      };
+  //     const product = {
+  //       id: productId,
+  //       name: productName,
+  //       price: productPrice,
+  //       imageUrl: productImageUrl
+  //     };
 
-      try {
-        await CartService.addItem(product, 1);
-        if (typeof showFeedback === 'function') {
-          showFeedback('¡Añadido!', `${productName} se añadió al carrito.`, 'success');
-        }
-        const currentCart = await CartService.getCart();
-        document.getElementById('cartCount').textContent = CartService.getItemCount(currentCart);
+  //     try {
+  //       await CartService.addItem(product, 1);
+  //       if (typeof showFeedback === 'function') {
+  //         showFeedback('¡Añadido!', `${productName} se añadió al carrito.`, 'success');
+  //       }
+  //       const currentCart = await CartService.getCart();
+  //       document.getElementById('cartCount').textContent = CartService.getItemCount(currentCart);
 
-      } catch (error) {
-        console.error('Error al añadir al carrito:', error);
-        if (typeof showFeedback === 'function') {
-          showFeedback('Error', 'No se pudo añadir el producto al carrito.', 'error');
-        }
-      }
-    }
-  });
+  //     } catch (error) {
+  //       console.error('Error al añadir al carrito:', error);
+  //       if (typeof showFeedback === 'function') {
+  //         showFeedback('Error', 'No se pudo añadir el producto al carrito.', 'error');
+  //       }
+  //     }
+  //   }
+  // });
 };
 
 /**
  * Configura la página de detalle de producto si existe
  */
 // const setupProductDetailPage = async () => {
-//   const productDetailContainer = document.querySelector(SELECTORS.PRODUCT_DETAIL);
-//   if (!productDetailContainer) return;
+//    const productDetailContainer = document.querySelector(SELECTORS.PRODUCT_DETAIL);
+//    if (!productDetailContainer) return;
 
-//   const urlParams = new URLSearchParams(window.location.search);
-//   const productId = urlParams.get('id');
+//    const urlParams = new URLSearchParams(window.location.search);
+//    const productId = urlParams.get('id');
 
-//   if (productId) {
-//     const product = await ProductService.getProductById(productId);
-//     if (product) {
-//       productDetailContainer.innerHTML = `
-//         <div class="product-detail-card">
-//           <img src="${product.imageUrl || '/assets/images/placeholder.png'}" alt="${product.nombre}">
-//           <div class="details">
-//             <h2>${product.nombre}</h2>
-//             <p class="description">${product.descripcion}</p>
-//             <p class="price">$${product.precio.toFixed(2)}</p>
-//             <button class="btn-add-to-cart add-to-cart-btn" 
-//                     data-id="${product.id}" 
-//                     data-name="${product.nombre}" 
-//                     data-price="${product.precio}"
-//                     data-image="${product.imagenUrl}">
-//               <i class="fas fa-shopping-cart"></i> Añadir al Carrito
-//             </button>
-//           </div>
-//         </div>
-//       `;
-//       renderRelatedProducts(product.id, product.categoria); 
-//     } else {
-//       productDetailContainer.innerHTML = '<p>Producto no encontrado.</p>';
-//     }
-//   } else {
-//     productDetailContainer.innerHTML = '<p>Selecciona un producto para ver los detalles.</p>';
-//   }
+//    if (productId) {
+//      const product = await ProductService.getProductById(productId);
+//      if (product) {
+//        productDetailContainer.innerHTML = `
+//          <div class="product-detail-card">
+//            <img src="${product.imageUrl || '/assets/images/placeholder.png'}" alt="${product.nombre}">
+//            <div class="details">
+//              <h2>${product.nombre}</h2>
+//              <p class="description">${product.descripcion}</p>
+//              <p class="price">$${product.precio.toFixed(2)}</p>
+//              <button class="btn-add-to-cart add-to-cart-btn" 
+//                       data-id="${product.id}" 
+//                       data-name="${product.nombre}" 
+//                       data-price="${product.precio}"
+//                       data-image="${product.imagenUrl}">
+//                <i class="fas fa-shopping-cart"></i> Añadir al Carrito
+//              </button>
+//            </div>
+//          </div>
+//        `;
+//        renderRelatedProducts(product.id, product.categoria); 
+//      } else {
+//        productDetailContainer.innerHTML = '<p>Producto no encontrado.</p>';
+//      }
+//    } else {
+//      productDetailContainer.innerHTML = '<p>Selecciona un producto para ver los detalles.</p>';
+//    }
 // };
 
 /**
@@ -221,26 +221,8 @@ const renderRelatedProducts = async (productId, category) => {
   if (!relatedContainer) return;
 
   try {
-    const relatedProducts = await ProductService.getRelatedProducts(productId, category);
-    
-    if (relatedProducts.length === 0) {
-      relatedContainer.classList.add(CLASSES.HIDDEN);
-      return;
-    }
-
-    relatedContainer.innerHTML = `
-      <h3>Productos relacionados</h3>
-      <div class="related-products-grid">
-        ${relatedProducts.map(product => `
-          <div class="related-product" data-id="${product.id}" onclick="window.location.href='producto.html?id=${product.id}'">
-            <img src="${product.imagenUrl || '/assets/images/placeholder.png'}" alt="${product.nombre}">
-            <h4>${product.nombre}</h4>
-            <p>$${product.precio.toFixed(2)}</p>
-          </div>
-        `).join('')}
-      </div>
-    `;
-
+    const relatedProducts = await ProductService.getProductsByCategory(category, maxResults + 1); 
+    return relatedProducts.filter(product => product.id !== productId).slice(0, maxResults);
   } catch (error) {
     console.error("Error rendering related products:", error);
     relatedContainer.classList.add(CLASSES.HIDDEN);

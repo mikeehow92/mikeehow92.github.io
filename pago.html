@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pago - MiTienda</title>
   
-  <script type="module" src="../src/shared/firebase-config.js"></script>
-  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
+  <!-- Estilos de la aplicación, ahora referenciados correctamente -->
   <link rel="stylesheet" href="/assets/css/styles.css">
   <link rel="stylesheet" href="/assets/css/auth.css">
   
@@ -62,7 +61,7 @@
       text-align: center;
       max-width: 400px;
       width: 90%;
-      box-shadow: var(--shadow);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       animation: slideIn 0.3s ease-out;
     }
     .feedback-icon {
@@ -137,7 +136,7 @@
     .order-summary {
       background-color: var(--white);
       border-radius: 8px;
-      box-shadow: var(--shadow);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       padding: 20px;
       margin-top: 20px;
     }
@@ -145,14 +144,14 @@
       font-size: 1.5em;
       color: var(--secondary);
       margin-bottom: 15px;
-      border-bottom: 1px solid var(--gray-light);
+      border-bottom: 1px solid #f1f5f9;
       padding-bottom: 10px;
     }
     .order-item {
       display: flex;
       justify-content: space-between;
       padding: 8px 0;
-      border-bottom: 1px dashed var(--gray-light);
+      border-bottom: 1px dashed #f1f5f9;
       font-size: 0.95em;
     }
     .order-item:last-child {
@@ -161,7 +160,7 @@
     .order-totals {
       margin-top: 15px;
       padding-top: 15px;
-      border-top: 1px solid var(--gray-light);
+      border-top: 1px solid #f1f5f9;
     }
     .order-totals div {
       display: flex;
@@ -280,19 +279,19 @@
     </div>
   </div>
 
+  <!-- Scripts -->
+  <!-- Punto de entrada principal de tu aplicación JavaScript manejado por Vite -->
+  <script type="module" src="/src/main.js"></script>
+  <!-- Lógica específica de la página de pago -->
   <script type="module">
-    // CORRECCIÓN: Cambiado de initPayment a initPayPalCheckout
-    // CORRECCIÓN: Ajustada la ruta del script de checkout.js
-    import { initPayPalCheckout } from '../src/paypal/checkout.js'; 
+    import { initPayPalCheckout } from '/src/paypal/checkout.js'; 
     
-    // Inicializar el sistema de pago
     document.addEventListener('DOMContentLoaded', () => {
       try {
-        // CORRECCIÓN: Llamada a initPayPalCheckout
         if (typeof initPayPalCheckout === 'function') { 
           initPayPalCheckout();
         } else {
-          console.error('initPayPalCheckout no está definido'); // Mensaje de error actualizado
+          console.error('initPayPalCheckout no está definido'); 
           document.getElementById('orderItems').innerHTML = 
             '<p class="error">Error al cargar el sistema de pago. Recargue la página.</p>';
         }
@@ -303,7 +302,7 @@
       }
     });
 
-    // Código para el manejo de feedbackModal y loadingOverlay (si lo tenías en tu pago.html original)
+    // Código para el manejo de feedbackModal y loadingOverlay
     const feedbackModal = document.getElementById('feedbackModal');
     const feedbackClose = document.getElementById('feedbackClose');
     const loadingOverlay = document.getElementById('loadingOverlay');
@@ -311,11 +310,13 @@
     if (feedbackClose) {
       feedbackClose.addEventListener('click', () => {
         if (feedbackModal) feedbackModal.classList.remove('active');
-        window.location.href = 'index.html'; // Redirigir a inicio después del pago
+        window.location.href = 'index.html'; 
       });
     }
 
-    // Funciones para mostrar/ocultar el feedback y el spinner
+    // Estas funciones showFeedback y showLoading ya se asignan globalmente en main.js
+    // por lo que este bloque es redundante si main.js se carga primero.
+    // Lo mantengo por si hay un escenario donde main.js no se carga antes.
     window.showFeedback = (title, message, type = 'success') => {
       const iconElement = document.getElementById('feedbackIcon');
       const titleElement = document.getElementById('feedbackTitle');

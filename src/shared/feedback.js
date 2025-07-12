@@ -1,3 +1,5 @@
+// src/shared/feedback.js
+
 // Constantes de configuración
 const CONFIG = {
   DEFAULT_DURATION: 3000, // 3 segundos
@@ -97,6 +99,39 @@ const STYLES = `
   background: white;
   width: 100%;
   transform-origin: left;
+}
+
+/* Estilos para el overlay de carga (spinner) */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001; /* Asegúrate de que esté por encima de otros elementos */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.loading-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+.loading-spinner {
+  border: 8px solid rgba(255, 255, 255, 0.3);
+  border-top: 8px solid #fff;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 `;
 
@@ -205,6 +240,28 @@ const dismissFeedback = (messageElement) => {
       container.remove();
     }
   }, 300);
+};
+
+/**
+ * Muestra u oculta un spinner de carga global.
+ * @param {boolean} show - True para mostrar, false para ocultar.
+ */
+export const showLoading = (show) => { // <-- Nueva función exportada
+  injectStyles(); // Asegura que los estilos del spinner estén inyectados
+  let loadingOverlay = document.getElementById('loadingOverlay');
+  if (!loadingOverlay) {
+    loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'loadingOverlay';
+    loadingOverlay.className = 'loading-overlay';
+    loadingOverlay.innerHTML = '<div class="loading-spinner"></div>';
+    document.body.appendChild(loadingOverlay);
+  }
+
+  if (show) {
+    loadingOverlay.classList.add('active');
+  } else {
+    loadingOverlay.classList.remove('active');
+  }
 };
 
 /**
