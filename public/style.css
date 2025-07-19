@@ -1,0 +1,44 @@
+/* style.css */
+
+/* Importa la fuente Inter de Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
+/* Estilos generales del cuerpo, aunque Tailwind maneja gran parte de esto */
+body {
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    color: #333; /* Color de texto por defecto */
+}
+
+/* Estilos para los iconos de redes sociales (ajuste de tamaño si es necesario) */
+.social-icons img {
+    width: 32px; /* Tamaño por defecto */
+    height: 32px;
+    transition: transform 0.3s ease; /* Transición suave al pasar el ratón */
+}
+
+.social-icons img:hover {
+    transform: scale(1.1); /* Efecto de zoom al pasar el ratón */
+}
+
+/* Ensancha los contenedores del formulario PayPal (estos estilos son para PayPal Hosted Fields, no para Smart Buttons) */
+/* Los estilos para #card-number-field-container, #card-expiry-field-container,
+   y #card-cvv-field-container no se pueden aplicar aquí para Smart Buttons,
+   ya que son parte del iframe seguro de PayPal y no son accesibles desde el CSS de tu sitio. */
+
+/* Ajustes para el contenedor de los botones de PayPal, para que se adapte al nuevo diseño flex */
+#paypal-button-container {
+  /* max-width: 600px;  Mantener el max-width si lo deseas */
+  box-sizing: border-box;
+  /* Eliminado: width: 400px; para permitir que Tailwind Flexbox controle el ancho */
+}
+
+/* Alturas explícitas recomendadas (estos son para Hosted Fields, no para Smart Buttons) */
+/* #card-number-field-container { height: 45px; } */
+/* #card-expiry-field-container, */
+/* #card-cvv-field-container { height: 45px; } */
+
+/* Opcional: centrado visual */
+.paypal-container {
+  margin: 0 auto;
+}

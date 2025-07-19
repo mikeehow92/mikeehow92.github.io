@@ -1,0 +1,13 @@
+# Ignorar la carpeta node_modules en la raíz del proyecto
+node_modules/
+
+# Ignorar la carpeta node_modules dentro de functions (si existe)
+functions/node_modules/
+
+# Ignorar logs, caché y otros archivos temporales
+npm-debug.log*
+.DS_Store
+.env
+.firebase/
+*.log
+*.env
