@@ -2,7 +2,7 @@
 
 // Importa las funciones necesarias de Firebase Auth, Firestore y Storage
 import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { doc, getDoc, collection, query, where, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc, collection, query, where, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getStorage, ref, listAll, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loggedInUserDisplay = document.getElementById('loggedInUserDisplay');
     const userNameDisplay = document.getElementById('userNameDisplay');
     const navCarrito = document.getElementById('navCarrito');
-    // const navPerfil = document.getElementById('navPerfil'); // Se comenta o elimina ya que el elemento se quitará del HTML
     const logoutButtonHeader = document.getElementById('logoutButtonHeader');
     const cartItemCountElement = document.getElementById('cartItemCount'); // Obtener el elemento del contador de ítems del carrito
 
@@ -25,6 +24,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const noOrdersMessage = document.getElementById('noOrdersMessage');
     const logoutButtonProfile = document.getElementById('logoutButtonProfile');
 
+    // Elementos de visualización de dirección
+    const profilePhone = document.getElementById('profilePhone');
+    const profileDepartment = document.getElementById('profileDepartment');
+    const profileMunicipality = document.getElementById('profileMunicipality');
+    const profileAddress = document.getElementById('profileAddress');
+    const editAddressButton = document.getElementById('editAddressButton'); // Nuevo botón para editar dirección
+
     // Elementos del modal de selección de avatar
     const selectAvatarButton = document.getElementById('selectAvatarButton');
     const avatarModal = document.getElementById('avatarModal');
@@ -34,11 +40,72 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorAvatarsMessage = document.getElementById('errorAvatarsMessage');
     const noAvatarsMessage = document.getElementById('noAvatarsMessage');
 
+    // Elementos del modal de edición de dirección
+    const addressModal = document.getElementById('addressModal');
+    const closeAddressModalButton = document.getElementById('closeAddressModalButton');
+    const editAddressForm = document.getElementById('editAddressForm');
+    const editPhone = document.getElementById('editPhone');
+    const editDepartment = document.getElementById('editDepartment');
+    const editMunicipality = document.getElementById('editMunicipality');
+    const editAddress = document.getElementById('editAddress');
+    const saveAddressButton = document.getElementById('saveAddressButton');
+
     // Referencias de Firebase
     const auth = window.firebaseAuth;
     const db = window.firebaseDb;
     const app = window.firebaseApp;
     const storage = app ? getStorage(app) : null; // Inicializa Storage solo si app está disponible
+
+    // Datos de Departamentos y Municipios de El Salvador (ejemplo, duplicado para perfil.js)
+    const departmentsAndMunicipalities = {
+        "Ahuachapán": ["Ahuachapán", "Apaneca", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
+        "Cabañas": ["Cinquera", "Dolores", "Guacotecti", "Ilobasco", "Sensuntepeque", "Tejutepeque", "Victoria"],
+        "Chalatenango": ["Agua Caliente", "Arcatao", "Azacualpa", "Cancasque", "Chalatenango", "Chesal", "Citalá", "Comalapa", "Concepción Quezaltepeque", "Dulce Nombre de María", "El Carrizal", "El Paraíso", "La Laguna", "La Palma", "La Reina", "Las Vueltas", "Nombre de Jesús", "Nueva Concepción", "Nueva Trinidad", "Ojos de Agua", "Potonico", "San Antonio de la Cruz", "San Antonio Los Ranchos", "San Fernando", "San Francisco Lempa", "San Ignacio", "San Isidro Labrador", "San Luis del Carmen", "San Miguel de Mercedes", "San Rafael", "Santa Rita", "Tejutla"],
+        "Cuscatlán": ["Cojutepeque", "Candelaria", "El Carmen", "El Rosario", "Monte San Juan", "Oratorio de Concepción", "San Bartolomé Perulapía", "San Cristóbal", "San José Guayabal", "San Pedro Perulapán", "San Rafael Cedros", "San Ramón", "Santa Cruz Analquito", "Santa Cruz Michapa", "Suchitoto", "Tenancingo"],
+        "La Libertad": ["Antiguo Cuscatlán", "Chiltiupán", "Ciudad Arce", "Colón", "Comasagua", "Huizúcar", "Jayaque", "Jicalapa", "La Libertad", "Santa Tecla", "Nuevo Cuscatlán", "Quezaltepeque", "Sacacoyo", "San Juan Opico", "San Matías", "San Pablo Tacachico", "Talnique", "Tamanique", "Teotepeque", "Tepecoyo", "Zaragoza"],
+        "La Paz": ["Cuyultitán", "El Rosario", "Jerusalén", "Mercedes La Ceiba", "Olocuilta", "Paraíso de Osorio", "San Antonio Masahuat", "San Emigdio", "San Francisco Chinameca", "San Juan Nonualco", "San Juan Talpa", "San Juan Tepezontes", "San Luis La Herradura", "San Luis Talpa", "San Miguel Tepezontes", "San Pedro Masahuat", "San Pedro Nonualco", "San Rafael Obrajuelo", "Santa María Ostuma", "Santiago Nonualco", "Tapalhuaca", "Zacatecoluca"],
+        "La Unión": ["Anamorós", "Bolívar", "Concepción de Oriente", "Conchagua", "El Carmen", "El Sauce", "Intipucá", "La Unión", "Lislique", "Meanguera del Golfo", "Nueva Esparta", "Pasaquina", "Polorós", "San Alejo", "San José", "Santa Rosa de Lima", "Yayantique", "Yucuaiquín"],
+        "Morazán": ["Arambala", "Cacaopera", "Chilanga", "Corinto", "Delicias de Concepción", "El Divisadero", "El Rosario", "Gualococti", "Guatajiagua", "Joateca", "Jocoro", "Lolotique", "Meanguera", "Osicala", "Perquín", "San Fernando", "San Isidro", "San Simón", "Sensembra", "Sociedad", "Torola", "Yamabal", "Yoloaiquín"],
+        "San Miguel": ["Carolina", "Chapeltique", "Chinameca", "Chirilagua", "Ciudad Barrios", "Comacarán", "El Tránsito", "Lolotique", "Moncagua", "Nueva Guadalupe", "Quelepa", "San Antonio del Mosco", "San Gerardo", "San Jorge", "San Luis de la Reina", "San Miguel", "San Rafael Oriente", "Sesori", "Uluazapa"],
+        "San Salvador": ["Aguilares", "Apopa", "Ayutuxtepeque", "Cuscatancingo", "Delgado", "El Paisnal", "Guazapa", "Ilopango", "Mejicanos", "Nejapa", "Panchimalco", "Rosario de Mora", "San Marcos", "San Martín", "San Salvador", "Soyapango", "Santo Tomás", "Tonacatepeque"],
+        "San Vicente": ["Apastepeque", "Guadalupe", "San Cayetano Istepeque", "San Esteban Catarina", "San Ildefonso", "San Lorenzo", "San Sebastián", "San Simón", "Sensembra", "Sociedad", "Torola", "Yamabal", "Yoloaiquín", "San Vicente", "Santa Clara", "Santo Domingo", "Tecoluca", "Tepetitán", "Verapaz"],
+        "Santa Ana": ["Candelaria de la Frontera", "Chalchuapa", "Coatepeque", "El Congo", "El Porvenir", "Masahuat", "Metapán", "Santa Ana", "Santa Rosa Guachipilín", "Santiago de la Frontera", "Texistepeque"],
+        "Sonsonate": ["Acajutla", "Armenia", "Caluco", "Cuisnahuat", "Izalco", "Juayúa", "Nahualingo", "Nahulingo", "Salcoatitán", "San Antonio del Monte", "San Julián", "Santa Catarina Masahuat", "Santa Isabel Ishuatán", "Santo Domingo de Guzmán", "Sonsonate", "Sonzacate"],
+        "Usulután": ["Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán", "Usulután"]
+    };
+
+    // Función para cargar departamentos en el select de edición
+    function loadDepartments(selectElement) {
+        selectElement.innerHTML = '<option value="">Seleccione un departamento</option>';
+        for (const dept in departmentsAndMunicipalities) {
+            const option = document.createElement('option');
+            option.value = dept;
+            option.textContent = dept;
+            selectElement.appendChild(option);
+        }
+    }
+
+    // Función para cargar municipios basado en el departamento seleccionado en el select de edición
+    function loadMunicipalities(selectElement, department, selectedMunicipality = '') {
+        selectElement.innerHTML = '<option value="">Seleccione un municipio</option>';
+        selectElement.disabled = true;
+
+        if (department && departmentsAndMunicipalities[department]) {
+            departmentsAndMunicipalities[department].forEach(muni => {
+                const option = document.createElement('option');
+                option.value = muni;
+                option.textContent = muni;
+                selectElement.appendChild(option);
+            });
+            selectElement.disabled = false;
+            // Seleccionar el municipio si se proporciona
+            if (selectedMunicipality) {
+                selectElement.value = selectedMunicipality;
+            }
+        } else {
+            selectElement.innerHTML = '<option value="">Primero seleccione un departamento</option>';
+        }
+    }
 
     // Función para actualizar el contador del carrito en el header
     function updateCartCountDisplay() {
@@ -71,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginButton.classList.add('hidden');
                 loggedInUserDisplay.classList.remove('hidden');
                 userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
-                // navPerfil.classList.remove('hidden'); // Se comenta o elimina ya que el elemento se quitará del HTML
 
                 // Cargar datos del perfil y pedidos
                 await loadUserProfile(user);
@@ -86,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     } else {
         console.warn("Firebase Auth no está inicializado. La funcionalidad de autenticación en el encabezado no estará disponible.");
-        // navPerfil.classList.add('hidden'); // Se comenta o elimina ya que el elemento se quitará del HTML
         window.showAlert("Error: Firebase Auth no está disponible. Redirigiendo a inicio de sesión.", "error");
         window.location.href = 'login.html';
         window.updateCartDisplay(); // Llama a la función para actualizar el contador incluso sin autenticación
@@ -142,13 +207,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Cargar datos adicionales del perfil desde Firestore (si los guardaste al registrar)
+        // Cargar datos adicionales del perfil desde Firestore (incluyendo dirección)
         try {
             const userDocRef = doc(db, "users", user.uid);
             const userDocSnap = await getDoc(userDocRef);
             if (userDocSnap.exists()) {
                 const userData = userDocSnap.data();
                 profileName.textContent = userData.fullName || user.displayName || 'Usuario';
+                profilePhone.textContent = userData.phone || 'N/A';
+                profileDepartment.textContent = userData.department || 'N/A';
+                profileMunicipality.textContent = userData.municipality || 'N/A';
+                profileAddress.textContent = userData.address || 'N/A';
+
+                // Precargar el modal de edición de dirección con los datos actuales
+                editPhone.value = userData.phone || '';
+                loadDepartments(editDepartment); // Cargar departamentos
+                editDepartment.value = userData.department || ''; // Seleccionar departamento actual
+                loadMunicipalities(editMunicipality, userData.department, userData.municipality); // Cargar y seleccionar municipio
+                editAddress.value = userData.address || '';
+
+            } else {
+                console.warn("No se encontraron datos adicionales del perfil en Firestore para el usuario:", user.uid);
+                profilePhone.textContent = 'No disponible';
+                profileDepartment.textContent = 'No disponible';
+                profileMunicipality.textContent = 'No disponible';
+                profileAddress.textContent = 'No disponible';
             }
         } catch (error) {
             console.error("Error al cargar datos adicionales del perfil desde Firestore:", error);
@@ -164,17 +247,30 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // --- CAMBIO CLAVE AQUÍ: Leer de la subcolección de órdenes del usuario ---
             const ordersCollectionRef = collection(db, "users", userId, "orders"); // Ruta correcta
-            const q = query(ordersCollectionRef, orderBy("timestamp", "desc")); // Asegúrate de que 'timestamp' sea el campo de fecha de la orden
-            const querySnapshot = await getDocs(q);
+            // NOTA: Se ha eliminado orderBy("timestamp", "desc") para evitar errores de índice.
+            // La ordenación se realizará en el cliente si es estrictamente necesaria.
+            const querySnapshot = await getDocs(ordersCollectionRef);
 
             if (querySnapshot.empty) {
                 noOrdersMessage.classList.remove('hidden');
                 return;
             }
 
+            // Convertir a array y ordenar en el cliente si es necesario
+            const orders = [];
             querySnapshot.forEach((doc) => {
-                const order = doc.data();
-                // Usar 'timestamp' de la Cloud Function
+                orders.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Ordenar por timestamp si existe y es un objeto con toDate
+            orders.sort((a, b) => {
+                const dateA = a.timestamp && typeof a.timestamp.toDate === 'function' ? a.timestamp.toDate() : new Date(0);
+                const dateB = b.timestamp && typeof b.timestamp.toDate === 'function' ? b.timestamp.toDate() : new Date(0);
+                return dateB - dateA; // Orden descendente
+            });
+
+
+            orders.forEach((order) => {
                 const orderDate = order.timestamp && typeof order.timestamp.toDate === 'function' ? order.timestamp.toDate().toLocaleDateString() : 'N/A';
                 const orderStatus = order.estado || 'Pendiente'; // Usar 'estado' de la Cloud Function
                 const orderTotal = order.total ? `$${order.total.toFixed(2)}` : '$0.00';
@@ -186,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const orderHtml = `
                     <div class="border border-gray-200 p-4 rounded-md">
-                        <p class="font-bold">Pedido #${doc.id.substring(0, 8)} - <span class="${orderStatus === 'entregado' ? 'text-green-600' : 'text-orange-500'}">${orderStatus}</span></p>
+                        <p class="font-bold">Pedido #${order.id.substring(0, 8)} - <span class="${orderStatus === 'entregado' ? 'text-green-600' : 'text-orange-500'}">${orderStatus}</span></p>
                         <p class="text-gray-700">Fecha: ${orderDate}</p>
                         <p class="text-gray-700">Total: ${orderTotal}</p>
                         <ul class="list-disc list-inside text-sm text-gray-600 mt-2">
@@ -265,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Event listeners para abrir/cerrar el modal
+    // Event listeners para abrir/cerrar el modal de avatar
     if (selectAvatarButton) {
         selectAvatarButton.addEventListener('click', () => {
             avatarModal.classList.remove('hidden');
@@ -279,10 +375,89 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cerrar modal al hacer clic fuera de él
+    // Cerrar modal de avatar al hacer clic fuera de él
     avatarModal.addEventListener('click', (event) => {
         if (event.target === avatarModal) {
             avatarModal.classList.add('hidden');
         }
     });
+
+    // --- Lógica para el Modal de Edición de Dirección ---
+
+    // Event listener para abrir el modal de edición de dirección
+    if (editAddressButton) {
+        editAddressButton.addEventListener('click', () => {
+            addressModal.classList.remove('hidden');
+            // Asegurarse de que los datos actuales del usuario estén cargados en el formulario
+            // Esto ya se hace en loadUserProfile, pero se puede llamar explícitamente si es necesario
+            if (auth.currentUser) {
+                loadUserProfile(auth.currentUser); // Recargar para asegurar que los campos estén llenos
+            }
+        });
+    }
+
+    // Event listener para cerrar el modal de edición de dirección
+    if (closeAddressModalButton) {
+        closeAddressModalButton.addEventListener('click', () => {
+            addressModal.classList.add('hidden');
+        });
+    }
+
+    // Cerrar modal de edición de dirección al hacer clic fuera de él
+    if (addressModal) {
+        addressModal.addEventListener('click', (event) => {
+            if (event.target === addressModal) {
+                addressModal.classList.add('hidden');
+            }
+        });
+    }
+
+    // Event listener para el cambio de departamento en el modal de edición
+    editDepartment.addEventListener('change', (event) => {
+        loadMunicipalities(editMunicipality, event.target.value);
+    });
+
+    // Manejo del envío del formulario de edición de dirección
+    if (editAddressForm) {
+        editAddressForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Previene el envío por defecto del formulario
+
+            const user = auth.currentUser;
+            if (!user) {
+                window.showAlert('No hay usuario autenticado para actualizar la dirección.', 'error');
+                return;
+            }
+
+            const newPhone = editPhone.value.trim();
+            const newDepartment = editDepartment.value;
+            const newMunicipality = editMunicipality.value;
+            const newAddress = editAddress.value.trim();
+
+            // Validaciones básicas
+            if (!newPhone || !newDepartment || !newMunicipality || !newAddress) {
+                window.showAlert('Todos los campos de dirección son obligatorios.', 'error');
+                return;
+            }
+
+            try {
+                const userDocRef = doc(db, "users", user.uid);
+                await updateDoc(userDocRef, {
+                    phone: newPhone,
+                    department: newDepartment,
+                    municipality: newMunicipality,
+                    address: newAddress
+                });
+
+                window.showAlert('Dirección actualizada con éxito.', 'success');
+                addressModal.classList.add('hidden'); // Cerrar el modal
+                await loadUserProfile(user); // Recargar los datos del perfil para mostrar los cambios
+            } catch (error) {
+                console.error('Error al actualizar la dirección en Firestore:', error);
+                window.showAlert('Error al guardar la dirección. Por favor, inténtalo de nuevo.', 'error');
+            }
+        });
+    }
+
+    // Cargar los departamentos iniciales para el modal de edición
+    loadDepartments(editDepartment);
 });
