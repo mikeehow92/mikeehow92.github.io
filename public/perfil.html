@@ -94,6 +94,20 @@
                     </div>
                 </div>
 
+                <!-- Sección de Dirección del Usuario -->
+                <div class="border-t border-gray-200 pt-6 mt-6">
+                    <h3 class="text-2xl font-semibold text-gray-900 mb-4">Mi Dirección</h3>
+                    <div id="addressDisplay" class="space-y-2 mb-4">
+                        <p class="text-lg text-gray-700"><strong class="text-dark-blue">Teléfono:</strong> <span id="profilePhone">Cargando...</span></p>
+                        <p class="text-lg text-gray-700"><strong class="text-dark-blue">Departamento:</strong> <span id="profileDepartment">Cargando...</span></p>
+                        <p class="text-lg text-gray-700"><strong class="text-dark-blue">Municipio:</strong> <span id="profileMunicipality">Cargando...</span></p>
+                        <p class="text-lg text-gray-700"><strong class="text-dark-blue">Dirección Exacta:</strong> <span id="profileAddress">Cargando...</span></p>
+                    </div>
+                    <button id="editAddressButton" class="bg-green-500 hover:bg-green-600 text-white text-sm py-2 px-4 rounded-full transition duration-300">
+                        Editar Dirección
+                    </button>
+                </div>
+
                 <h3 class="text-2xl font-semibold text-gray-900 mt-8 mb-4">Mis Pedidos Recientes</h3>
                 <div id="ordersList" class="space-y-4">
                     <!-- Los pedidos se cargarán aquí dinámicamente -->
@@ -118,6 +132,39 @@
                 <p id="errorAvatarsMessage" class="col-span-full text-center text-red-500 hidden">Error al cargar avatares.</p>
                 <p id="noAvatarsMessage" class="col-span-full text-center text-gray-600 hidden">No hay avatares disponibles.</p>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal para Edición de Dirección -->
+    <div id="addressModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-11/12 max-w-md max-h-[90vh] overflow-y-auto relative">
+            <h3 class="text-2xl font-bold text-dark-blue mb-4">Editar Dirección</h3>
+            <button id="closeAddressModalButton" class="absolute top-4 right-4 text-gray-600 hover:text-gray-900 text-3xl font-bold">&times;</button>
+            <form id="editAddressForm" class="space-y-4">
+                <div>
+                    <label for="editPhone" class="block text-gray-700 text-sm font-bold mb-2">Teléfono</label>
+                    <input type="tel" id="editPhone" name="editPhone" class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-dark-blue focus:border-transparent" placeholder="Ej: +503 7777-7777" required>
+                </div>
+                <div>
+                    <label for="editDepartment" class="block text-gray-700 text-sm font-bold mb-2">Departamento</label>
+                    <select id="editDepartment" name="editDepartment" class="shadow border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-dark-blue focus:border-transparent" required>
+                        <option value="">Seleccione un departamento</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="editMunicipality" class="block text-gray-700 text-sm font-bold mb-2">Municipio</label>
+                    <select id="editMunicipality" name="editMunicipality" class="shadow border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-dark-blue focus:border-transparent" disabled required>
+                        <option value="">Primero seleccione un departamento</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="editAddress" class="block text-gray-700 text-sm font-bold mb-2">Dirección exacta</label>
+                    <textarea id="editAddress" name="editAddress" rows="3" class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-dark-blue focus:border-transparent" placeholder="Calle, número de casa, colonia, etc." required></textarea>
+                </div>
+                <button type="submit" id="saveAddressButton" class="bg-dark-blue hover:bg-blue-800 text-white font-semibold py-3 px-6 rounded-full shadow-lg transition duration-300 w-full">
+                    Guardar Cambios
+                </button>
+            </form>
         </div>
     </div>
 
