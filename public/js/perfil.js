@@ -2,7 +2,7 @@
 
 // Importa las funciones necesarias de Firebase Auth, Firestore y Storage
 import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { doc, getDoc, collection, query, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // Importa onSnapshot
+import { doc, getDoc, collection, query, where, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getStorage, ref, listAll, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const departmentsAndMunicipalities = {
         "Ahuachapán": ["Ahuachapán", "Apaneca", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
         "Cabañas": ["Cinquera", "Dolores", "Guacotecti", "Ilobasco", "Sensuntepeque", "Tejutepeque", "Victoria"],
-        "Chalatenango": ["Agua Caliente", "Arcatao", "Azacualpa", "Cancasque", "Chalatenango", "Chesal", "Citalá", "Comalapa", "Concepción Quezaltepeque", "Dulce Nombre de María", "El Carrizal", "El Paraíso", "La Laguna", "La Palma", "La Reina", "Las Vueltas", "Nombre de Jesús", "Nueva Concepción", "Nueva Trinidad", "Ojos de Agua", "Potonico", "San Antonio de la Cruz", "San Antonio Los Ranchos", "San Fernando", "San Ignacio", "San Isidro Labrador", "San Luis del Carmen", "San Miguel de Mercedes", "San Rafael", "Santa Rita", "Tejutla"],
+        "Chalatenango": ["Agua Caliente", "Arcatao", "Azacualpa", "Cancasque", "Chalatenango", "Chesal", "Citalá", "Comalapa", "Concepción Quezaltepeque", "Dulce Nombre de María", "El Carrizal", "El Paraíso", "La Laguna", "La Palma", "La Reina", "Las Vueltas", "Nombre de Jesús", "Nueva Concepción", "Nueva Trinidad", "Ojos de Agua", "Potonico", "San Antonio de la Cruz", "San Antonio Los Ranchos", "San Fernando", "San Francisco Lempa", "San Ignacio", "San Isidro Labrador", "San Luis del Carmen", "San Miguel de Mercedes", "San Rafael", "Santa Rita", "Tejutla"],
         "Cuscatlán": ["Cojutepeque", "Candelaria", "El Carmen", "El Rosario", "Monte San Juan", "Oratorio de Concepción", "San Bartolomé Perulapía", "San Cristóbal", "San José Guayabal", "San Pedro Perulapán", "San Rafael Cedros", "San Ramón", "Santa Cruz Analquito", "Santa Cruz Michapa", "Suchitoto", "Tenancingo"],
         "La Libertad": ["Antiguo Cuscatlán", "Chiltiupán", "Ciudad Arce", "Colón", "Comasagua", "Huizúcar", "Jayaque", "Jicalapa", "La Libertad", "Santa Tecla", "Nuevo Cuscatlán", "Quezaltepeque", "Sacacoyo", "San Juan Opico", "San Matías", "San Pablo Tacachico", "Talnique", "Tamanique", "Teotepeque", "Tepecoyo", "Zaragoza"],
         "La Paz": ["Cuyultitán", "El Rosario", "Jerusalén", "Mercedes La Ceiba", "Olocuilta", "Paraíso de Osorio", "San Antonio Masahuat", "San Emigdio", "San Francisco Chinameca", "San Juan Nonualco", "San Juan Talpa", "San Juan Tepezontes", "San Luis La Herradura", "San Luis Talpa", "San Miguel Tepezontes", "San Pedro Masahuat", "San Pedro Nonualco", "San Rafael Obrajuelo", "Santa María Ostuma", "Santiago Nonualco", "Tapalhuaca", "Zacatecoluca"],
@@ -131,27 +131,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Lógica adicional específica de UI para perfil.html si es necesaria
     };
 
-    // Variable para almacenar la función de desuscripción del listener de órdenes
-    let unsubscribeOrdersListener = null;
-
     // Manejo del estado de autenticación en el encabezado
     if (auth) {
         onAuthStateChanged(auth, async (user) => {
-            // Limpiar el listener anterior si existe
-            if (unsubscribeOrdersListener) {
-                unsubscribeOrdersListener();
-                unsubscribeOrdersListener = null;
-            }
-
             if (user) {
                 loginButton.classList.add('hidden');
                 loggedInUserDisplay.classList.remove('hidden');
                 userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
 
-                // Cargar datos del perfil
+                // Cargar datos del perfil y pedidos
                 await loadUserProfile(user);
-                // Iniciar el listener de órdenes y guardar la función de desuscripción
-                unsubscribeOrdersListener = setupOrdersListener(user.uid); // Usar nueva función para el listener
+                await loadRecentOrders(user.uid); // Pasar el UID del usuario logueado
 
             } else {
                 // Usuario no logueado, redirigir a la página de inicio de sesión
@@ -172,11 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (auth) {
             try {
                 await signOut(auth);
-                // Limpiar el listener de órdenes al cerrar sesión
-                if (unsubscribeOrdersListener) {
-                    unsubscribeOrdersListener();
-                    unsubscribeOrdersListener = null;
-                }
                 window.showAlert('Has cerrado sesión correctamente.', 'success');
                 window.location.href = 'login.html';
             } catch (error) {
@@ -254,33 +239,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Función para configurar el listener de pedidos en tiempo real
-    function setupOrdersListener(userId) {
-        const ordersCollectionRef = collection(db, "users", userId, "orders");
-        // No se añade orderBy("timestamp", "desc") en la consulta para evitar errores de índice
-        // si no está configurado en Firestore. La ordenación se hará en el cliente.
-        const q = query(ordersCollectionRef); // Consulta sin ordenación inicial
+    // Función para cargar pedidos recientes
+    async function loadRecentOrders(userId) {
+        ordersList.innerHTML = '';
+        noOrdersMessage.classList.add('hidden');
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            ordersList.innerHTML = ''; // Limpiar la lista cada vez que hay una actualización
-            noOrdersMessage.classList.add('hidden'); // Ocultar mensaje inicialmente
+        try {
+            // --- CAMBIO CLAVE AQUÍ: Leer de la subcolección de órdenes del usuario ---
+            const ordersCollectionRef = collection(db, "users", userId, "orders"); // Ruta correcta
+            // NOTA: Se ha eliminado orderBy("timestamp", "desc") para evitar errores de índice.
+            // La ordenación se realizará en el cliente si es estrictamente necesaria.
+            const querySnapshot = await getDocs(ordersCollectionRef);
 
-            if (snapshot.empty) {
+            if (querySnapshot.empty) {
                 noOrdersMessage.classList.remove('hidden');
                 return;
             }
 
+            // Convertir a array y ordenar en el cliente si es necesario
             const orders = [];
-            snapshot.forEach((doc) => {
+            querySnapshot.forEach((doc) => {
                 orders.push({ id: doc.id, ...doc.data() });
             });
 
-            // Ordenar por timestamp en el cliente (si existe y es un objeto con toDate)
+            // Ordenar por timestamp si existe y es un objeto con toDate
             orders.sort((a, b) => {
                 const dateA = a.timestamp && typeof a.timestamp.toDate === 'function' ? a.timestamp.toDate() : new Date(0);
                 const dateB = b.timestamp && typeof b.timestamp.toDate === 'function' ? b.timestamp.toDate() : new Date(0);
                 return dateB - dateA; // Orden descendente
             });
+
 
             orders.forEach((order) => {
                 const orderDate = order.timestamp && typeof order.timestamp.toDate === 'function' ? order.timestamp.toDate().toLocaleDateString() : 'N/A';
@@ -292,18 +280,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     productsHtml = order.items.map(item => `<li>${item.name} (x${item.quantity})</li>`).join('');
                 }
 
-                // Obtener nombre del cliente y dirección de envío
-                const clientName = order.shippingDetails?.fullName || 'N/A';
-                const shippingAddress = order.shippingDetails?.address || 'N/A';
-
-
                 const orderHtml = `
-                    <div class="border border-gray-200 p-4 rounded-md mb-4">
+                    <div class="border border-gray-200 p-4 rounded-md">
                         <p class="font-bold">Pedido #${order.id.substring(0, 8)} - <span class="${orderStatus === 'entregado' ? 'text-green-600' : 'text-orange-500'}">${orderStatus}</span></p>
                         <p class="text-gray-700">Fecha: ${orderDate}</p>
                         <p class="text-gray-700">Total: ${orderTotal}</p>
-                        <p class="text-gray-700">Cliente: ${clientName}</p>
-                        <p class="text-gray-700">Dirección: ${shippingAddress}</p>
                         <ul class="list-disc list-inside text-sm text-gray-600 mt-2">
                             ${productsHtml}
                         </ul>
@@ -312,14 +293,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 ordersList.innerHTML += orderHtml;
             });
 
-        }, (error) => {
-            console.error("Error al cargar pedidos en tiempo real:", error);
-            window.showAlert("Error al cargar tus pedidos recientes: " + error.message, "error");
+        } catch (error) {
+            console.error("Error al cargar pedidos:", error);
+            window.showAlert("Error al cargar tus pedidos recientes: " + error.message, "error"); // Mostrar mensaje de error más específico
             noOrdersMessage.textContent = "Error al cargar pedidos.";
             noOrdersMessage.classList.remove('hidden');
-        });
-
-        return unsubscribe; // Devuelve la función de desuscripción
+        }
     }
 
     // --- Lógica para el Modal de Selección de Avatar ---
@@ -430,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (event.target === addressModal) {
                 addressModal.classList.add('hidden');
             }
-        }); // <-- Paréntesis de cierre corregido aquí
+        });
     }
 
     // Event listener para el cambio de departamento en el modal de edición
