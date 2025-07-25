@@ -1,7 +1,7 @@
-// js/perfil.js - Versión 2024-07-25 1:07 PM CST - Corrección Final de TypeErrors y Real-time Orders
-// Mejoras de estado y depuración para 'procesando'
+// js/perfil.js - Versión 2024-07-25 1:45 PM CST - Corrección Final de TypeErrors y Real-time Orders
+// Mejoras de estado y depuración para 'procesando' y 'orderTotal'
 
-console.log("perfil.js: Versión 2024-07-25 1:07 PM CST - Script cargado.");
+console.log("perfil.js: Versión 2024-07-25 1:45 PM CST - Script cargado.");
 
 // Importa las funciones necesarias de Firebase Auth, Firestore y Storage
 import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -297,12 +297,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             orders.forEach((order) => {
+                console.log(`perfil.js: Processing order ID: ${order.id}`);
+                console.log(`perfil.js: Order object received:`, order); // Log del objeto completo de la orden
+
                 const orderDate = order.timestamp && typeof order.timestamp.toDate === 'function' ? order.timestamp.toDate().toLocaleDateString() : 'N/A';
                 const rawOrderStatus = order.estado; // Valor original del estado desde Firestore
                 let displayStatus = 'Pendiente'; // Estado a mostrar
                 let statusClass = 'text-orange-500'; // Clase CSS por defecto (para pendiente/procesando)
 
                 console.log(`perfil.js: Raw order status for order ${order.id}:`, rawOrderStatus);
+                console.log(`perfil.js: Order total value from Firestore:`, order.total); // Log del valor de order.total
 
                 if (typeof rawOrderStatus === 'string') {
                     const normalizedStatus = rawOrderStatus.toLowerCase().trim(); // Normalizar a minúsculas y sin espacios
@@ -360,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(`perfil.js: Applied status class:`, statusClass);
 
                 // Declarar orderTotal aquí, antes de usarlo en orderHtml
-                const orderTotal = order.total ? `$${order.total.toFixed(2)}` : '$0.00'; // MOVIDO AQUÍ
+                const orderTotal = order.total ? `$${order.total.toFixed(2)}` : '$0.00';
 
                 let productsHtml = '';
                 if (order.items && Array.isArray(order.items)) {
