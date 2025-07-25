@@ -1,7 +1,7 @@
-// js/perfil.js - Versión 2024-07-25 12:42 PM CST - Corrección Final de TypeErrors y Real-time Orders
-// Mejoras de estado y depuración.
+// js/perfil.js - Versión 2024-07-25 1:07 PM CST - Corrección Final de TypeErrors y Real-time Orders
+// Mejoras de estado y depuración para 'procesando'
 
-console.log("perfil.js: Versión 2024-07-25 12:42 PM CST - Script cargado.");
+console.log("perfil.js: Versión 2024-07-25 1:07 PM CST - Script cargado.");
 
 // Importa las funciones necesarias de Firebase Auth, Firestore y Storage
 import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
