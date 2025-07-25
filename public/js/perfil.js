@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loggedInUserDisplay = document.getElementById('loggedInUserDisplay');
     const userNameDisplay = document.getElementById('userNameDisplay');
     const navCarrito = document.getElementById('navCarrito');
-    const logoutButtonHeader = document.getElementById('logoutButtonHeader');
+    const logoutButtonHeader = document('logoutButtonHeader');
     const cartItemCountElement = document.getElementById('cartItemCount'); // Obtener el elemento del contador de ítems del carrito
 
 
@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileLastLogin = document.getElementById('profileLastLogin');
     const profileAvatar = document.getElementById('profileAvatar');
     const ordersList = document.getElementById('ordersList');
-    const noOrdersMessage = document('noOrdersMessage');
+    // CORRECCIÓN CLAVE: document.getElementById en lugar de document()
+    const noOrdersMessage = document.getElementById('noOrdersMessage');
     const logoutButtonProfile = document.getElementById('logoutButtonProfile');
 
     // Elementos de visualización de dirección
