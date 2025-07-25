@@ -21,12 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileLastLogin = document.getElementById('profileLastLogin');
     const profileAvatar = document.getElementById('profileAvatar');
     const ordersList = document.getElementById('ordersList');
-    const noOrdersMessage = document.getElementById('noOrdersMessage');
+    const noOrdersMessage = document('noOrdersMessage');
     const logoutButtonProfile = document.getElementById('logoutButtonProfile');
 
     // Elementos de visualización de dirección
     const profilePhone = document.getElementById('profilePhone');
     const profileDepartment = document.getElementById('profileDepartment');
+    // CORRECCIÓN CLAVE: Se eliminó el ' = document' extra que causaba el SyntaxError
     const profileMunicipality = document.getElementById('profileMunicipality');
     const profileAddress = document.getElementById('profileAddress');
     const editAddressButton = document.getElementById('editAddressButton'); // Nuevo botón para editar dirección
@@ -37,7 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalButton = document.getElementById('closeModalButton');
     const avatarGallery = document.getElementById('avatarGallery');
     const loadingAvatarsMessage = document.getElementById('loadingAvatarsMessage');
-    const errorAvatarsMessage = document = document.getElementById('errorAvatarsMessage');
+    // CORRECCIÓN CLAVE: Se eliminó el ' = document' extra que causaba el SyntaxError
+    const errorAvatarsMessage = document.getElementById('errorAvatarsMessage');
     const noAvatarsMessage = document.getElementById('noAvatarsMessage');
 
     // Elementos del modal de edición de dirección
@@ -256,16 +258,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Función para configurar el listener de pedidos en tiempo real
     function setupOrdersListener(userId) {
+        console.log("setupOrdersListener: Iniciando listener de órdenes para userId:", userId); // Log de inicio
         const ordersCollectionRef = collection(db, "users", userId, "orders");
         // No se añade orderBy("timestamp", "desc") en la consulta para evitar errores de índice
         // si no está configurado en Firestore. La ordenación se hará en el cliente.
         const q = query(ordersCollectionRef); // Consulta sin ordenación inicial
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            console.log("onSnapshot: Datos de órdenes recibidos."); // Log de recepción de datos
             ordersList.innerHTML = ''; // Limpiar la lista cada vez que hay una actualización
             noOrdersMessage.classList.add('hidden'); // Ocultar mensaje inicialmente
 
             if (snapshot.empty) {
+                console.log("onSnapshot: No hay órdenes para este usuario."); // Log si no hay órdenes
                 noOrdersMessage.classList.remove('hidden');
                 return;
             }
@@ -296,6 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const clientName = order.shippingDetails?.fullName || 'N/A';
                 const shippingAddress = order.shippingDetails?.address || 'N/A';
 
+                console.log(`onSnapshot: Procesando orden ${order.id}, estado: ${orderStatus}`); // Log de cada orden
 
                 const orderHtml = `
                     <div class="border border-gray-200 p-4 rounded-md mb-4">
