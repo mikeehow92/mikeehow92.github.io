@@ -359,6 +359,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(`perfil.js: Normalized display status:`, displayStatus);
                 console.log(`perfil.js: Applied status class:`, statusClass);
 
+                // Declarar orderTotal aquí, antes de usarlo en orderHtml
+                const orderTotal = order.total ? `$${order.total.toFixed(2)}` : '$0.00'; // MOVIDO AQUÍ
 
                 let productsHtml = '';
                 if (order.items && Array.isArray(order.items)) {
