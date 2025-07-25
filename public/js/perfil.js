@@ -1,4 +1,5 @@
 // js/perfil.js - Versión 2024-07-25 12:42 PM CST - Corrección Final de TypeErrors y Real-time Orders
+// Mejoras de estado y depuración.
 
 console.log("perfil.js: Versión 2024-07-25 12:42 PM CST - Script cargado.");
 
@@ -16,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loggedInUserDisplay = document.getElementById('loggedInUserDisplay');
     const userNameDisplay = document.getElementById('userNameDisplay');
     const navCarrito = document.getElementById('navCarrito');
-    const logoutButtonHeader = document.getElementById('logoutButtonHeader'); // CORREGIDO
+    const logoutButtonHeader = document.getElementById('logoutButtonHeader');
     const cartItemCountElement = document.getElementById('cartItemCount'); // Obtener el elemento del contador de ítems del carrito
 
 
@@ -26,13 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileLastLogin = document.getElementById('profileLastLogin');
     const profileAvatar = document.getElementById('profileAvatar');
     const ordersList = document.getElementById('ordersList');
-    const noOrdersMessage = document.getElementById('noOrdersMessage'); // CORREGIDO
+    const noOrdersMessage = document.getElementById('noOrdersMessage');
     const logoutButtonProfile = document.getElementById('logoutButtonProfile');
 
     // Elementos de visualización de dirección
     const profilePhone = document.getElementById('profilePhone');
     const profileDepartment = document.getElementById('profileDepartment');
-    const profileMunicipality = document.getElementById('profileMunicipality'); // CORREGIDO
+    const profileMunicipality = document.getElementById('profileMunicipality');
     const profileAddress = document.getElementById('profileAddress');
     const editAddressButton = document.getElementById('editAddressButton'); // Nuevo botón para editar dirección
 
@@ -42,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalButton = document.getElementById('closeModalButton');
     const avatarGallery = document.getElementById('avatarGallery');
     const loadingAvatarsMessage = document.getElementById('loadingAvatarsMessage');
-    const errorAvatarsMessage = document.getElementById('errorAvatarsMessage'); // CORREGIDO
+    const errorAvatarsMessage = document.getElementById('errorAvatarsMessage');
     const noAvatarsMessageAvatars = document.getElementById('noAvatarsMessage'); // Renombrado para evitar conflicto si existía otro noAvatarsMessage
 
     // Elementos del modal de edición de dirección
@@ -297,8 +298,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
             orders.forEach((order) => {
                 const orderDate = order.timestamp && typeof order.timestamp.toDate === 'function' ? order.timestamp.toDate().toLocaleDateString() : 'N/A';
-                const orderStatus = order.estado || 'Pendiente'; // Usar 'estado' de la Cloud Function
-                const orderTotal = order.total ? `$${order.total.toFixed(2)}` : '$0.00';
+                const rawOrderStatus = order.estado; // Valor original del estado desde Firestore
+                let displayStatus = 'Pendiente'; // Estado a mostrar
+                let statusClass = 'text-orange-500'; // Clase CSS por defecto (para pendiente/procesando)
+
+                console.log(`perfil.js: Raw order status for order ${order.id}:`, rawOrderStatus);
+
+                if (typeof rawOrderStatus === 'string') {
+                    const normalizedStatus = rawOrderStatus.toLowerCase().trim(); // Normalizar a minúsculas y sin espacios
+                    switch (normalizedStatus) {
+                        case 'entregado':
+                            displayStatus = 'Entregado';
+                            statusClass = 'text-green-600';
+                            break;
+                        case 'procesando':
+                            displayStatus = 'Procesando';
+                            statusClass = 'text-blue-500'; // Añadir clase para procesando
+                            break;
+                        case 'enviado':
+                            displayStatus = 'Enviado';
+                            statusClass = 'text-purple-500'; // Añadir clase para enviado
+                            break;
+                        case 'cancelado':
+                            displayStatus = 'Cancelado';
+                            statusClass = 'text-red-500'; // Clase para cancelado
+                            break;
+                        default:
+                            displayStatus = 'Pendiente';
+                            statusClass = 'text-orange-500';
+                            break;
+                    }
+                } else if (rawOrderStatus && typeof rawOrderStatus === 'object' && rawOrderStatus.hasOwnProperty('stringValue')) {
+                    // Si el estado es un objeto con una propiedad stringValue (común en Firestore)
+                    const normalizedStatus = rawOrderStatus.stringValue.toLowerCase().trim();
+                    switch (normalizedStatus) {
+                        case 'entregado':
+                            displayStatus = 'Entregado';
+                            statusClass = 'text-green-600';
+                            break;
+                        case 'procesando':
+                            displayStatus = 'Procesando';
+                            statusClass = 'text-blue-500';
+                            break;
+                        case 'enviado':
+                            displayStatus = 'Enviado';
+                            statusClass = 'text-purple-500';
+                            break;
+                        case 'cancelado':
+                            displayStatus = 'Cancelado';
+                            statusClass = 'text-red-500';
+                            break;
+                        default:
+                            displayStatus = 'Pendiente';
+                            statusClass = 'text-orange-500';
+                            break;
+                    }
+                }
+                // Si no es string ni objeto con stringValue, se mantiene 'Pendiente' y 'text-orange-500'
+
+                console.log(`perfil.js: Normalized display status:`, displayStatus);
+                console.log(`perfil.js: Applied status class:`, statusClass);
+
 
                 let productsHtml = '';
                 if (order.items && Array.isArray(order.items)) {
@@ -309,11 +369,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const clientName = order.shippingDetails?.fullName || 'N/A';
                 const shippingAddress = order.shippingDetails?.address || 'N/A';
 
-                console.log(`perfil.js: onSnapshot - Procesando orden ${order.id}, estado: ${orderStatus}`); // Log de cada orden
+                console.log(`perfil.js: onSnapshot - Procesando orden ${order.id}, estado: ${displayStatus}`); // Log de cada orden
 
                 const orderHtml = `
                     <div class="border border-gray-200 p-4 rounded-md mb-4">
-                        <p class="font-bold">Pedido #${order.id.substring(0, 8)} - <span class="${orderStatus === 'entregado' ? 'text-green-600' : 'text-orange-500'}">${orderStatus}</span></p>
+                        <p class="font-bold">Pedido #${order.id.substring(0, 8)} - <span class="${statusClass}">${displayStatus}</span></p>
                         <p class="text-gray-700">Fecha: ${orderDate}</p>
                         <p class="text-gray-700">Total: ${orderTotal}</p>
                         <p class="text-gray-700">Cliente: ${clientName}</p>
