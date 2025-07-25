@@ -1,17 +1,22 @@
-// js/perfil.js
+// js/perfil.js - Versión 2024-07-25 12:42 PM CST - Corrección Final de TypeErrors y Real-time Orders
+
+console.log("perfil.js: Versión 2024-07-25 12:42 PM CST - Script cargado.");
 
 // Importa las funciones necesarias de Firebase Auth, Firestore y Storage
 import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { doc, getDoc, collection, query, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // Importa onSnapshot
+// Importa onSnapshot, doc, getDoc, collection, query, updateDoc
+import { doc, getDoc, collection, query, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getStorage, ref, listAll, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("perfil.js: DOMContentLoaded - Inicializando elementos.");
+
     // Elementos del encabezado
     const loginButton = document.getElementById('loginButton');
     const loggedInUserDisplay = document.getElementById('loggedInUserDisplay');
     const userNameDisplay = document.getElementById('userNameDisplay');
     const navCarrito = document.getElementById('navCarrito');
-    const logoutButtonHeader = document('logoutButtonHeader');
+    const logoutButtonHeader = document.getElementById('logoutButtonHeader'); // CORREGIDO
     const cartItemCountElement = document.getElementById('cartItemCount'); // Obtener el elemento del contador de ítems del carrito
 
 
@@ -21,15 +26,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileLastLogin = document.getElementById('profileLastLogin');
     const profileAvatar = document.getElementById('profileAvatar');
     const ordersList = document.getElementById('ordersList');
-    // CORRECCIÓN CLAVE: document.getElementById en lugar de document()
-    const noOrdersMessage = document.getElementById('noOrdersMessage');
+    const noOrdersMessage = document.getElementById('noOrdersMessage'); // CORREGIDO
     const logoutButtonProfile = document.getElementById('logoutButtonProfile');
 
     // Elementos de visualización de dirección
     const profilePhone = document.getElementById('profilePhone');
     const profileDepartment = document.getElementById('profileDepartment');
-    // CORRECCIÓN CLAVE: Se eliminó el ' = document' extra que causaba el SyntaxError
-    const profileMunicipality = document.getElementById('profileMunicipality');
+    const profileMunicipality = document.getElementById('profileMunicipality'); // CORREGIDO
     const profileAddress = document.getElementById('profileAddress');
     const editAddressButton = document.getElementById('editAddressButton'); // Nuevo botón para editar dirección
 
@@ -39,9 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalButton = document.getElementById('closeModalButton');
     const avatarGallery = document.getElementById('avatarGallery');
     const loadingAvatarsMessage = document.getElementById('loadingAvatarsMessage');
-    // CORRECCIÓN CLAVE: Se eliminó el ' = document' extra que causaba el SyntaxError
-    const errorAvatarsMessage = document.getElementById('errorAvatarsMessage');
-    const noAvatarsMessage = document.getElementById('noAvatarsMessage');
+    const errorAvatarsMessage = document.getElementById('errorAvatarsMessage'); // CORREGIDO
+    const noAvatarsMessageAvatars = document.getElementById('noAvatarsMessage'); // Renombrado para evitar conflicto si existía otro noAvatarsMessage
 
     // Elementos del modal de edición de dirección
     const addressModal = document.getElementById('addressModal');
@@ -142,11 +144,13 @@ document.addEventListener('DOMContentLoaded', () => {
         onAuthStateChanged(auth, async (user) => {
             // Limpiar el listener anterior si existe
             if (unsubscribeOrdersListener) {
+                console.log("perfil.js: onAuthStateChanged - Desuscribiendo listener anterior.");
                 unsubscribeOrdersListener();
                 unsubscribeOrdersListener = null;
             }
 
             if (user) {
+                console.log("perfil.js: onAuthStateChanged - Usuario autenticado:", user.uid);
                 loginButton.classList.add('hidden');
                 loggedInUserDisplay.classList.remove('hidden');
                 userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
@@ -157,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 unsubscribeOrdersListener = setupOrdersListener(user.uid); // Usar nueva función para el listener
 
             } else {
+                console.log("perfil.js: onAuthStateChanged - Usuario no autenticado. Redirigiendo a login.");
                 // Usuario no logueado, redirigir a la página de inicio de sesión
                 window.showAlert('Debes iniciar sesión para ver tu perfil.', 'info');
                 window.location.href = 'login.html';
@@ -164,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.updateCartDisplay(); // Llama a la función para actualizar el contador al cambiar el estado de autenticación
         });
     } else {
-        console.warn("Firebase Auth no está inicializado. La funcionalidad de autenticación en el encabezado no estará disponible.");
+        console.warn("perfil.js: Firebase Auth no está inicializado. La funcionalidad de autenticación en el encabezado no estará disponible.");
         window.showAlert("Error: Firebase Auth no está disponible. Redirigiendo a inicio de sesión.", "error");
         window.location.href = 'login.html';
         window.updateCartDisplay(); // Llama a la función para actualizar el contador incluso sin autenticación
@@ -177,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await signOut(auth);
                 // Limpiar el listener de órdenes al cerrar sesión
                 if (unsubscribeOrdersListener) {
+                    console.log("perfil.js: handleLogout - Desuscribiendo listener de órdenes.");
                     unsubscribeOrdersListener();
                     unsubscribeOrdersListener = null;
                 }
@@ -198,6 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Función para cargar datos del perfil del usuario
     async function loadUserProfile(user) {
+        console.log("perfil.js: loadUserProfile - Cargando datos del perfil para:", user.uid);
         profileName.textContent = user.displayName || 'Cargando Nombre...';
         profileEmail.textContent = user.email || 'Cargando Correo...';
         profileLastLogin.textContent = user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleString() : 'N/A';
@@ -245,33 +252,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 editAddress.value = userData.address || '';
 
             } else {
-                console.warn("No se encontraron datos adicionales del perfil en Firestore para el usuario:", user.uid);
+                console.warn("perfil.js: loadUserProfile - No se encontraron datos adicionales del perfil en Firestore para el usuario:", user.uid);
                 profilePhone.textContent = 'No disponible';
                 profileDepartment.textContent = 'No disponible';
                 profileMunicipality.textContent = 'No disponible';
                 profileAddress.textContent = 'No disponible';
             }
         } catch (error) {
-            console.error("Error al cargar datos adicionales del perfil desde Firestore:", error);
+            console.error("perfil.js: Error al cargar datos adicionales del perfil desde Firestore:", error);
             window.showAlert("Error al cargar información adicional del perfil.", "error");
         }
     }
 
     // Función para configurar el listener de pedidos en tiempo real
     function setupOrdersListener(userId) {
-        console.log("setupOrdersListener: Iniciando listener de órdenes para userId:", userId); // Log de inicio
+        console.log("perfil.js: setupOrdersListener - Iniciando listener de órdenes para userId:", userId); // Log de inicio
         const ordersCollectionRef = collection(db, "users", userId, "orders");
-        // No se añade orderBy("timestamp", "desc") en la consulta para evitar errores de índice
-        // si no está configurado en Firestore. La ordenación se hará en el cliente.
+        // No se añade orderBy("timestamp", "desc") en la consulta para evitar errores de índice.
+        // La ordenación se realizará en el cliente.
         const q = query(ordersCollectionRef); // Consulta sin ordenación inicial
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            console.log("onSnapshot: Datos de órdenes recibidos."); // Log de recepción de datos
+            console.log("perfil.js: onSnapshot - Datos de órdenes recibidos. Cantidad:", snapshot.docs.length); // Log de recepción de datos
             ordersList.innerHTML = ''; // Limpiar la lista cada vez que hay una actualización
             noOrdersMessage.classList.add('hidden'); // Ocultar mensaje inicialmente
 
             if (snapshot.empty) {
-                console.log("onSnapshot: No hay órdenes para este usuario."); // Log si no hay órdenes
+                console.log("perfil.js: onSnapshot - No hay órdenes para este usuario."); // Log si no hay órdenes
                 noOrdersMessage.classList.remove('hidden');
                 return;
             }
@@ -302,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const clientName = order.shippingDetails?.fullName || 'N/A';
                 const shippingAddress = order.shippingDetails?.address || 'N/A';
 
-                console.log(`onSnapshot: Procesando orden ${order.id}, estado: ${orderStatus}`); // Log de cada orden
+                console.log(`perfil.js: onSnapshot - Procesando orden ${order.id}, estado: ${orderStatus}`); // Log de cada orden
 
                 const orderHtml = `
                     <div class="border border-gray-200 p-4 rounded-md mb-4">
@@ -320,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
         }, (error) => {
-            console.error("Error al cargar pedidos en tiempo real:", error);
+            console.error("perfil.js: Error al cargar pedidos en tiempo real:", error);
             window.showAlert("Error al cargar tus pedidos recientes: " + error.message, "error");
             noOrdersMessage.textContent = "Error al cargar pedidos.";
             noOrdersMessage.classList.remove('hidden');
@@ -336,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
         avatarGallery.innerHTML = ''; // Limpiar galería
         loadingAvatarsMessage.classList.remove('hidden');
         errorAvatarsMessage.classList.add('hidden');
-        noAvatarsMessage.classList.add('hidden');
+        noAvatarsMessageAvatars.classList.add('hidden'); // Usar el renombrado
 
         if (!storage) {
             errorAvatarsMessage.textContent = "Error: Firebase Storage no está inicializado.";
@@ -350,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await listAll(avatarsRef); // Listar todos los ítems en la carpeta
 
             if (result.items.length === 0) {
-                noAvatarsMessage.classList.remove('hidden');
+                noAvatarsMessageAvatars.classList.remove('hidden'); // Usar el renombrado
                 loadingAvatarsMessage.classList.add('hidden');
                 return;
             }
@@ -437,7 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (event.target === addressModal) {
                 addressModal.classList.add('hidden');
             }
-        }); // <-- Paréntesis de cierre corregido aquí
+        });
     }
 
     // Event listener para el cambio de departamento en el modal de edición
