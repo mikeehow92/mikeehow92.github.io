@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiTienda503 - Inicio</title>
+    <!-- Enlace a Tailwind CSS CDN para estilos rápidos y responsivos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'dark-blue': '#1a202c', // Color azul oscuro para el encabezado
+                        'red-button': '#ef4444', // Color rojo para los botones
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Enlace a tu archivo CSS personalizado global -->
+  <script type="module" crossorigin src="/assets/index-CEo9pOzZ.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DfZ2IGiH.css">
+</head>
+<body class="font-inter bg-gray-100 text-gray-800">
+
+    <!-- Encabezado (Header) - Común a todas las páginas -->
+    <header class="bg-dark-blue text-white p-4 shadow-md">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+            <!-- Logo -->
+            <div class="text-2xl font-bold mb-4 md:mb-0">
+                <img src="https://firebasestorage.googleapis.com/v0/b/mitienda-c2609.firebasestorage.app/o/pagina%20web%2Flogo.png?alt=media&token=3ea4712e-75fa-4917-bd39-f5bf95bf8f85" alt="Logo MiTienda503" class="h-12 inline-block">
+            </div>
+
+            <!-- Menú de Navegación -->
+            <nav class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-6 text-lg">
+                <a href="index.html" class="hover:text-gray-300 transition duration-300">Inicio</a>
+                <a href="productos.html" class="hover:text-gray-300 transition duration-300">Productos</a>
+                <a href="#contacto" class="hover:text-gray-300 transition duration-300">Contacto</a>
+                <!-- AÑADIDO: Icono de Carrito con Contador -->
+                <a href="pago.html" id="navCarrito" class="hover:text-gray-300 transition duration-300 relative flex items-center">
+                    <!-- Icono de Carrito (SVG de Font Awesome Free) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="h-6 w-6 fill-current text-white">
+                        <!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc. -->
+                        <path d="M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7c-26.3 0-45.5-25-38.6-50.4L180.6 96H120.9L109.5 64H24C10.7 64 0 53.3 0 40S10.7 16 24 16zM176 352a64 64 0 1 1 0 128 64 64 0 1 1 0-128zm320 0a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
+                    </svg>
+                    <!-- Contador de ítems en el carrito -->
+                    <span id="cartItemCount" class="absolute -top-2 -right-2 bg-red-button text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </a>
+                <!-- ELIMINADO: <a href="perfil.html" id="navPerfil" class="hover:text-gray-300 transition duration-300 hidden">Mi Perfil</a> -->
+            </nav>
+
+            <!-- Contenedor para el botón de Iniciar Sesión o el nombre de usuario/perfil -->
+            <div id="authButtons" class="mt-4 md:mt-0">
+                <button id="loginButton" class="bg-red-button hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition duration-300">
+                    Iniciar Sesión
+                </button>
+                <!-- Se mostrará cuando el usuario esté logueado -->
+                <div id="loggedInUserDisplay" class="hidden flex items-center space-x-4">
+                    <img id="profileAvatarHeader" src="https://placehold.co/40x40/F0F0F0/333333?text=A" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
+                    <span id="userNameDisplay" class="text-white text-lg font-semibold"></span>
+                    <!-- AÑADIDO ID: Este es el enlace de perfil que queremos mantener -->
+                    <a href="perfil.html" id="profileLinkHeader" class="text-white hover:text-gray-300 transition duration-300 text-lg">Perfil</a>
+                    <button id="logoutButton" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-full shadow-lg transition duration-300 text-sm">
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sección de Imagen Principal (Hero) -->
+    <section id="hero" class="relative bg-cover bg-center h-[700px] flex items-center justify-center text-center"
+        style="background-image: url('https://firebasestorage.googleapis.com/v0/b/mitienda-c2609.firebasestorage.app/o/pagina%20web%2Fhero.avif?alt=media&token=ff61d44c-fc66-46dc-bb04-d7d72effa9fa');">
+        <!-- Comentario: Imagen principal de la tienda cargada desde Firebase Storage. -->
+        <div class="absolute inset-0 bg-black opacity-50"></div>
+        <div class="relative z-10 text-white p-4">
+            <h1 class="text-4xl md:text-5xl font-extrabold leading-tight mb-4">Todo para tu Hogar y Estilo</h1>
+            <p class="text-lg md:text-xl max-w-2xl mx-auto">Encuentra los mejores electrodomésticos, ropa y zapatos para toda la familia</p>
+        </div>
+    </section>
+
+    <!-- Sección: "Nuestros Productos" (Añadida después del Hero) -->
+    <section id="productos-home" class="container mx-auto py-16 px-4">
+        <h2 class="text-4xl font-bold text-dark-blue mb-8 relative pb-4">
+            Nuestros Productos
+            <span class="absolute bottom-0 left-0 w-24 h-1 bg-red-button"></span>
+        </h2>
+
+        <div id="productGridHome" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Los productos se cargarán aquí dinámicamente desde Firebase Firestore/Storage -->
+            <!-- Aquí se mostrarán los placeholders o se llenará con JS -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition duration-300">
+                <a href="detalle-producto.html?id=1" class="block">
+                    <img src="https://placehold.co/400x300/F0F0F0/333333?text=Producto+1" alt="Producto 1" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Nombre del Producto 1</h3>
+                        <p class="text-gray-700 mb-4">Descripción breve del producto.</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-bold text-dark-blue">$99.99</span>
+                            <button class="add-to-cart-btn bg-dark-blue hover:bg-blue-800 text-white py-2 px-4 rounded-full text-sm font-semibold transition duration-300" data-product-id="1" data-product-name="Nombre del Producto 1" data-product-price="99.99">
+                                Añadir al Carrito
+                            </button>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition duration-300">
+                <a href="detalle-producto.html?id=2" class="block">
+                    <img src="https://placehold.co/400x300/F0F0F0/333333?text=Producto+2" alt="Producto 2" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Nombre del Producto 2</h3>
+                        <p class="text-gray-700 mb-4">Descripción breve del producto.</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-bold text-dark-blue">$129.99</span>
+                            <button class="add-to-cart-btn bg-dark-blue hover:bg-blue-800 text-white py-2 px-4 rounded-full text-sm font-semibold transition duration-300" data-product-id="2" data-product-name="Nombre del Producto 2" data-product-price="129.99">
+                                Añadir al Carrito
+                            </button>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition duration-300">
+                <a href="detalle-producto.html?id=3" class="block">
+                    <img src="https://placehold.co/400x300/F0F0F0/333333?text=Producto+3" alt="Producto 3" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Nombre del Producto 3</h3>
+                        <p class="text-gray-700 mb-4">Descripción breve del producto.</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-bold text-dark-blue">$75.00</span>
+                            <button class="add-to-cart-btn bg-dark-blue hover:bg-blue-800 text-white py-2 px-4 rounded-full text-sm font-semibold transition duration-300" data-product-id="3" data-product-name="Nombre del Producto 3" data-product-price="75.00">
+                                Añadir al Carrito
+                            </button>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition duration-300">
+                <a href="detalle-producto.html?id=4" class="block">
+                    <img src="https://placehold.co/400x300/F0F0F0/333333?text=Producto+4" alt="Producto 4" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Nombre del Producto 4</h3>
+                        <p class="text-gray-700 mb-4">Descripción breve del producto.</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-bold text-dark-blue">$150.00</span>
+                            <button class="add-to-cart-btn bg-dark-blue hover:bg-blue-800 text-white py-2 px-4 rounded-full text-sm font-semibold transition duration-300" data-product-id="4" data-product-name="Nombre del Producto 4" data-product-price="150.00">
+                                Añadir al Carrito
+                            </button>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition duration-300">
+                <a href="detalle-producto.html?id=5" class="block">
+                    <img src="https://placehold.co/400x300/F0F0F0/333333?text=Producto+5" alt="Producto 5" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Nombre del Producto 5</h3>
+                        <p class="text-gray-700 mb-4">Descripción breve del producto.</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-bold text-dark-blue">$25.00</span>
+                            <button class="add-to-cart-btn bg-dark-blue hover:bg-blue-800 text-white py-2 px-4 rounded-full text-sm font-semibold transition duration-300" data-product-id="5" data-product-name="Nombre del Producto 5" data-product-price="25.00">
+                                Añadir al Carrito
+                            </button>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition duration-300">
+                <a href="detalle-producto.html?id=6" class="block">
+                    <img src="https://placehold.co/400x300/F0F0F0/333333?text=Producto+6" alt="Producto 6" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Nombre del Producto 6</h3>
+                        <p class="text-gray-700 mb-4">Descripción breve del producto.</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-bold text-dark-blue">$50.00</span>
+                            <button class="add-to-cart-btn bg-dark-blue hover:bg-blue-800 text-white py-2 px-4 rounded-full text-sm font-semibold transition duration-300" data-product-id="6" data-product-name="Nombre del Producto 6" data-product-price="50.00">
+                                Añadir al Carrito
+                            </button>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <div class="text-center mt-8">
+            <a href="productos.html" class="inline-block bg-dark-blue hover:bg-blue-800 text-white font-semibold py-3 px-8 rounded-full shadow-lg transition duration-300">
+                Ver Todos los Productos
+            </a>
+        </div>
+    </section>
+
+    <!-- Sección: "Sobre Nosotros" -->
+    <section id="nosotros" class="container mx-auto py-16 px-4">
+        <h2 class="text-4xl font-bold text-dark-blue mb-8 relative pb-4">
+            Sobre Nosotros
+            <span class="absolute bottom-0 left-0 w-24 h-1 bg-red-button"></span>
+        </h2>
+        <div class="flex flex-col md:flex-row items-center md:space-x-8">
+            <!-- Imagen a la izquierda -->
+            <div class="md:w-1/2 mb-8 md:mb-0">
+                <img src="https://firebasestorage.googleapis.com/v0/b/mitienda-c2609.firebasestorage.app/o/pagina%20web%2Fsobrenosotros.avif?alt=media&token=7fcedb86-f995-4b43-891e-c917b70e7bf1" alt="Mujer atendiendo en tienda" class="rounded-lg shadow-lg w-full h-auto object-cover">
+                <!-- Comentario: Imagen de la sección "Sobre Nosotros" cargada desde Firebase Storage. -->
+            </div>
+            <!-- Texto a la derecha -->
+            <div class="md:w-1/2">
+                <h3 class="text-3xl font-semibold text-gray-900 mb-4">Nuestra Historia y Compromiso</h3>
+                <p class="text-gray-700 text-lg mb-4">
+                    <span class="font-bold">Misión:</span> En MiTienda503, nuestra misión es ofrecer productos de calidad superior y un servicio al cliente excepcional, construyendo relaciones duraderas con nuestra comunidad.
+                </p>
+                <p class="text-gray-700 text-lg mb-6">
+                    <span class="font-bold">Lema:</span> Con entusiasmo, comenzamos nuestra historia en la comunidad salvadoreña, comprometidos a crecer junto a ustedes y adaptarnos a sus necesidades.
+                </p>
+                <a href="#contacto" class="inline-block bg-red-button hover:bg-red-600 text-white font-semibold py-3 px-8 rounded-full shadow-lg transition duration-300">
+                    Contáctanos
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección: "Contacto" (Integrada en index.html) -->
+    <section id="contacto" class="container mx-auto py-16 px-4">
+        <h2 class="text-4xl font-bold text-dark-blue mb-8 relative pb-4">
+            Contacto
+            <span class="absolute bottom-0 left-0 w-24 h-1 bg-red-button"></span>
+        </h2>
+        <div class="flex flex-col md:flex-row md:space-x-8">
+            <!-- Información de Contacto -->
+            <div class="md:w-1/2 bg-white p-8 rounded-lg shadow-lg mb-8 md:mb-0">
+                <h3 class="text-2xl font-semibold text-gray-900 mb-4">Información de Contacto</h3>
+                <p class="text-gray-700 mb-2">Somos una tienda en línea dedicada a brindarte la mejor experiencia de compra desde la comodidad de tu hogar.</p>
+                <p class="text-gray-700 mb-2"><strong class="text-dark-blue">Teléfono:</strong> +503 2292 3333</p>
+                <p class="text-gray-700 mb-2"><strong class="text-dark-blue">Correo:</strong> info@mitienda503.com</p>
+                <p class="text-gray-700 mb-4"><strong class="text-dark-blue">Horario de Atención:</strong> Lunes a Viernes, 7am - 4pm</p>
+
+                <h4 class="text-xl font-semibold text-gray-900 mb-3">Redes Sociales</h4>
+                <div class="flex space-x-4 text-dark-blue">
+                    <a href="#" class="hover:text-red-button transition duration-300"><img src="https://img.icons8.com/ios-filled/50/000000/facebook-new.png" alt="Facebook" class="w-8 h-8"></a>
+                    <a href="#" class="hover:text-red-button transition duration-300"><img src="https://img.icons8.com/ios-filled/50/000000/instagram-new.png" alt="Instagram" class="w-8 h-8"></a>
+                </div>
+            </div>
+
+            <!-- Formulario de Mensaje -->
+            <div class="md:w-1/2 bg-white p-8 rounded-lg shadow-lg">
+                <h3 class="text-2xl font-semibold text-gray-900 mb-4">Envíanos un Mensaje</h3>
+                <form id="contactForm" class="space-y-4">
+                    <div>
+                        <label for="fullName" class="block text-gray-700 text-sm font-bold mb-2">Nombre Completo</label>
+                        <input type="text" id="fullName" name="fullName" class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-dark-blue focus:border-transparent" placeholder="Tu Nombre Completo" required>
+                    </div>
+                    <div>
+                        <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Correo Electrónico</label>
+                        <input type="email" id="email" name="email" class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-dark-blue focus:border-transparent" placeholder="tu.correo@ejemplo.com" required>
+                    </div>
+                    <div>
+                        <label for="message" class="block text-gray-700 text-sm font-bold mb-2">Mensaje</label>
+                        <textarea id="message" name="message" rows="5" class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-dark-blue focus:border-transparent" placeholder="Escribe tu mensaje aquí..." required></textarea>
+                    </div>
+                    <button type="submit" class="bg-red-button hover:bg-red-600 text-white font-semibold py-3 px-8 rounded-full shadow-lg transition duration-300 w-full">
+                        Enviar Mensaje
+                    </button>
+                </form>
+                <!-- Comentario: Aquí es donde Firebase Cloud Functions podría procesar el envío del formulario. -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Pie de Página (Footer) - Común a todas las páginas -->
+    <footer class="bg-dark-blue text-white py-8 text-center">
+        <div class="container mx-auto">
+            <p>&copy; 2024 MiTienda503. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Enlace al archivo JavaScript común (debe cargarse primero) -->
+    <!-- Enlace al archivo JavaScript específico de esta página (depende de common.js) -->
+</body>
+</html>
