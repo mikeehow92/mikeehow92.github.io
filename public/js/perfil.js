@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalButton = document.getElementById('closeModalButton');
     const avatarGallery = document.getElementById('avatarGallery');
     const loadingAvatarsMessage = document.getElementById('loadingAvatarsMessage');
-    const errorAvatarsMessage = document.getElementById('errorAvatarsMessage');
+    const errorAvatarsMessage = document = document.getElementById('errorAvatarsMessage');
     const noAvatarsMessage = document.getElementById('noAvatarsMessage');
 
     // Elementos del modal de edición de dirección
