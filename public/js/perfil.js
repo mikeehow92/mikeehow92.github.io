@@ -1,7 +1,6 @@
-// js/perfil.js - Versión 2024-07-25 1:45 PM CST - Corrección Final de TypeErrors y Real-time Orders
-// Mejoras de estado y depuración para 'procesando' y 'orderTotal'
+// js/perfil.js - Versión 2024-07-25 2:00 PM CST - Depuración de campo 'estado' faltante
 
-console.log("perfil.js: Versión 2024-07-25 1:45 PM CST - Script cargado.");
+console.log("perfil.js: Versión 2024-07-25 2:00 PM CST - Script cargado.");
 
 // Importa las funciones necesarias de Firebase Auth, Firestore y Storage
 import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -133,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Define la función global updateCartDisplay para esta página.
     window.updateCartDisplay = function() {
-        updateCartCountDisplay();
+        updateCartDisplay();
         // Lógica adicional específica de UI para perfil.html si es necesaria
     };
 
@@ -306,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let statusClass = 'text-orange-500'; // Clase CSS por defecto (para pendiente/procesando)
 
                 console.log(`perfil.js: Raw order status for order ${order.id}:`, rawOrderStatus);
-                console.log(`perfil.js: Order total value from Firestore:`, order.total); // Log del valor de order.total
+                console.log(`perfil.js: Order total value from Firestore:`, order.total);
 
                 if (typeof rawOrderStatus === 'string') {
                     const normalizedStatus = rawOrderStatus.toLowerCase().trim(); // Normalizar a minúsculas y sin espacios
