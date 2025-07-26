@@ -1,4 +1,4 @@
-// js/pago.js
+// js/pago.js - Versión 2024-07-26 1:42 PM CST - Añadir estado inicial a la orden
 
 // Importa las funciones necesarias de Firebase Auth, Firestore y Storage
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -155,7 +155,9 @@ function renderPayPalButtons() {
                         department: shippingDepartment,
                         municipality: shippingMunicipality,
                         address: shippingAddress
-                    }
+                    },
+                    estado: 'procesando', // AÑADIDO: Estado inicial de la orden
+                    userId: window.currentUserIdGlobal // AÑADIDO: Asegura que el userId se envíe con la orden
                 };
 
                 // Asegúrate de que currentUserId esté disponible
