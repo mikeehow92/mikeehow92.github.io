@@ -1,4 +1,4 @@
-// js/pago.js - Versión 2024-07-26 1:42 PM CST - Añadir estado inicial a la orden
+// js/pago.js - Versión 2024-07-26 2:30 PM CST - Envío de estado y corrección de bucle
 
 // Importa las funciones necesarias de Firebase Auth, Firestore y Storage
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -37,16 +37,16 @@ let validationMessageDiv; // Para el mensaje de validación de PayPal
 
 // Función para renderizar los botones de PayPal
 function renderPayPalButtons() {
-    console.log('renderPayPalButtons: Función iniciada.');
+    console.log('pago.js: renderPayPalButtons - Función iniciada.');
     const cart = window.getCart();
 
     // Asegúrate de que el contenedor exista y el carrito no esté vacío
     if (!paypalButtonContainer) {
-        console.error('renderPayPalButtons: Contenedor #paypal-button-container no encontrado. Asegúrate de que pago.html tenga este ID.');
+        console.error('pago.js: renderPayPalButtons - Contenedor #paypal-button-container no encontrado. Asegúrate de que pago.html tenga este ID.');
         return;
     }
     if (cart.length === 0) {
-        console.log('renderPayPalButtons: Carrito vacío, no se renderizan los botones de PayPal.');
+        console.log('pago.js: renderPayPalButtons - Carrito vacío, no se renderizan los botones de PayPal.');
         paypalButtonContainer.innerHTML = ''; // Limpia si no hay carrito
         return;
     }
@@ -75,12 +75,12 @@ function renderPayPalButtons() {
 
     // Verifica si el objeto paypal está disponible
     if (typeof paypal === 'undefined') {
-        console.error('renderPayPalButtons: Objeto "paypal" no definido. El SDK de PayPal no se ha cargado correctamente. Verifica tu PAYPAL_CLIENT_ID en common.js.');
+        console.error('pago.js: renderPayPalButtons - Objeto "paypal" no definido. El SDK de PayPal no se ha cargado correctamente. Verifica tu PAYPAL_CLIENT_ID en common.js.');
         validationMessageDiv.textContent = 'Error: El servicio de pago no está disponible. Por favor, recarga la página o inténtalo más tarde.';
         validationMessageDiv.classList.remove('hidden');
         return;
     } else {
-        console.log('renderPayPalButtons: Objeto "paypal" detectado, intentando renderizar botones.');
+        console.log('pago.js: renderPayPalButtons - Objeto "paypal" detectado, intentando renderizar botones.');
     }
 
     // Renderiza los botones de PayPal
@@ -126,7 +126,7 @@ function renderPayPalButtons() {
         onApprove: function(data, actions) {
             // Captura el pedido una vez aprobado
             return actions.order.capture().then(function(details) {
-                console.log('Pago completado por ' + details.payer.name.given_name, details);
+                console.log('pago.js: Pago completado por ' + details.payer.name.given_name, details);
                 window.showAlert('¡Pago completado con éxito! Procesando tu pedido...', 'success');
 
                 // --- Recopilar detalles de envío del formulario local ---
@@ -160,10 +160,12 @@ function renderPayPalButtons() {
                     userId: window.currentUserIdGlobal // AÑADIDO: Asegura que el userId se envíe con la orden
                 };
 
+                console.log('pago.js: Enviando orderDetails a Cloud Function:', orderDetails); // Log para depuración
+
                 // Asegúrate de que currentUserId esté disponible
                 const currentUserId = window.currentUserIdGlobal; // Accede a la variable global
                 if (!currentUserId) {
-                    console.error("Error: currentUserId no está definido al intentar enviar la orden a la Cloud Function.");
+                    console.error("pago.js: Error: currentUserId no está definido al intentar enviar la orden a la Cloud Function.");
                     window.showAlert('Error interno: No se pudo identificar al usuario para procesar el pedido.', 'error');
                     return; // Detener el proceso si no hay ID de usuario
                 }
@@ -191,7 +193,7 @@ function renderPayPalButtons() {
                     });
                 })
                 .then(data => {
-                    console.log('Respuesta de la Cloud Function:', data);
+                    console.log('pago.js: Respuesta de la Cloud Function:', data);
                     window.showAlert('¡Tu pedido ha sido procesado y guardado con éxito! Gracias por tu compra.', 'success');
                     localStorage.removeItem('shoppingCart'); // Limpiar el carrito después de un pago exitoso
                     sessionStorage.removeItem('guestUserId'); // Limpiar ID de invitado si se completó la compra
@@ -200,22 +202,22 @@ function renderPayPalButtons() {
                     // window.location.href = 'confirmacion-pedido.html';
                 })
                 .catch(error => {
-                    console.error('Error al llamar a la Cloud Function:', error);
+                    console.error('pago.js: Error al llamar a la Cloud Function:', error);
                     // Muestra el mensaje de error específico de la Cloud Function si está disponible
                     window.showAlert(`Hubo un error al procesar tu pago: ${error.message}. Por favor, inténtalo de nuevo.`, 'error');
                 });
 
             }).catch(error => {
-                console.error('Error al capturar el pago:', error);
+                console.error('pago.js: Error al capturar el pago:', error);
                 window.showAlert('Hubo un error al procesar tu pago. Por favor, inténtalo de nuevo.', 'error');
             });
         },
         onError: function(err) {
-            console.error('Error en PayPal:', err);
+            console.error('pago.js: Error en PayPal:', err);
             window.showAlert('Ocurrió un error con PayPal. Por favor, inténtalo de nuevo o elige otro método de pago.', 'error');
         },
         onCancel: function(data) {
-            console.log('Pago cancelado por el usuario.');
+            console.log('pago.js: Pago cancelado por el usuario.');
             window.showAlert('El pago ha sido cancelado.', 'info');
         }
     }).render(buttonsDiv); // Renderiza los botones en el div específico
@@ -230,19 +232,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileAvatarHeader = document.getElementById('profileAvatarHeader');
     const logoutButton = document.getElementById('logoutButton');
     const navCarrito = document.getElementById('navCarrito');
-    // const navPerfil = document.getElementById('navPerfil'); // Se comenta o elimina ya que el elemento se quitará del HTML
     const cartItemCountElement = document.getElementById('cartItemCount'); // Obtener el elemento del contador de ítems del carrito
 
     // Elementos del cuerpo principal de la página de pago
     const cartItemsContainer = document.getElementById('cartItemsContainer');
     const emptyCartMessage = document.getElementById('emptyCartMessage');
     const cartTotalElement = document.getElementById('cartTotal');
-    // Asignar paypalButtonContainer a la variable global aquí
     paypalButtonContainer = document.getElementById('paypal-button-container');
 
 
     // Asignar elementos del formulario de envío a las variables globales aquí
-    // CORRECCIÓN: El ID del formulario en pago.html es 'shippingDetailsForm'
     shippingForm = document.getElementById('shippingDetailsForm');
     shippingFullNameInput = document.getElementById('shippingFullName');
     shippingEmailInput = document.getElementById('shippingEmail');
@@ -253,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Verificar si el formulario de envío se encontró
     if (!shippingForm) {
-        console.error('Error: El formulario de envío con ID "shippingDetailsForm" no se encontró en el DOM. Los botones de PayPal podrían no funcionar correctamente.');
+        console.error('pago.js: Error: El formulario de envío con ID "shippingDetailsForm" no se encontró en el DOM. Los botones de PayPal podrían no funcionar correctamente.');
     }
 
     // Obtener referencias de Firebase
@@ -285,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Define la función global updateCartDisplay para esta página.
     window.updateCartDisplay = function() {
+        console.log('pago.js: window.updateCartDisplay - Actualizando UI del carrito y renderizando PayPal.');
         updateCartCountDisplay();
         // Lógica de visualización de ítems del carrito en la página de pago
         const cart = window.getCart();
@@ -337,22 +337,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            // Agrega un listener al formulario de envío para re-renderizar los botones de PayPal
-            // cada vez que un campo cambia, para que la validación se refleje.
-            // Asegúrate de que shippingForm exista antes de añadir el listener
-            if (shippingForm) {
-                shippingForm.addEventListener('input', () => {
-                    if (typeof paypal !== 'undefined' && window.getCart().length > 0) {
-                        renderPayPalButtons();
-                    }
-                });
-            }
-
+            // NO SE AÑADE EL LISTENER 'input' AL FORMULARIO AQUÍ PARA EVITAR RECURSIÓN
+            // renderPayPalButtons() se llamará al cargar el SDK y al cambiar el carrito.
 
             // Renderizar botones de PayPal si el SDK está cargado y el carrito no está vacío
             if (typeof paypal !== 'undefined' && cart.length > 0) {
                 renderPayPalButtons();
             } else if (cart.length > 0) {
+                // Si el SDK no está cargado pero hay ítems, intenta cargarlo.
+                // El evento 'paypalSDKLoaded' disparará renderPayPalButtons.
                 window.loadPayPalSDK();
             }
         }
@@ -393,10 +386,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (shippingDepartmentSelect) { // Protección adicional
         shippingDepartmentSelect.addEventListener('change', (event) => {
             loadShippingMunicipalities(event.target.value);
-            // Re-renderizar PayPal para actualizar el mensaje de validación
-            if (typeof paypal !== 'undefined' && window.getCart().length > 0) {
-                renderPayPalButtons();
-            }
+            // No se llama a renderPayPalButtons aquí para evitar el bucle.
+            // Se asume que el cambio de carrito o la carga de la página lo manejará.
         });
     }
 
@@ -413,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Manejo del botón "Iniciar Sesión" en el encabezado
     if (loginButton) {
         loginButton.addEventListener('click', () => {
-            console.log('Botón "Iniciar Sesión" clickeado en pago.html. Redirigiendo a login.html...');
+            console.log('pago.js: Botón "Iniciar Sesión" clickeado en pago.html. Redirigiendo a login.html...');
             window.location.href = 'login.html';
         });
     }
@@ -426,7 +417,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginButton.classList.add('hidden');
                 loggedInUserDisplay.classList.remove('hidden');
                 userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
-                // navPerfil.classList.remove('hidden'); // Se comenta o elimina ya que el elemento se quitará del HTML
 
                 // Cargar avatar
                 if (profileAvatarHeader) { // Protección adicional
@@ -473,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                     } catch (error) {
-                        console.error("Error al precargar datos de envío del usuario:", error);
+                        console.error("pago.js: Error al precargar datos de envío del usuario:", error);
                         window.showAlert("Error al cargar tus datos de envío. Por favor, introdúcelos manualmente.", "error");
                     }
                 }
@@ -482,7 +472,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Usuario no logueado (invitado)
                 loginButton.classList.remove('hidden');
                 loggedInUserDisplay.classList.add('hidden');
-                // navPerfil.classList.add('hidden'); // Se comenta o elimina ya que el elemento se quitará del HTML
                 if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
 
                 let guestId = sessionStorage.getItem('guestUserId');
@@ -496,10 +485,9 @@ document.addEventListener('DOMContentLoaded', () => {
             window.updateCartDisplay(); // Actualiza la UI del carrito y renderiza PayPal
         });
     } else {
-        console.warn("Firebase Auth no está inicializado. Procediendo como invitado.");
+        console.warn("pago.js: Firebase Auth no está inicializado. Procediendo como invitado.");
         loginButton.classList.remove('hidden');
         loggedInUserDisplay.classList.add('hidden');
-        // navPerfil.classList.add('hidden'); // Se comenta o elimina ya que el elemento se quitará del HTML
         if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
 
         let guestId = sessionStorage.getItem('guestUserId');
@@ -519,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await signOut(auth);
                     window.showAlert('Has cerrado sesión correctamente.', 'success');
                 } catch (error) {
-                    console.error('Error al cerrar sesión:', error.message);
+                    console.error('pago.js: Error al cerrar sesión:', error.message);
                     window.showAlert('Error al cerrar sesión. Por favor, inténtalo de nuevo.', 'error');
                 }
             } else {
@@ -533,7 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Escucha el evento 'paypalSDKLoaded' para renderizar los botones
     document.addEventListener('paypalSDKLoaded', () => {
-        console.log('Evento paypalSDKLoaded disparado. Actualizando display del carrito para renderizar botones.');
+        console.log('pago.js: Evento paypalSDKLoaded disparado. Actualizando display del carrito para renderizar botones.');
         window.updateCartDisplay();
     });
 });
