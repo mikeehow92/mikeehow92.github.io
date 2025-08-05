@@ -1,4 +1,4 @@
-// functions/index.js - Versión 2024-07-26 2:45 PM CST - Corrección Final del campo 'estado'
+// functions/index.js - Versión 2024-07-26 3:30 PM CST - Corrección de estado inicial consistente y Sincronización
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
@@ -144,9 +144,10 @@ exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res)
                 ...orderDetails,
                 timestamp: admin.firestore.FieldValue.serverTimestamp(), // Usar timestamp del servidor para la subcolección
                 userId: userId, // Asegura que el userId está explícitamente en la subcolección
-                estado: initialOrderStatus // AÑADIDO: Asegura que el estado se guarde aquí también
+                estado: initialOrderStatus // Asegura que el estado se guarde aquí también
             };
-            transaction.set(userOrdersCollectionRef.doc(), orderToSaveUser);
+            // Usar el mismo ID de orden que la colección central para facilitar la sincronización
+            transaction.set(userOrdersCollectionRef.doc(orderRef.id), orderToSaveUser);
             functions.logger.info(`Orden guardada en la subcolección 'users/${userId}/orders' con éxito con estado: ${initialOrderStatus}`);
 
         });
@@ -159,3 +160,55 @@ exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res)
         res.status(500).json({ message: `Error interno del servidor: ${errorMessage}` });
     }
 });
+
+// =============================================================================
+// NUEVA Cloud Function: Sincronizar Estado de Orden (exports.syncOrderStatus)
+// Escucha cambios en la colección central 'orders' y actualiza la subcolección del usuario.
+// =============================================================================
+exports.syncOrderStatus = functions.firestore
+    .document('orders/{orderId}') // Escucha cualquier cambio en un documento de la colección 'orders'
+    .onUpdate(async (change, context) => {
+        const newOrderData = change.after.data(); // Datos del documento después de la actualización
+        const previousOrderData = change.before.data(); // Datos del documento antes de la actualización
+        const orderId = context.params.orderId; // ID del documento de la orden
+
+        // Log para depuración: Mostrar datos de la orden antes y después
+        functions.logger.info(`syncOrderStatus: Detectado cambio en orden ${orderId}. Estado anterior: ${previousOrderData.estado}, Estado nuevo: ${newOrderData.estado}`);
+
+        // Solo proceder si el campo 'estado' ha cambiado
+        if (newOrderData.estado === previousOrderData.estado) {
+            functions.logger.info(`syncOrderStatus: El estado de la orden ${orderId} no ha cambiado. No se requiere sincronización.`);
+            return null; // No hacer nada si el estado no cambió
+        }
+
+        const userId = newOrderData.userId; // Obtener el userId de los datos de la orden
+        const newStatus = newOrderData.estado; // Obtener el nuevo estado
+
+        if (!userId) {
+            functions.logger.warn(`syncOrderStatus: userId no encontrado para la orden ${orderId}. No se puede sincronizar la subcolección.`);
+            return null;
+        }
+
+        functions.logger.info(`syncOrderStatus: Estado de la orden ${orderId} cambiado a ${newStatus}. Sincronizando para userId: ${userId}`);
+
+        try {
+            // Referencia al documento de la orden en la subcolección del usuario
+            const userOrderRef = db.collection('users').doc(userId).collection('orders').doc(orderId);
+
+            // Verificar si el documento existe en la subcolección antes de intentar actualizarlo
+            const userOrderDoc = await userOrderRef.get();
+            if (!userOrderDoc.exists) {
+                functions.logger.warn(`syncOrderStatus: Documento de orden ${orderId} no encontrado en la subcolección del usuario ${userId}. No se puede actualizar.`);
+                return null;
+            }
+
+            // Actualizar solo el campo 'estado' en la subcolección del usuario
+            await userOrderRef.update({ estado: newStatus });
+            functions.logger.info(`syncOrderStatus: Estado de la orden ${orderId} actualizado a ${newStatus} en la subcolección del usuario ${userId}.`);
+
+        } catch (error) {
+            functions.logger.error(`syncOrderStatus: Error al sincronizar el estado de la orden ${orderId} para el usuario ${userId}:`, error);
+        }
+
+        return null; // Las funciones Cloud Functions deben devolver null o una Promise
+    });
