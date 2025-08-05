@@ -1,4 +1,4 @@
-// functions/index.js - Versión 2024-07-26 3:30 PM CST - Corrección de estado inicial consistente y Sincronización
+// functions/index.js
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
@@ -9,7 +9,9 @@ const db = admin.firestore(); // Obtener la instancia de Firestore Admin
 // =============================================================================
 // Cloud Function para el Formulario de Contacto (exports.api)
 // =============================================================================
+// Maneja las peticiones POST para guardar mensajes de contacto en Firestore.
 exports.api = functions.https.onRequest(async (req, res) => {
+    // Configuración de CORS
     res.set('Access-Control-Allow-Origin', '*');
 
     if (req.method === 'OPTIONS') {
@@ -25,6 +27,7 @@ exports.api = functions.https.onRequest(async (req, res) => {
 
     const { fullName, email, message } = req.body;
 
+    // Validación de los datos del formulario
     if (!fullName || !email || !message) {
         functions.logger.error('Datos del formulario de contacto incompletos:', req.body);
         return res.status(400).send('Por favor, proporciona nombre completo, correo electrónico y mensaje.');
@@ -51,8 +54,10 @@ exports.api = functions.https.onRequest(async (req, res) => {
 // =============================================================================
 // Cloud Function para Actualizar Inventario y Guardar Orden (exports.updateInventoryAndSaveOrder)
 // =============================================================================
+// Procesa las solicitudes de compra dentro de una transacción para garantizar
+// la integridad de los datos del inventario y el registro de la orden.
 exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res) => {
-    // Configurar CORS para permitir solicitudes desde cualquier origen (ajusta según sea necesario para producción)
+    // Configuración de CORS
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
@@ -70,10 +75,10 @@ exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res)
 
     const { items, orderDetails, userId } = req.body;
 
-    // Log para depuración: Verificar el userId y orderDetails recibidos
-    functions.logger.info(`updateInventoryAndSaveOrder: Solicitud recibida. UserId: ${userId}`, { orderDetails: orderDetails });
+    // Log para depuración
+    functions.logger.info(`updateInventoryAndSaveOrder: Solicitud recibida. UserId: ${userId}`, { body: req.body });
 
-
+    // Validación de los datos de entrada
     if (!items || !Array.isArray(items) || items.length === 0 || !orderDetails || !userId) {
         functions.logger.error('updateInventoryAndSaveOrder: Datos de entrada inválidos.', { items, orderDetails, userId });
         return res.status(400).json({ message: 'Datos de pedido o ítems inválidos o vacíos.' });
@@ -86,21 +91,19 @@ exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res)
             const productsData = {};
 
             // --- FASE 1: TODAS LAS LECTURAS ---
-            // Primero, obtener todos los documentos de productos necesarios dentro de la transacción
+            // Se leen los documentos de los productos dentro de la transacción.
             for (const item of items) {
                 const productRef = db.collection('productos').doc(item.id);
-                productRefs[item.id] = productRef; // Guardar referencia para la fase de escritura
+                productRefs[item.id] = productRef;
                 const productDoc = await transaction.get(productRef);
 
                 if (!productDoc.exists) {
-                    // Si el producto no existe, lanzamos un error claro
                     throw new Error(`Producto con ID ${item.id} no encontrado en la base de datos.`);
                 }
 
-                // Usar 'cantidadInventario' como el nombre del campo de stock
                 const currentStock = productDoc.data().cantidadInventario;
 
-                // Validar que currentStock sea un número
+                // Validar que el stock es un número y es suficiente
                 if (typeof currentStock === 'undefined' || currentStock === null || isNaN(currentStock)) {
                     throw new Error(`El campo 'cantidadInventario' no es válido para el producto ${item.name} (ID: ${item.id}). Valor actual: ${currentStock}.`);
                 }
@@ -112,46 +115,52 @@ exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res)
             }
 
             // --- FASE 2: TODAS LAS ESCRITURAS ---
-            // Ahora que todas las lecturas se han completado, procede con las escrituras.
+            // Una vez validados todos los datos, se realizan las escrituras.
 
             // 1. Actualizar el inventario de cada producto
             for (const item of items) {
                 const newStock = productsData[item.id].currentStock - item.quantity;
-                // Usar 'cantidadInventario' para la actualización
                 transaction.update(productRefs[item.id], { cantidadInventario: newStock });
                 functions.logger.info(`Inventario actualizado para producto ${item.id}: ${productsData[item.id].currentStock} -> ${newStock}`);
             }
 
-            // Determinar el estado inicial de la orden
-            // Si orderDetails.estado existe y no es null/undefined, úsalo. De lo contrario, 'pendiente'.
-            const initialOrderStatus = orderDetails.estado || 'pendiente';
-
             // 2. Guardar la orden en la colección central 'orders'
-            const orderRef = db.collection('orders').doc(); // Genera un nuevo ID de documento
+            const orderRef = db.collection('orders').doc();
+            // AHORA NO SE FORZA EL ESTADO A 'pendiente', SE USARÁ EL QUE VIENE EN orderDetails
             const orderToSave = {
                 ...orderDetails,
                 userId: userId,
-                fechaOrden: admin.firestore.FieldValue.serverTimestamp(), // Marca de tiempo del servidor
-                estado: initialOrderStatus // Usar el estado determinado
+                fechaOrden: admin.firestore.FieldValue.serverTimestamp(),
             };
             transaction.set(orderRef, orderToSave);
-            functions.logger.info(`Orden guardada con ID: ${orderRef.id} en 'orders' para el usuario: ${userId} con estado: ${initialOrderStatus}`);
+            functions.logger.info(`Orden guardada con ID: ${orderRef.id} en 'orders' para el usuario: ${userId}`);
 
             // 3. Guardar la orden en la subcolección del usuario 'users/{userId}/orders'
+            // NOTA: El estado 'procesando' ya está en orderDetails, que se usará aquí también.
             const userOrdersCollectionRef = db.collection('users').doc(userId).collection('orders');
             const orderToSaveUser = {
-                // Incluir todas las propiedades de orderDetails
-                ...orderDetails,
-                timestamp: admin.firestore.FieldValue.serverTimestamp(), // Usar timestamp del servidor para la subcolección
-                userId: userId, // Asegura que el userId está explícitamente en la subcolección
-                estado: initialOrderStatus // Asegura que el estado se guarde aquí también
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                total: orderDetails.total,
+                items: orderDetails.items.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    imageUrl: item.imageUrl || ''
+                })),
+                shippingDetails: orderDetails.shippingDetails,
+                paypalTransactionId: orderDetails.paypalTransactionId,
+                paymentStatus: orderDetails.paymentStatus,
+                payerId: orderDetails.payerId,
+                payerEmail: orderDetails.payerEmail,
+                estado: orderDetails.estado // Aseguramos que el estado se guarde explícitamente aquí.
             };
-            // Usar el mismo ID de orden que la colección central para facilitar la sincronización
-            transaction.set(userOrdersCollectionRef.doc(orderRef.id), orderToSaveUser);
-            functions.logger.info(`Orden guardada en la subcolección 'users/${userId}/orders' con éxito con estado: ${initialOrderStatus}`);
+            transaction.set(userOrdersCollectionRef.doc(), orderToSaveUser);
+            functions.logger.info(`Orden guardada en la subcolección 'users/${userId}/orders' con éxito.`);
 
         });
 
+        // Respuesta exitosa
         res.status(200).json({ message: 'Inventario actualizado y orden guardada con éxito.' });
 
     } catch (error) {
@@ -160,55 +169,3 @@ exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res)
         res.status(500).json({ message: `Error interno del servidor: ${errorMessage}` });
     }
 });
-
-// =============================================================================
-// NUEVA Cloud Function: Sincronizar Estado de Orden (exports.syncOrderStatus)
-// Escucha cambios en la colección central 'orders' y actualiza la subcolección del usuario.
-// =============================================================================
-exports.syncOrderStatus = functions.firestore
-    .document('orders/{orderId}') // Escucha cualquier cambio en un documento de la colección 'orders'
-    .onUpdate(async (change, context) => {
-        const newOrderData = change.after.data(); // Datos del documento después de la actualización
-        const previousOrderData = change.before.data(); // Datos del documento antes de la actualización
-        const orderId = context.params.orderId; // ID del documento de la orden
-
-        // Log para depuración: Mostrar datos de la orden antes y después
-        functions.logger.info(`syncOrderStatus: Detectado cambio en orden ${orderId}. Estado anterior: ${previousOrderData.estado}, Estado nuevo: ${newOrderData.estado}`);
-
-        // Solo proceder si el campo 'estado' ha cambiado
-        if (newOrderData.estado === previousOrderData.estado) {
-            functions.logger.info(`syncOrderStatus: El estado de la orden ${orderId} no ha cambiado. No se requiere sincronización.`);
-            return null; // No hacer nada si el estado no cambió
-        }
-
-        const userId = newOrderData.userId; // Obtener el userId de los datos de la orden
-        const newStatus = newOrderData.estado; // Obtener el nuevo estado
-
-        if (!userId) {
-            functions.logger.warn(`syncOrderStatus: userId no encontrado para la orden ${orderId}. No se puede sincronizar la subcolección.`);
-            return null;
-        }
-
-        functions.logger.info(`syncOrderStatus: Estado de la orden ${orderId} cambiado a ${newStatus}. Sincronizando para userId: ${userId}`);
-
-        try {
-            // Referencia al documento de la orden en la subcolección del usuario
-            const userOrderRef = db.collection('users').doc(userId).collection('orders').doc(orderId);
-
-            // Verificar si el documento existe en la subcolección antes de intentar actualizarlo
-            const userOrderDoc = await userOrderRef.get();
-            if (!userOrderDoc.exists) {
-                functions.logger.warn(`syncOrderStatus: Documento de orden ${orderId} no encontrado en la subcolección del usuario ${userId}. No se puede actualizar.`);
-                return null;
-            }
-
-            // Actualizar solo el campo 'estado' en la subcolección del usuario
-            await userOrderRef.update({ estado: newStatus });
-            functions.logger.info(`syncOrderStatus: Estado de la orden ${orderId} actualizado a ${newStatus} en la subcolección del usuario ${userId}.`);
-
-        } catch (error) {
-            functions.logger.error(`syncOrderStatus: Error al sincronizar el estado de la orden ${orderId} para el usuario ${userId}:`, error);
-        }
-
-        return null; // Las funciones Cloud Functions deben devolver null o una Promise
-    });
