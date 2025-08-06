@@ -126,7 +126,6 @@ exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res)
 
             // 2. Guardar la orden en la colección central 'orders'
             const orderRef = db.collection('orders').doc();
-            // AHORA NO SE FORZA EL ESTADO A 'pendiente', SE USARÁ EL QUE VIENE EN orderDetails
             const orderToSave = {
                 ...orderDetails,
                 userId: userId,
@@ -136,7 +135,6 @@ exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res)
             functions.logger.info(`Orden guardada con ID: ${orderRef.id} en 'orders' para el usuario: ${userId}`);
 
             // 3. Guardar la orden en la subcolección del usuario 'users/{userId}/orders'
-            // NOTA: El estado 'procesando' ya está en orderDetails, que se usará aquí también.
             const userOrdersCollectionRef = db.collection('users').doc(userId).collection('orders');
             const orderToSaveUser = {
                 timestamp: admin.firestore.FieldValue.serverTimestamp(),
@@ -169,3 +167,53 @@ exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res)
         res.status(500).json({ message: `Error interno del servidor: ${errorMessage}` });
     }
 });
+
+// =============================================================================
+// Cloud Function para Sincronizar el Estado de la Orden (exports.syncOrderStatus)
+// =============================================================================
+// Se activa cada vez que se actualiza un documento en la colección 'orders'.
+// Sincroniza el estado de la orden con el documento correspondiente en la subcolección del usuario.
+exports.syncOrderStatus = functions.firestore
+    .document('orders/{orderId}')
+    .onUpdate(async (change, context) => {
+        const orderBefore = change.before.data();
+        const orderAfter = change.after.data();
+
+        // Si el estado no ha cambiado, no hacemos nada.
+        if (orderBefore.estado === orderAfter.estado) {
+            functions.logger.info(`syncOrderStatus: Estado de la orden ${context.params.orderId} no ha cambiado. No se requiere sincronización.`);
+            return null;
+        }
+
+        const userId = orderAfter.userId;
+        const newStatus = orderAfter.estado;
+
+        if (!userId) {
+            functions.logger.error(`syncOrderStatus: Campo 'userId' no encontrado para la orden ${context.params.orderId}.`);
+            return null;
+        }
+
+        try {
+            // Buscar el documento de la orden en la subcolección del usuario.
+            const userOrdersRef = db.collection('users').doc(userId).collection('orders');
+            const q = userOrdersRef.where('paypalTransactionId', '==', orderAfter.paypalTransactionId).limit(1);
+
+            const snapshot = await q.get();
+
+            if (snapshot.empty) {
+                functions.logger.warn(`syncOrderStatus: No se encontró la orden en la subcolección del usuario para la transacción ${orderAfter.paypalTransactionId}.`);
+                return null;
+            }
+
+            // Actualizar el estado del primer documento encontrado.
+            const userOrderDocRef = snapshot.docs[0].ref;
+            await userOrderDocRef.update({ estado: newStatus });
+
+            functions.logger.info(`syncOrderStatus: Estado de la orden ${context.params.orderId} actualizado a '${newStatus}' en la subcolección del usuario.`);
+
+        } catch (error) {
+            functions.logger.error(`syncOrderStatus: Error al sincronizar el estado de la orden ${context.params.orderId}:`, error);
+        }
+
+        return null;
+    });
