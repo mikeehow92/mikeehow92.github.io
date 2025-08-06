@@ -2,16 +2,12 @@
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-
-// Inicializa Firebase Admin SDK. Esto es esencial para interactuar con
-// Firestore y otros servicios de Firebase desde las funciones.
 admin.initializeApp();
 
-// Obtiene una referencia a la base de datos de Firestore.
-const db = admin.firestore();
+const db = admin.firestore(); // Obtener la instancia de Firestore Admin
 
 // =============================================================================
-// Cloud Function para el Formulario de Contacto
+// Cloud Function para el Formulario de Contacto (exports.api)
 // =============================================================================
 exports.api = functions.https.onRequest(async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
@@ -42,93 +38,84 @@ exports.api = functions.https.onRequest(async (req, res) => {
             message: message,
             timestamp: admin.firestore.FieldValue.serverTimestamp()
         });
-        res.status(200).send('Mensaje recibido con éxito.');
+        return res.status(200).send('Mensaje enviado con éxito.');
     } catch (error) {
         functions.logger.error('Error al guardar el mensaje de contacto:', error);
-        res.status(500).send('Error interno del servidor.');
+        return res.status(500).send('Error interno del servidor.');
     }
 });
 
 // =============================================================================
-// Cloud Function para procesar la compra (tu código existente)
+// Nueva Cloud Function para crear la orden de compra y actualizar el inventario
+// Esta función usará la misma ID para ambos documentos
 // =============================================================================
-exports.processOrder = functions.https.onRequest(async (req, res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-
-    if (req.method === 'OPTIONS') {
-        res.set('Access-Control-Allow-Methods', 'POST');
-        res.set('Access-Control-Allow-Headers', 'Content-Type');
-        res.set('Access-Control-Max-Age', '3600');
-        return res.status(204).send('');
+exports.createOrderAndAdjustInventory = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'El usuario debe estar autenticado para realizar esta acción.');
     }
 
-    if (req.method !== 'POST') {
-        return res.status(405).send('Método no permitido. Solo POST.');
+    const { orderDetails, userId } = data;
+    const itemsToUpdate = orderDetails.items;
+    
+    // Validar si el carrito está vacío
+    if (!itemsToUpdate || itemsToUpdate.length === 0) {
+        throw new functions.https.HttpsError('invalid-argument', 'El carrito de compras está vacío.');
     }
-
-    const { userId, orderDetails } = req.body;
-
-    if (!userId || !orderDetails || !orderDetails.items || orderDetails.items.length === 0) {
-        return res.status(400).json({ message: 'Datos de la orden incompletos.' });
-    }
+    
+    // Obtener una ID única para la orden antes de iniciar la transacción
+    const newOrderId = db.collection('orders').doc().id;
 
     try {
-        const result = await db.runTransaction(async (transaction) => {
-            const inventoryUpdates = [];
-            const itemsWithOutOfStock = [];
-            
-            for (const item of orderDetails.items) {
-                const productDocRef = db.collection('products').doc(item.id);
-                const productDoc = await transaction.get(productDocRef);
+        await db.runTransaction(async (transaction) => {
+            // Verificar el inventario
+            const promises = itemsToUpdate.map(item => {
+                const itemRef = db.collection(`artifacts/${__app_id}/users/${userId}/products`).doc(item.id);
+                return transaction.get(itemRef);
+            });
+            const itemDocs = await Promise.all(promises);
 
-                if (!productDoc.exists) {
-                    throw new Error(`El producto con ID ${item.id} no existe.`);
+            for (let i = 0; i < itemDocs.length; i++) {
+                const docSnap = itemDocs[i];
+                if (!docSnap.exists) {
+                    throw new functions.https.HttpsError('not-found', `Producto con ID ${itemsToUpdate[i].id} no encontrado.`);
                 }
 
-                const productData = productDoc.data();
-                const newStock = (productData.stock || 0) - item.quantity;
+                const currentQuantity = docSnap.data().cantidadInventario;
+                const requestedQuantity = itemsToUpdate[i].quantity;
 
-                if (newStock < 0) {
-                    itemsWithOutOfStock.push(item.name);
-                } else {
-                    inventoryUpdates.push({ ref: productDocRef, newStock: newStock });
+                if (currentQuantity < requestedQuantity) {
+                    throw new functions.https.HttpsError('failed-precondition', `No hay suficiente stock para el producto ${docSnap.data().nombre}.`);
                 }
+                
+                // Actualizar la cantidad del inventario
+                const newQuantity = currentQuantity - requestedQuantity;
+                transaction.update(docSnap.ref, { cantidadInventario: newQuantity });
             }
 
-            if (itemsWithOutOfStock.length > 0) {
-                throw new Error(`Los siguientes productos no tienen suficiente stock: ${itemsWithOutOfStock.join(', ')}`);
-            }
-
-            inventoryUpdates.forEach(update => {
-                transaction.update(update.ref, { stock: update.newStock });
+            // Crear el documento en la colección principal 'orders' usando la ID pre-generada
+            const orderRef = db.collection(`artifacts/${__app_id}/public/data/orders`).doc(newOrderId);
+            transaction.set(orderRef, {
+                ...orderDetails,
+                userId: userId,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
 
-            // Guardar la orden en la subcolección de 'orders' del usuario
-            const userOrdersCollectionRef = db.collection('users').doc(userId).collection('orders');
-            const orderToSaveUser = {
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                total: orderDetails.total,
-                items: orderDetails.items.map(item => ({
-                    id: item.id,
-                    name: item.name,
-                    price: item.price,
-                    quantity: item.quantity,
-                    imageUrl: item.imageUrl || ''
-                })),
-                shippingDetails: orderDetails.shippingDetails,
-                paypalTransactionId: orderDetails.paypalTransactionId,
-                paymentStatus: orderDetails.paymentStatus,
-                payerId: orderDetails.payerId,
-                payerEmail: orderDetails.payerEmail,
-            };
-            transaction.set(userOrdersCollectionRef.doc(), orderToSaveUser);
-            functions.logger.info(`Orden guardada en la subcolección 'users/${userId}/orders' con éxito.`);
+            // Crear el documento en la subcolección del usuario 'orders' usando la MISMA ID
+            const userOrderRef = db.collection(`artifacts/${__app_id}/users/${userId}/orders`).doc(newOrderId);
+            transaction.set(userOrderRef, {
+                ...orderDetails,
+                userId: userId,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+
         });
 
-        res.status(200).json({ message: 'Inventario actualizado y orden guardada con éxito.' });
+        return { orderId: newOrderId, message: 'Inventario actualizado y orden guardada con éxito.' };
+
     } catch (error) {
         functions.logger.error('Error en la transacción de actualización de inventario o guardado de orden:', error);
-        const errorMessage = error.message || 'Error interno del servidor.';
-        res.status(500).json({ message: `Error interno del servidor: ${errorMessage}` });
+        throw new functions.https.HttpsError('internal', error.message || 'Error interno del servidor.');
     }
 });
