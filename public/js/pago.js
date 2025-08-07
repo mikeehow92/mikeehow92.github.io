@@ -1,10 +1,10 @@
 // js/pago.js
 
 // Importa las funciones necesarias de Firebase Auth, Firestore y Storage
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+// Asegúrate de que las rutas sean correctas para tu proyecto
+import { onAuthStateChanged, signOut, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
+import { doc, getDoc, getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Datos de Departamentos y Municipios de El Salvador
 const departmentsAndMunicipalities = {
@@ -24,347 +24,212 @@ const departmentsAndMunicipalities = {
     "Usulután": ["Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuarán", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán", "Usulután"]
 };
 
-let shippingForm;
-let shippingFullNameInput;
-let shippingEmailInput;
-let shippingPhoneInput;
-let shippingDepartmentSelect;
-let shippingMunicipalitySelect;
-let shippingAddressInput;
-let paypalButtonContainer;
-let validationMessageDiv;
-let cartItemsContainer;
-let cartTotalElement;
-let checkoutButton;
-let logoutButton;
-let loginButtonNav;
+// Esta es la solución principal: se asegura de que todo el DOM y los scripts
+// (incluyendo common.js) estén cargados antes de ejecutar cualquier lógica.
+document.addEventListener('DOMContentLoaded', () => {
 
-window.updateCartDisplay = function() {
-    const cart = window.getCart();
-    const total = window.getCartTotal();
+    // Referencias a los elementos del DOM
+    const shippingDepartmentSelect = document.getElementById('shippingDepartment');
+    const shippingMunicipalitySelect = document.getElementById('shippingMunicipality');
+    const shippingDetailsForm = document.getElementById('shippingDetailsForm');
+    const paypalButtonContainer = document.getElementById('paypal-button-container');
+    const cartItemsContainer = document.getElementById('cartItemsContainer');
+    const cartTotalElement = document.getElementById('cartTotal');
+    const emptyCartMessage = document.getElementById('emptyCartMessage');
 
-    if (!cartItemsContainer) {
-        cartItemsContainer = document.getElementById('cart-items-container');
-    }
-    if (!cartTotalElement) {
-        cartTotalElement = document.getElementById('cart-total');
-    }
-    if (!checkoutButton) {
-        checkoutButton = document.getElementById('checkout-button');
-    }
+    // Inicializa la base de datos y la autenticación, usando las instancias globales
+    // que common.js ya debería haber creado.
+    const db = window.firebase.db;
+    const auth = window.firebase.auth;
 
-    if (!cartItemsContainer || !cartTotalElement) {
-        return;
-    }
-
-    cartItemsContainer.innerHTML = '';
-    let cartIsEmpty = cart.length === 0;
-
-    if (cartIsEmpty) {
-        cartItemsContainer.innerHTML = '<p class="text-center text-gray-500">Tu carrito está vacío.</p>';
-        cartTotalElement.textContent = '$0.00';
-    } else {
-        cart.forEach(item => {
-            const itemElement = document.createElement('div');
-            itemElement.className = 'flex justify-between items-center py-2 border-b border-gray-200';
-            itemElement.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-cover rounded-md">
-                    <div>
-                        <p class="font-semibold text-gray-800">${item.name}</p>
-                        <p class="text-sm text-gray-500">Cantidad: ${item.quantity}</p>
-                    </div>
-                </div>
-                <span class="font-bold text-gray-800">$${(item.price * item.quantity).toFixed(2)}</span>
-            `;
-            cartItemsContainer.appendChild(itemElement);
+    // Rellenar el select de departamentos
+    function populateDepartments() {
+        if (!shippingDepartmentSelect) return;
+        // Limpiamos las opciones previas antes de rellenar
+        shippingDepartmentSelect.innerHTML = '<option value="">Seleccione un departamento</option>';
+        Object.keys(departmentsAndMunicipalities).forEach(department => {
+            const option = document.createElement('option');
+            option.value = department;
+            option.textContent = department;
+            shippingDepartmentSelect.appendChild(option);
         });
-        cartTotalElement.textContent = `$${total.toFixed(2)}`;
     }
 
-    if (checkoutButton) {
-        checkoutButton.disabled = cartIsEmpty;
-    }
-    
-    if (window.loadPayPalSDK) {
-        window.loadPayPalSDK();
-    }
-};
-
-function renderPayPalButtons() {
-    const cart = window.getCart();
-
-    if (!paypalButtonContainer) {
-        console.error('renderPayPalButtons: Contenedor #paypal-button-container no encontrado.');
-        return;
-    }
-
-    if (cart.length === 0) {
-        paypalButtonContainer.innerHTML = '';
-        return;
-    }
-
-    paypalButtonContainer.innerHTML = '';
-
-    const buttonsDiv = document.createElement('div');
-    buttonsDiv.id = 'paypal-buttons-actual';
-    paypalButtonContainer.appendChild(buttonsDiv);
-
-    if (!validationMessageDiv) {
-        validationMessageDiv = document.createElement('p');
-        validationMessageDiv.id = 'paypal-validation-message';
-        validationMessageDiv.className = 'text-red-500 text-sm mt-2 text-center';
-        paypalButtonContainer.appendChild(validationMessageDiv);
-    } else {
-        if (!paypalButtonContainer.contains(validationMessageDiv)) {
-            paypalButtonContainer.appendChild(validationMessageDiv);
+    // Actualizar el select de municipios basado en el departamento seleccionado
+    function updateMunicipalities() {
+        if (!shippingDepartmentSelect || !shippingMunicipalitySelect) return;
+        const selectedDepartment = shippingDepartmentSelect.value;
+        const municipalities = departmentsAndMunicipalities[selectedDepartment] || [];
+        shippingMunicipalitySelect.innerHTML = '<option value="">Primero seleccione un departamento</option>';
+        if (municipalities.length > 0) {
+            shippingMunicipalitySelect.disabled = false;
+            municipalities.forEach(municipality => {
+                const option = document.createElement('option');
+                option.value = municipality;
+                option.textContent = municipality;
+                shippingMunicipalitySelect.appendChild(option);
+            });
+            shippingMunicipalitySelect.innerHTML = '<option value="">Seleccione un municipio</option>' + shippingMunicipalitySelect.innerHTML;
+        } else {
+            shippingMunicipalitySelect.disabled = true;
         }
     }
-    
-    if (typeof paypal === 'undefined') {
-        validationMessageDiv.textContent = 'Error: El servicio de pago no está disponible. Por favor, recarga la página o inténtalo más tarde.';
-        validationMessageDiv.classList.remove('hidden');
-        return;
-    } else {
-        console.log('renderPayPalButtons: Objeto "paypal" detectado, intentando renderizar botones.');
-    }
-    
-    paypal.Buttons({
-        createOrder: function(data, actions) {
-            if (!shippingForm || !shippingForm.checkValidity()) {
-                validationMessageDiv.textContent = 'Por favor, completa todos los detalles de envío para continuar.';
-                validationMessageDiv.classList.remove('hidden');
-                throw new Error('Formulario de envío incompleto o inválido.');
-            } else {
-                validationMessageDiv.classList.add('hidden');
+
+    // Función para renderizar los botones de PayPal
+    function renderPayPalButtons() {
+        const cart = window.getCart();
+        const total = window.getCartTotal();
+
+        // Si el carrito está vacío, se ocultan los botones de pago
+        if (cart.length === 0) {
+            if (paypalButtonContainer) {
+                paypalButtonContainer.innerHTML = '<p class="text-center text-gray-500">Tu carrito está vacío, no se puede proceder al pago.</p>';
             }
-
-            const total = window.getCartTotal();
-            const items = cart.map(item => ({
-                name: item.name,
-                quantity: item.quantity,
-                unit_amount: {
-                    currency_code: 'USD',
-                    value: item.price.toFixed(2)
-                }
-            }));
-            
-            return actions.order.create({
-                purchase_units: [{
-                    amount: {
-                        currency_code: 'USD',
-                        value: total.toFixed(2),
-                        breakdown: {
-                            item_total: {
-                                currency_code: 'USD',
-                                value: total.toFixed(2)
-                            }
-                        }
-                    },
-                    items: items
-                }]
-            });
-        },
-        onApprove: function(data, actions) {
-            return actions.order.capture().then(function(details) {
-                console.log('Pago completado por ' + details.payer.name.given_name, details);
-                window.showAlert('¡Pago completado con éxito! Procesando tu pedido...', 'success');
-
-                const shippingFullName = shippingFullNameInput ? shippingFullNameInput.value : '';
-                const shippingEmail = shippingEmailInput ? shippingEmailInput.value : '';
-                const shippingPhone = shippingPhoneInput ? shippingPhoneInput.value : '';
-                const shippingDepartment = shippingDepartmentSelect ? shippingDepartmentSelect.value : '';
-                const shippingMunicipality = shippingMunicipalitySelect ? shippingMunicipalitySelect.value : '';
-                const shippingAddress = shippingAddressInput ? shippingAddressInput.value : '';
-
-                const functions = getFunctions(window.firebase.app);
-                const processOrder = httpsCallable(functions, 'createOrderAndAdjustInventory');
-                
-                const orderDetails = {
-                    paypalTransactionId: details.id,
-                    paymentStatus: details.status,
-                    payerId: details.payer.payer_id,
-                    payerEmail: shippingEmail,
-                    total: parseFloat(details.purchase_units[0].amount.value),
-                    items: window.getCart(),
-                    shippingDetails: {
-                        fullName: shippingFullName,
-                        email: shippingEmail,
-                        phone: shippingPhone,
-                        department: shippingDepartment,
-                        municipality: shippingMunicipality,
-                        address: shippingAddress
-                    }
-                };
-                
-                processOrder({ orderDetails })
-                .then((result) => {
-                    const data = result.data;
-                    console.log('Respuesta de la Cloud Function:', data);
-                    window.showAlert('¡Pedido procesado con éxito!', 'success');
-                    window.clearCart();
-                    window.updateCartDisplay();
-                    setTimeout(() => {
-                        window.location.href = 'confirmation.html';
-                    }, 2000);
-                })
-                .catch(error => {
-                    console.error('Error al llamar a la Cloud Function:', error);
-                    window.showAlert(`Error al procesar tu pedido: ${error.message}`, 'error');
-                });
-            });
-        },
-        onCancel: function(data) {
-            console.log('Pago cancelado por el usuario:', data);
-            window.showAlert('Has cancelado el pago.', 'info');
-        },
-        onError: function(err) {
-            console.error('Error de PayPal:', err);
-            window.showAlert('Ocurrió un error con el pago de PayPal. Inténtalo de nuevo.', 'error');
+            return;
         }
-    }).render('#paypal-buttons-actual');
-}
 
-function updateMunicipalities() {
-    const selectedDepartment = shippingDepartmentSelect.value;
-    const municipalities = departmentsAndMunicipalities[selectedDepartment] || [];
+        // Si el carrito tiene productos, se renderizan los botones
+        if (paypalButtonContainer) {
+            paypalButtonContainer.innerHTML = '';
+            paypal.Buttons({
+                createOrder: function(data, actions) {
+                    // Validar el formulario de envío antes de crear la orden
+                    if (!shippingDetailsForm || !shippingDetailsForm.checkValidity()) {
+                        window.showAlert('Por favor, completa todos los campos del formulario de envío.', 'error');
+                        return actions.reject();
+                    }
+                    return actions.order.create({
+                        purchase_units: [{
+                            amount: {
+                                currency_code: 'USD',
+                                value: total.toFixed(2),
+                            }
+                        }]
+                    });
+                },
+                onApprove: function(data, actions) {
+                    return actions.order.capture().then(function(details) {
+                        window.showAlert('¡Pago completado con éxito! Procesando tu pedido...', 'success');
+                        window.clearCart();
+                        setTimeout(() => { window.location.href = 'confirmation.html'; }, 2000);
+                    });
+                },
+                onCancel: function(data) {
+                    window.showAlert('Has cancelado el pago.', 'info');
+                },
+                onError: function(err) {
+                    console.error('Error de PayPal:', err);
+                    window.showAlert('Ocurrió un error con el pago de PayPal. Inténtalo de nuevo.', 'error');
+                }
+            }).render('#paypal-button-container');
+        }
+    }
 
-    shippingMunicipalitySelect.innerHTML = '<option value="">Selecciona un Municipio</option>';
+    // Reemplaza la función global de common.js para la página de pago
+    // Esta función se encarga de actualizar toda la UI del carrito y los botones de PayPal
+    window.updateCartDisplay = () => {
+        const cart = window.getCart();
+        const total = window.getCartTotal();
+        
+        // Actualizar la lista de ítems del carrito
+        if (cartItemsContainer) {
+            cartItemsContainer.innerHTML = '';
+            if (cart.length === 0) {
+                // Muestra el mensaje de carrito vacío si no hay ítems
+                if (emptyCartMessage) emptyCartMessage.classList.remove('hidden');
+            } else {
+                // Oculta el mensaje de carrito vacío
+                if (emptyCartMessage) emptyCartMessage.classList.add('hidden');
+                
+                cart.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'flex justify-between items-center py-2 border-b border-gray-200';
+                    itemElement.innerHTML = `
+                        <div class="flex items-center space-x-4">
+                            <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded-md shadow">
+                            <div>
+                                <p class="font-semibold text-gray-900">${item.name}</p>
+                                <p class="text-gray-600">Cantidad: ${item.quantity}</p>
+                                <p class="text-sm font-bold text-blue-600">$${(item.price).toFixed(2)} c/u</p>
+                            </div>
+                        </div>
+                        <span class="font-bold text-gray-900">$${(item.price * item.quantity).toFixed(2)}</span>
+                    `;
+                    cartItemsContainer.appendChild(itemElement);
+                });
+            }
+        }
 
-    municipalities.forEach(municipality => {
-        const option = document.createElement('option');
-        option.value = municipality;
-        option.textContent = municipality;
-        shippingMunicipalitySelect.appendChild(option);
+        // Actualizar el total del carrito
+        if (cartTotalElement) {
+            cartTotalElement.textContent = `$${total.toFixed(2)}`;
+        }
+        
+        // Renderizar los botones de PayPal después de actualizar la visualización del carrito
+        renderPayPalButtons();
+    };
+
+    // Escuchar cambios en la autenticación para rellenar el formulario de envío
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            console.log("Usuario autenticado en la página de pagos:", user.uid);
+            const userDocRef = doc(db, "users", user.uid);
+            try {
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    const shippingFullNameInput = document.getElementById('shippingFullName');
+                    const shippingEmailInput = document.getElementById('shippingEmail');
+                    const shippingPhoneInput = document.getElementById('shippingPhone');
+                    if (shippingFullNameInput) shippingFullNameInput.value = userData.displayName || '';
+                    if (shippingEmailInput) shippingEmailInput.value = userData.email || '';
+                    if (shippingPhoneInput) shippingPhoneInput.value = userData.phone || '';
+                }
+            } catch (error) {
+                console.error("Error al obtener datos del usuario:", error);
+            }
+        } else {
+            console.log("Usuario no autenticado en la página de pagos.");
+            // Opcional: limpiar el formulario si el usuario cierra sesión
+            if (shippingDetailsForm) shippingDetailsForm.reset();
+        }
+        
+        // Llamada inicial para asegurar que el carrito se renderiza
+        window.updateCartDisplay();
     });
 
-    shippingMunicipalitySelect.disabled = municipalities.length === 0;
-}
-
-// Nueva función que encapsula toda la lógica de inicialización.
-// Esto permite llamarla solo cuando las dependencias estén listas.
-function initializePaymentPage() {
-    shippingForm = document.getElementById('shipping-form');
-    shippingFullNameInput = document.getElementById('shippingFullName');
-    shippingEmailInput = document.getElementById('shippingEmail');
-    shippingPhoneInput = document.getElementById('shippingPhone');
-    shippingDepartmentSelect = document.getElementById('shippingDepartment');
-    shippingMunicipalitySelect = document.getElementById('shippingMunicipality');
-    shippingAddressInput = document.getElementById('shippingAddress');
-    paypalButtonContainer = document.getElementById('paypal-button-container');
-
-    cartItemsContainer = document.getElementById('cart-items-container');
-    cartTotalElement = document.getElementById('cart-total');
-    checkoutButton = document.getElementById('checkout-button');
-
-    Object.keys(departmentsAndMunicipalities).forEach(department => {
-        const option = document.createElement('option');
-        option.value = department;
-        option.textContent = department;
-        shippingDepartmentSelect.appendChild(option);
-    });
-
+    // Carga inicial de datos de la página
+    populateDepartments();
     if (shippingDepartmentSelect) {
         shippingDepartmentSelect.addEventListener('change', updateMunicipalities);
     }
+    updateMunicipalities();
 
+    // Carga el SDK de PayPal
+    window.loadPayPalSDK = () => {
+        // Primero verificamos si el SDK ya ha sido cargado para no duplicarlo
+        if (!document.querySelector('script[src*="paypal.com/sdk"]')) {
+            const paypalScript = document.createElement('script');
+            // Reemplaza 'TU_CLIENTE_ID_DE_PAYPAL' con tu ID de cliente real de PayPal
+            paypalScript.src = "https://www.paypal.com/sdk/js?client-id=TU_CLIENTE_ID_DE_PAYPAL&currency=USD";
+            paypalScript.id = 'paypal-sdk-script';
+            document.body.appendChild(paypalScript);
+            paypalScript.onload = () => {
+                console.log("PayPal SDK ha sido cargado.");
+                // Dispara el evento después de la carga
+                const event = new Event('paypalSDKLoaded');
+                document.dispatchEvent(event);
+            };
+        }
+    };
+    
+    // Escucha el evento 'paypalSDKLoaded' para renderizar los botones
     document.addEventListener('paypalSDKLoaded', () => {
+        console.log('Evento paypalSDKLoaded disparado. Renderizando botones.');
         renderPayPalButtons();
     });
-
-    if (shippingForm) {
-        shippingForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-        });
-    }
-
-    logoutButton = document.getElementById('logout-button');
-    if (logoutButton) {
-        logoutButton.addEventListener('click', async () => {
-            if (window.auth) {
-                try {
-                    await signOut(window.auth);
-                    window.showAlert('Has cerrado sesión correctamente.', 'success');
-                } catch (error) {
-                    console.error('Error al cerrar sesión:', error.message);
-                    window.showAlert('Error al cerrar sesión. Por favor, inténtalo de nuevo.', 'error');
-                }
-            } else {
-                window.showAlert('Firebase Auth no está disponible para cerrar sesión.', 'error');
-            }
-        });
-    }
-
-    onAuthStateChanged(window.auth, async (user) => {
-        const loginContainer = document.getElementById('login-container');
-        const userProfileContainer = document.getElementById('user-profile-container');
-        const profileAvatarHeader = document.getElementById('profile-avatar-header');
-        const profileName = document.getElementById('profile-name');
-        const profileEmail = document.getElementById('profile-email');
-        const profileAvatarSidebar = document.getElementById('profile-avatar-sidebar');
-        const profileNameSidebar = document.getElementById('profile-name-sidebar');
-        logoutButton = document.getElementById('logout-button');
-        loginButtonNav = document.getElementById('login-button-nav');
-
-        if (user) {
-            window.currentUserIdGlobal = user.uid;
-
-            if (loginContainer) loginContainer.classList.add('hidden');
-            if (userProfileContainer) userProfileContainer.classList.remove('hidden');
-
-            const userDocRef = doc(window.db, "users", user.uid);
-            const userDocSnap = await getDoc(userDocRef);
-            let userName = user.email;
-            let avatarUrl = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
-
-            if (userDocSnap.exists()) {
-                const userData = userDocSnap.data();
-                if (userData.displayName) userName = userData.displayName;
-                if (userData.profilePicture) avatarUrl = userData.profilePicture;
-            }
-
-            if (profileAvatarHeader) profileAvatarHeader.src = avatarUrl;
-            if (profileAvatarSidebar) profileAvatarSidebar.src = avatarUrl;
-            if (profileName) profileName.textContent = userName;
-            if (profileNameSidebar) profileNameSidebar.textContent = userName;
-            if (profileEmail) profileEmail.textContent = user.email;
-
-            window.updateCartDisplay();
-        } else {
-            if (loginContainer) loginContainer.classList.remove('hidden');
-            if (userProfileContainer) userProfileContainer.classList.add('hidden');
-
-            if (loginButtonNav) {
-                loginButtonNav.classList.remove('hidden');
-                loginButtonNav.textContent = 'Iniciar Sesión';
-            }
-            if (logoutButton) logoutButton.classList.add('hidden');
-
-            let guestId = sessionStorage.getItem('guestUserId');
-            if (!guestId) {
-                guestId = crypto.randomUUID();
-                sessionStorage.setItem('guestUserId', guestId);
-            }
-            window.currentUserIdGlobal = guestId;
-
-            if (profileName) { profileName.textContent = 'Usuario Invitado'; }
-            if (profileEmail) { profileEmail.textContent = 'Invítalo a iniciar sesión'; }
-            if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
-
-            window.updateCartDisplay();
-        }
-    });
-
-    window.updateCartDisplay();
-}
-
-// NUEVO: Esperamos a que el DOM esté cargado
-document.addEventListener('DOMContentLoaded', () => {
-    // Si la aplicación ya se ha inicializado, la llamamos inmediatamente
-    if (window.firebase && typeof window.getCart === 'function' && window.auth) {
-        initializePaymentPage();
-    } else {
-        // Si no, escuchamos por el evento personalizado 'firebaseReady'
-        document.addEventListener('firebaseReady', initializePaymentPage);
-    }
+    
+    // Dispara la carga del SDK
+    window.loadPayPalSDK();
 });
+
