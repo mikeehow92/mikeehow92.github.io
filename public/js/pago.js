@@ -1,15 +1,12 @@
 // js/pago.js
 
-// ==========================================================================================================================
-// 1. IMPORTACIONES DE MÓDULOS DE FIREBASE
-// ==========================================================================================================================
+// Importa las funciones necesarias de Firebase Auth, Firestore y Storage
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // Importar getDoc
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js"; // NUEVA IMPORTACIÓN: Se necesita para las funciones onCall
 
-// ==========================================================================================================================
-// 2. DATOS GEOGRÁFICOS DE EL SALVADOR
-// ==========================================================================================================================
+// Datos de Departamentos y Municipios de El Salvador
 const departmentsAndMunicipalities = {
     "Ahuachapán": ["Ahuachapán", "Apaneca", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
     "Cabañas": ["Cinquera", "Dolores", "Guacotecti", "Ilobasco", "Sensuntepeque", "Tejutepeque", "Victoria"],
@@ -27,9 +24,6 @@ const departmentsAndMunicipalities = {
     "Usulután": ["Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuarán", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán", "Usulután"]
 };
 
-// ==========================================================================================================================
-// 3. DECLARACIÓN DE VARIABLES GLOBALES
-// ==========================================================================================================================
 let shippingForm;
 let shippingFullNameInput;
 let shippingEmailInput;
@@ -42,23 +36,13 @@ let validationMessageDiv;
 let cartItemsContainer;
 let cartTotalElement;
 let checkoutButton;
+let logoutButton;
+let loginButtonNav;
 
-// ==========================================================================================================================
-// 4. FUNCIONES PRINCIPALES
-// ==========================================================================================================================
-
-/**
- * @function updateCartDisplay
- * @description Esta función, ahora definida en pago.js, se encarga de leer el carrito de compras
- * de localStorage y renderizar los productos en la interfaz de usuario de la página de pago.
- * Se llama en cada carga de página y después de cualquier modificación del carrito.
- */
 window.updateCartDisplay = function() {
-    console.log('updateCartDisplay: Actualizando la UI del carrito para la página de pago.');
     const cart = window.getCart();
     const total = window.getCartTotal();
 
-    // Referencias a los elementos del DOM de la página de pago
     if (!cartItemsContainer) {
         cartItemsContainer = document.getElementById('cart-items-container');
     }
@@ -70,11 +54,10 @@ window.updateCartDisplay = function() {
     }
 
     if (!cartItemsContainer || !cartTotalElement) {
-        console.warn('Elementos del carrito (contenedor o total) no encontrados en la página de pago.');
         return;
     }
 
-    cartItemsContainer.innerHTML = ''; // Limpia el contenedor antes de renderizar
+    cartItemsContainer.innerHTML = '';
     let cartIsEmpty = cart.length === 0;
 
     if (cartIsEmpty) {
@@ -99,19 +82,16 @@ window.updateCartDisplay = function() {
         cartTotalElement.textContent = `$${total.toFixed(2)}`;
     }
 
-    // Actualiza el estado del botón de checkout
     if (checkoutButton) {
         checkoutButton.disabled = cartIsEmpty;
     }
-
-    // Renderiza los botones de PayPal solo si el carrito no está vacío
+    
     if (window.loadPayPalSDK) {
-        window.loadPayPalSDK(); // Carga el SDK de PayPal si no está cargado.
+        window.loadPayPalSDK();
     }
 };
 
 function renderPayPalButtons() {
-    console.log('renderPayPalButtons: Función iniciada.');
     const cart = window.getCart();
 
     if (!paypalButtonContainer) {
@@ -120,7 +100,6 @@ function renderPayPalButtons() {
     }
 
     if (cart.length === 0) {
-        console.log('renderPayPalButtons: Carrito vacío, no se renderizan los botones de PayPal.');
         paypalButtonContainer.innerHTML = '';
         return;
     }
@@ -141,16 +120,15 @@ function renderPayPalButtons() {
             paypalButtonContainer.appendChild(validationMessageDiv);
         }
     }
-
+    
     if (typeof paypal === 'undefined') {
-        console.error('renderPayPalButtons: Objeto "paypal" no definido. El SDK de PayPal no se ha cargado correctamente.');
         validationMessageDiv.textContent = 'Error: El servicio de pago no está disponible. Por favor, recarga la página o inténtalo más tarde.';
         validationMessageDiv.classList.remove('hidden');
         return;
     } else {
         console.log('renderPayPalButtons: Objeto "paypal" detectado, intentando renderizar botones.');
     }
-
+    
     paypal.Buttons({
         createOrder: function(data, actions) {
             if (!shippingForm || !shippingForm.checkValidity()) {
@@ -170,7 +148,7 @@ function renderPayPalButtons() {
                     value: item.price.toFixed(2)
                 }
             }));
-
+            
             return actions.order.create({
                 purchase_units: [{
                     amount: {
@@ -199,11 +177,12 @@ function renderPayPalButtons() {
                 const shippingMunicipality = shippingMunicipalitySelect ? shippingMunicipalitySelect.value : '';
                 const shippingAddress = shippingAddressInput ? shippingAddressInput.value : '';
 
-                const cloudFunctionUrl = 'https://us-central1-mitienda-c2609.cloudfunctions.net/updateInventoryAndSaveOrder';
-                const orderId = `order_${crypto.randomUUID()}`;
-
+                // --- INICIO DE LA CORRECCIÓN ---
+                // Se obtiene la referencia a la Cloud Function de tipo https.onCall
+                const functions = getFunctions(window.app);
+                const processOrder = httpsCallable(functions, 'createOrderAndAdjustInventory');
+                
                 const orderDetails = {
-                    orderId: orderId,
                     paypalTransactionId: details.id,
                     paymentStatus: details.status,
                     payerId: details.payer.payer_id,
@@ -219,33 +198,12 @@ function renderPayPalButtons() {
                         address: shippingAddress
                     }
                 };
-
-                const currentUserId = window.currentUserIdGlobal;
-                if (!currentUserId) {
-                    console.error("Error: currentUserId no está definido al intentar enviar la orden a la Cloud Function.");
-                    window.showAlert('Error interno: No se pudo identificar al usuario para procesar el pedido.', 'error');
-                    return;
-                }
-
-                fetch(cloudFunctionUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        items: window.getCart(),
-                        orderDetails: orderDetails,
-                        userId: currentUserId,
-                        orderId: orderId
-                    })
-                })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    }
-                    return response.json().then(errorData => {
-                        throw new Error(errorData.message || 'Error desconocido de la Cloud Function');
-                    });
-                })
-                .then(data => {
+                
+                // Se llama a la Cloud Function usando httpsCallable, que se encarga de la comunicación segura
+                // y evita el error de CORS.
+                processOrder({ orderDetails })
+                .then((result) => {
+                    const data = result.data;
                     console.log('Respuesta de la Cloud Function:', data);
                     window.showAlert('¡Pedido procesado con éxito!', 'success');
                     window.clearCart();
@@ -255,9 +213,10 @@ function renderPayPalButtons() {
                     }, 2000);
                 })
                 .catch(error => {
-                    console.error('Error al enviar la orden a la Cloud Function:', error);
+                    console.error('Error al llamar a la Cloud Function:', error);
                     window.showAlert(`Error al procesar tu pedido: ${error.message}`, 'error');
                 });
+                // --- FIN DE LA CORRECCIÓN ---
             });
         },
         onCancel: function(data) {
@@ -287,10 +246,6 @@ function updateMunicipalities() {
     shippingMunicipalitySelect.disabled = municipalities.length === 0;
 }
 
-
-// ==========================================================================================================================
-// 5. EVENT LISTENERS
-// ==========================================================================================================================
 document.addEventListener('DOMContentLoaded', () => {
     shippingForm = document.getElementById('shipping-form');
     shippingFullNameInput = document.getElementById('shippingFullName');
@@ -301,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
     shippingAddressInput = document.getElementById('shippingAddress');
     paypalButtonContainer = document.getElementById('paypal-button-container');
 
-    // Aquí se asignan los elementos específicos para la visualización del carrito
     cartItemsContainer = document.getElementById('cart-items-container');
     cartTotalElement = document.getElementById('cart-total');
     checkoutButton = document.getElementById('checkout-button');
@@ -318,18 +272,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.addEventListener('paypalSDKLoaded', () => {
-        console.log('Evento paypalSDKLoaded disparado.');
         renderPayPalButtons();
     });
 
     if (shippingForm) {
         shippingForm.addEventListener('submit', (event) => {
             event.preventDefault();
-            console.log('Formulario de envío validado.');
         });
     }
 
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(window.auth, async (user) => {
         const loginContainer = document.getElementById('login-container');
         const userProfileContainer = document.getElementById('user-profile-container');
         const profileAvatarHeader = document.getElementById('profile-avatar-header');
@@ -337,11 +289,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const profileEmail = document.getElementById('profile-email');
         const profileAvatarSidebar = document.getElementById('profile-avatar-sidebar');
         const profileNameSidebar = document.getElementById('profile-name-sidebar');
-        const logoutButton = document.getElementById('logout-button');
-        const loginButtonNav = document.getElementById('login-button-nav');
+        logoutButton = document.getElementById('logout-button');
+        loginButtonNav = document.getElementById('login-button-nav');
 
         if (user) {
-            console.log("Usuario autenticado:", user.uid);
             window.currentUserIdGlobal = user.uid;
 
             if (loginContainer) loginContainer.classList.add('hidden');
@@ -364,10 +315,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (profileNameSidebar) profileNameSidebar.textContent = userName;
             if (profileEmail) profileEmail.textContent = user.email;
             
-            // Llama a la función de visualización del carrito después de la autenticación
             window.updateCartDisplay();
         } else {
-            console.log("Usuario no autenticado. Usando ID de invitado.");
             if (loginContainer) loginContainer.classList.remove('hidden');
             if (userProfileContainer) userProfileContainer.classList.add('hidden');
             
@@ -383,18 +332,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.setItem('guestUserId', guestId);
             }
             window.currentUserIdGlobal = guestId;
-            console.log("ID de invitado asignado:", window.currentUserIdGlobal);
 
             if (profileName) { profileName.textContent = 'Usuario Invitado'; }
             if (profileEmail) { profileEmail.textContent = 'Invítalo a iniciar sesión'; }
             if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
             
-            // Llama a la función de visualización del carrito para usuarios invitados
             window.updateCartDisplay();
         }
     });
 
-    const logoutButton = document.getElementById('logout-button');
+    logoutButton = document.getElementById('logout-button');
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
             if (window.auth) {
@@ -411,6 +358,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Aquí se llama a la función de visualización del carrito para que se muestre al cargar la página
     window.updateCartDisplay();
 });
