@@ -4,10 +4,10 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-const db = admin.firestore(); // Obtener la instancia de Firestore Admin
+const db = admin.firestore(); // Get the Firestore Admin instance
 
 // =============================================================================
-// Cloud Function para el Formulario de Contacto (exports.api)
+// Cloud Function for the Contact Form (exports.api)
 // =============================================================================
 exports.api = functions.https.onRequest(async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
@@ -20,102 +20,163 @@ exports.api = functions.https.onRequest(async (req, res) => {
     }
 
     if (req.method !== 'POST') {
-        return res.status(405).send('Método no permitido. Solo POST.');
+        return res.status(405).send('Method not allowed. Only POST.');
     }
 
     const { fullName, email, message } = req.body;
 
     if (!fullName || !email || !message) {
-        functions.logger.error('Datos del formulario de contacto incompletos:', req.body);
-        return res.status(400).send('Por favor, proporciona nombre completo, correo electrónico y mensaje.');
+        functions.logger.error('Incomplete contact form data:', req.body);
+        return res.status(400).send('Please provide full name, email, and message.');
     }
 
     try {
-        functions.logger.info('Mensaje de contacto recibido:', { fullName, email, message });
+        functions.logger.info('Contact message received:', { fullName, email, message });
         await db.collection('contactMessages').add({
             fullName: fullName,
             email: email,
             message: message,
             timestamp: admin.firestore.FieldValue.serverTimestamp()
         });
-        return res.status(200).send('Mensaje enviado con éxito.');
+        return res.status(200).send('Message received successfully.');
     } catch (error) {
-        functions.logger.error('Error al guardar el mensaje de contacto:', error);
-        return res.status(500).send('Error interno del servidor.');
+        functions.logger.error('Error saving contact message:', error);
+        return res.status(500).send('Internal server error.');
     }
 });
 
 // =============================================================================
-// Nueva Cloud Function para crear la orden de compra y actualizar el inventario
-// Esta función usará la misma ID para ambos documentos
+// Cloud Function to process the complete order (inventory and save order)
+// This is the function called from PayPal payment
 // =============================================================================
-exports.createOrderAndAdjustInventory = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'El usuario debe estar autenticado para realizar esta acción.');
+exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res) => {
+    // Configure CORS
+    res.set('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') {
+        res.set('Access-Control-Allow-Methods', 'POST');
+        res.set('Access-Control-Allow-Headers', 'Content-Type');
+        res.set('Access-Control-Max-Age', '3600');
+        return res.status(204).send('');
     }
 
-    const { orderDetails, userId } = data;
-    const itemsToUpdate = orderDetails.items;
-    
-    // Validar si el carrito está vacío
-    if (!itemsToUpdate || itemsToUpdate.length === 0) {
-        throw new functions.https.HttpsError('invalid-argument', 'El carrito de compras está vacío.');
+    if (req.method !== 'POST') {
+        return res.status(405).send('Method not allowed. Only POST.');
     }
-    
-    // Obtener una ID única para la orden antes de iniciar la transacción
-    const newOrderId = db.collection('orders').doc().id;
 
+    const { items, orderDetails, userId } = req.body;
+
+    if (!items || !orderDetails || !userId) {
+        return res.status(400).send('Missing order or user data.');
+    }
+
+    // Use a transaction to ensure inventory consistency and order creation
     try {
-        await db.runTransaction(async (transaction) => {
-            // Verificar el inventario
-            const promises = itemsToUpdate.map(item => {
-                const itemRef = db.collection(`artifacts/${__app_id}/users/${userId}/products`).doc(item.id);
-                return transaction.get(itemRef);
-            });
-            const itemDocs = await Promise.all(promises);
+        const orderId = await db.runTransaction(async (transaction) => {
+            // 1. Verify and update inventory
+            const productsRef = db.collection('products');
+            for (const item of items) {
+                const productRef = productsRef.doc(item.id);
+                const productDoc = await transaction.get(productRef);
 
-            for (let i = 0; i < itemDocs.length; i++) {
-                const docSnap = itemDocs[i];
-                if (!docSnap.exists) {
-                    throw new functions.https.HttpsError('not-found', `Producto con ID ${itemsToUpdate[i].id} no encontrado.`);
+                if (!productDoc.exists) {
+                    throw new Error(`Product with ID ${item.id} does not exist.`);
                 }
 
-                const currentQuantity = docSnap.data().cantidadInventario;
-                const requestedQuantity = itemsToUpdate[i].quantity;
+                const currentStock = productDoc.data().stock;
+                const newStock = currentStock - item.quantity;
 
-                if (currentQuantity < requestedQuantity) {
-                    throw new functions.https.HttpsError('failed-precondition', `No hay suficiente stock para el producto ${docSnap.data().nombre}.`);
+                if (newStock < 0) {
+                    throw new Error(`Insufficient stock for product ${productDoc.data().name}.`);
                 }
-                
-                // Actualizar la cantidad del inventario
-                const newQuantity = currentQuantity - requestedQuantity;
-                transaction.update(docSnap.ref, { cantidadInventario: newQuantity });
+
+                transaction.update(productRef, { stock: newStock });
             }
 
-            // Crear el documento en la colección principal 'orders' usando la ID pre-generada
-            const orderRef = db.collection(`artifacts/${__app_id}/public/data/orders`).doc(newOrderId);
-            transaction.set(orderRef, {
-                ...orderDetails,
+            // 2. Save the order in the main collection
+            const newOrderRef = db.collection('orders').doc();
+            const orderToSavePublic = {
+                orderId: newOrderRef.id,
                 userId: userId,
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                total: orderDetails.total,
+                status: 'Pendiente', // Initial order status
+                items: orderDetails.items.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    imageUrl: item.imageUrl || ''
+                })),
+                shippingDetails: orderDetails.shippingDetails,
+                paypalOrderId: orderDetails.paypalOrderId,
+            };
+            transaction.set(newOrderRef, orderToSavePublic);
 
-            // Crear el documento en la subcolección del usuario 'orders' usando la MISMA ID
-            const userOrderRef = db.collection(`artifacts/${__app_id}/users/${userId}/orders`).doc(newOrderId);
-            transaction.set(userOrderRef, {
-                ...orderDetails,
-                userId: userId,
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
+            // 3. Save the same order in the user's subcollection
+            const userOrdersCollectionRef = db.collection('users').doc(userId).collection('orders');
+            const orderToSaveUser = {
+                orderId: newOrderRef.id,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                total: orderDetails.total,
+                status: 'Pendiente', // Initial order status
+                items: orderDetails.items.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    imageUrl: item.imageUrl || ''
+                })),
+                shippingDetails: orderDetails.shippingDetails,
+                paypalOrderId: orderDetails.paypalOrderId,
+            };
+            transaction.set(userOrdersCollectionRef.doc(newOrderRef.id), orderToSaveUser);
 
+            return newOrderRef.id;
         });
 
-        return { orderId: newOrderId, message: 'Inventario actualizado y orden guardada con éxito.' };
+        res.status(200).json({ message: 'Inventory updated and order saved successfully.', orderId: orderId });
 
     } catch (error) {
-        functions.logger.error('Error en la transacción de actualización de inventario o guardado de orden:', error);
-        throw new functions.https.HttpsError('internal', error.message || 'Error interno del servidor.');
+        console.error('Error in inventory update or order save transaction:', error);
+        return res.status(500).json({ message: `Internal server error: ${error.message}` });
+    }
+});
+
+// =============================================================================
+// New Cloud Function to update an order's status
+// =============================================================================
+exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
+    // 1. Verify caller authentication
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'Only authenticated users can update the status of orders.');
+    }
+
+    // 2. Validate input data
+    const { orderId, newStatus, userId } = data;
+
+    if (!orderId || !newStatus || !userId) {
+        throw new functions.https.HttpsError('invalid-argument', 'orderId, newStatus, and userId are required.');
+    }
+
+    // 3. Define the references of the documents to update
+    const publicOrderRef = db.collection('orders').doc(orderId);
+    const userOrderRef = db.collection('users').doc(userId).collection('orders').doc(orderId);
+
+    // 4. Start a transaction to ensure both updates are atomic
+    try {
+        await db.runTransaction(async (transaction) => {
+            // Update the order in the public collection
+            transaction.update(publicOrderRef, { status: newStatus });
+
+            // Update the order in the user's subcollection
+            transaction.update(userOrderRef, { status: newStatus });
+        });
+
+        console.log(`Order status ${orderId} updated to ${newStatus} for user ${userId}.`);
+        return { success: true, message: `Order status updated to ${newStatus}.` };
+
+    } catch (error) {
+        console.error('Error in status update transaction:', error);
+        throw new functions.https.HttpsError('internal', 'Error updating order status.', error);
     }
 });
