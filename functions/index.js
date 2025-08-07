@@ -73,7 +73,7 @@ exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res)
     try {
         const orderId = await db.runTransaction(async (transaction) => {
             // 1. Verify and update inventory
-            const productsRef = db.collection('products');
+            const productsRef = db.collection('productos'); // CORRECTION: changed 'products' to 'productos'
             for (const item of items) {
                 const productRef = productsRef.doc(item.id);
                 const productDoc = await transaction.get(productRef);
