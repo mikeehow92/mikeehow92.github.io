@@ -241,78 +241,9 @@ function updateMunicipalities() {
     shippingMunicipalitySelect.disabled = municipalities.length === 0;
 }
 
-// NUEVA FUNCIÓN PARA ESPERAR LA INICIALIZACIÓN
-function waitForGlobalScripts() {
-    // Verificamos si window.auth y window.updateCartDisplay ya existen
-    if (window.auth && typeof window.updateCartDisplay === 'function') {
-        // Si existen, podemos proceder con la lógica del pago.
-        // Ahora se inicializa onAuthStateChanged aquí
-        onAuthStateChanged(window.auth, async (user) => {
-            const loginContainer = document.getElementById('login-container');
-            const userProfileContainer = document.getElementById('user-profile-container');
-            const profileAvatarHeader = document.getElementById('profile-avatar-header');
-            const profileName = document.getElementById('profile-name');
-            const profileEmail = document.getElementById('profile-email');
-            const profileAvatarSidebar = document.getElementById('profile-avatar-sidebar');
-            const profileNameSidebar = document.getElementById('profile-name-sidebar');
-            logoutButton = document.getElementById('logout-button');
-            loginButtonNav = document.getElementById('login-button-nav');
-    
-            if (user) {
-                window.currentUserIdGlobal = user.uid;
-    
-                if (loginContainer) loginContainer.classList.add('hidden');
-                if (userProfileContainer) userProfileContainer.classList.remove('hidden');
-    
-                const userDocRef = doc(window.db, "users", user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-                let userName = user.email;
-                let avatarUrl = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
-    
-                if (userDocSnap.exists()) {
-                    const userData = userDocSnap.data();
-                    if (userData.displayName) userName = userData.displayName;
-                    if (userData.profilePicture) avatarUrl = userData.profilePicture;
-                }
-    
-                if (profileAvatarHeader) profileAvatarHeader.src = avatarUrl;
-                if (profileAvatarSidebar) profileAvatarSidebar.src = avatarUrl;
-                if (profileName) profileName.textContent = userName;
-                if (profileNameSidebar) profileNameSidebar.textContent = userName;
-                if (profileEmail) profileEmail.textContent = user.email;
-                
-                window.updateCartDisplay();
-            } else {
-                if (loginContainer) loginContainer.classList.remove('hidden');
-                if (userProfileContainer) userProfileContainer.classList.add('hidden');
-                
-                if (loginButtonNav) {
-                    loginButtonNav.classList.remove('hidden');
-                    loginButtonNav.textContent = 'Iniciar Sesión';
-                }
-                if (logoutButton) logoutButton.classList.add('hidden');
-    
-                let guestId = sessionStorage.getItem('guestUserId');
-                if (!guestId) {
-                    guestId = crypto.randomUUID();
-                    sessionStorage.setItem('guestUserId', guestId);
-                }
-                window.currentUserIdGlobal = guestId;
-    
-                if (profileName) { profileName.textContent = 'Usuario Invitado'; }
-                if (profileEmail) { profileEmail.textContent = 'Invítalo a iniciar sesión'; }
-                if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
-                
-                window.updateCartDisplay();
-            }
-        });
-    } else {
-        // Si no, volvemos a intentarlo en 100ms.
-        setTimeout(waitForGlobalScripts, 100);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
+// Nueva función que encapsula toda la lógica de inicialización.
+// Esto permite llamarla solo cuando las dependencias estén listas.
+function initializePaymentPage() {
     shippingForm = document.getElementById('shipping-form');
     shippingFullNameInput = document.getElementById('shippingFullName');
     shippingEmailInput = document.getElementById('shippingEmail');
@@ -364,6 +295,76 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Inicia el proceso de espera
-    waitForGlobalScripts();
+    onAuthStateChanged(window.auth, async (user) => {
+        const loginContainer = document.getElementById('login-container');
+        const userProfileContainer = document.getElementById('user-profile-container');
+        const profileAvatarHeader = document.getElementById('profile-avatar-header');
+        const profileName = document.getElementById('profile-name');
+        const profileEmail = document.getElementById('profile-email');
+        const profileAvatarSidebar = document.getElementById('profile-avatar-sidebar');
+        const profileNameSidebar = document.getElementById('profile-name-sidebar');
+        logoutButton = document.getElementById('logout-button');
+        loginButtonNav = document.getElementById('login-button-nav');
+
+        if (user) {
+            window.currentUserIdGlobal = user.uid;
+
+            if (loginContainer) loginContainer.classList.add('hidden');
+            if (userProfileContainer) userProfileContainer.classList.remove('hidden');
+
+            const userDocRef = doc(window.db, "users", user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            let userName = user.email;
+            let avatarUrl = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
+
+            if (userDocSnap.exists()) {
+                const userData = userDocSnap.data();
+                if (userData.displayName) userName = userData.displayName;
+                if (userData.profilePicture) avatarUrl = userData.profilePicture;
+            }
+
+            if (profileAvatarHeader) profileAvatarHeader.src = avatarUrl;
+            if (profileAvatarSidebar) profileAvatarSidebar.src = avatarUrl;
+            if (profileName) profileName.textContent = userName;
+            if (profileNameSidebar) profileNameSidebar.textContent = userName;
+            if (profileEmail) profileEmail.textContent = user.email;
+
+            window.updateCartDisplay();
+        } else {
+            if (loginContainer) loginContainer.classList.remove('hidden');
+            if (userProfileContainer) userProfileContainer.classList.add('hidden');
+
+            if (loginButtonNav) {
+                loginButtonNav.classList.remove('hidden');
+                loginButtonNav.textContent = 'Iniciar Sesión';
+            }
+            if (logoutButton) logoutButton.classList.add('hidden');
+
+            let guestId = sessionStorage.getItem('guestUserId');
+            if (!guestId) {
+                guestId = crypto.randomUUID();
+                sessionStorage.setItem('guestUserId', guestId);
+            }
+            window.currentUserIdGlobal = guestId;
+
+            if (profileName) { profileName.textContent = 'Usuario Invitado'; }
+            if (profileEmail) { profileEmail.textContent = 'Invítalo a iniciar sesión'; }
+            if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
+
+            window.updateCartDisplay();
+        }
+    });
+
+    window.updateCartDisplay();
+}
+
+// NUEVO: Esperamos a que el DOM esté cargado
+document.addEventListener('DOMContentLoaded', () => {
+    // Si la aplicación ya se ha inicializado, la llamamos inmediatamente
+    if (window.firebase && typeof window.getCart === 'function' && window.auth) {
+        initializePaymentPage();
+    } else {
+        // Si no, escuchamos por el evento personalizado 'firebaseReady'
+        document.addEventListener('firebaseReady', initializePaymentPage);
+    }
 });
