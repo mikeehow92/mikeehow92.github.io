@@ -3,8 +3,8 @@
 // Importa las funciones necesarias de Firebase Auth, Firestore y Storage
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // Importar getDoc
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js"; // NUEVA IMPORTACIÓN: Se necesita para las funciones onCall
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
 
 // Datos de Departamentos y Municipios de El Salvador
 const departmentsAndMunicipalities = {
@@ -177,8 +177,6 @@ function renderPayPalButtons() {
                 const shippingMunicipality = shippingMunicipalitySelect ? shippingMunicipalitySelect.value : '';
                 const shippingAddress = shippingAddressInput ? shippingAddressInput.value : '';
 
-                // --- INICIO DE LA CORRECCIÓN ---
-                // Se obtiene la referencia a la Cloud Function de tipo https.onCall
                 const functions = getFunctions(window.firebase.app);
                 const processOrder = httpsCallable(functions, 'createOrderAndAdjustInventory');
                 
@@ -199,8 +197,6 @@ function renderPayPalButtons() {
                     }
                 };
                 
-                // Se llama a la Cloud Function usando httpsCallable, que se encarga de la comunicación segura
-                // y evita el error de CORS.
                 processOrder({ orderDetails })
                 .then((result) => {
                     const data = result.data;
@@ -216,7 +212,6 @@ function renderPayPalButtons() {
                     console.error('Error al llamar a la Cloud Function:', error);
                     window.showAlert(`Error al procesar tu pedido: ${error.message}`, 'error');
                 });
-                // --- FIN DE LA CORRECCIÓN ---
             });
         },
         onCancel: function(data) {
@@ -244,6 +239,77 @@ function updateMunicipalities() {
     });
 
     shippingMunicipalitySelect.disabled = municipalities.length === 0;
+}
+
+// NUEVA FUNCIÓN PARA ESPERAR LA INICIALIZACIÓN
+function waitForGlobalScripts() {
+    // Verificamos si window.auth y window.updateCartDisplay ya existen
+    if (window.auth && typeof window.updateCartDisplay === 'function') {
+        // Si existen, podemos proceder con la lógica del pago.
+        // Ahora se inicializa onAuthStateChanged aquí
+        onAuthStateChanged(window.auth, async (user) => {
+            const loginContainer = document.getElementById('login-container');
+            const userProfileContainer = document.getElementById('user-profile-container');
+            const profileAvatarHeader = document.getElementById('profile-avatar-header');
+            const profileName = document.getElementById('profile-name');
+            const profileEmail = document.getElementById('profile-email');
+            const profileAvatarSidebar = document.getElementById('profile-avatar-sidebar');
+            const profileNameSidebar = document.getElementById('profile-name-sidebar');
+            logoutButton = document.getElementById('logout-button');
+            loginButtonNav = document.getElementById('login-button-nav');
+    
+            if (user) {
+                window.currentUserIdGlobal = user.uid;
+    
+                if (loginContainer) loginContainer.classList.add('hidden');
+                if (userProfileContainer) userProfileContainer.classList.remove('hidden');
+    
+                const userDocRef = doc(window.db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                let userName = user.email;
+                let avatarUrl = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
+    
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    if (userData.displayName) userName = userData.displayName;
+                    if (userData.profilePicture) avatarUrl = userData.profilePicture;
+                }
+    
+                if (profileAvatarHeader) profileAvatarHeader.src = avatarUrl;
+                if (profileAvatarSidebar) profileAvatarSidebar.src = avatarUrl;
+                if (profileName) profileName.textContent = userName;
+                if (profileNameSidebar) profileNameSidebar.textContent = userName;
+                if (profileEmail) profileEmail.textContent = user.email;
+                
+                window.updateCartDisplay();
+            } else {
+                if (loginContainer) loginContainer.classList.remove('hidden');
+                if (userProfileContainer) userProfileContainer.classList.add('hidden');
+                
+                if (loginButtonNav) {
+                    loginButtonNav.classList.remove('hidden');
+                    loginButtonNav.textContent = 'Iniciar Sesión';
+                }
+                if (logoutButton) logoutButton.classList.add('hidden');
+    
+                let guestId = sessionStorage.getItem('guestUserId');
+                if (!guestId) {
+                    guestId = crypto.randomUUID();
+                    sessionStorage.setItem('guestUserId', guestId);
+                }
+                window.currentUserIdGlobal = guestId;
+    
+                if (profileName) { profileName.textContent = 'Usuario Invitado'; }
+                if (profileEmail) { profileEmail.textContent = 'Invítalo a iniciar sesión'; }
+                if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
+                
+                window.updateCartDisplay();
+            }
+        });
+    } else {
+        // Si no, volvemos a intentarlo en 100ms.
+        setTimeout(waitForGlobalScripts, 100);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -281,66 +347,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    onAuthStateChanged(window.auth, async (user) => {
-        const loginContainer = document.getElementById('login-container');
-        const userProfileContainer = document.getElementById('user-profile-container');
-        const profileAvatarHeader = document.getElementById('profile-avatar-header');
-        const profileName = document.getElementById('profile-name');
-        const profileEmail = document.getElementById('profile-email');
-        const profileAvatarSidebar = document.getElementById('profile-avatar-sidebar');
-        const profileNameSidebar = document.getElementById('profile-name-sidebar');
-        logoutButton = document.getElementById('logout-button');
-        loginButtonNav = document.getElementById('login-button-nav');
-
-        if (user) {
-            window.currentUserIdGlobal = user.uid;
-
-            if (loginContainer) loginContainer.classList.add('hidden');
-            if (userProfileContainer) userProfileContainer.classList.remove('hidden');
-
-            const userDocRef = doc(window.db, "users", user.uid);
-            const userDocSnap = await getDoc(userDocRef);
-            let userName = user.email;
-            let avatarUrl = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
-
-            if (userDocSnap.exists()) {
-                const userData = userDocSnap.data();
-                if (userData.displayName) userName = userData.displayName;
-                if (userData.profilePicture) avatarUrl = userData.profilePicture;
-            }
-
-            if (profileAvatarHeader) profileAvatarHeader.src = avatarUrl;
-            if (profileAvatarSidebar) profileAvatarSidebar.src = avatarUrl;
-            if (profileName) profileName.textContent = userName;
-            if (profileNameSidebar) profileNameSidebar.textContent = userName;
-            if (profileEmail) profileEmail.textContent = user.email;
-            
-            window.updateCartDisplay();
-        } else {
-            if (loginContainer) loginContainer.classList.remove('hidden');
-            if (userProfileContainer) userProfileContainer.classList.add('hidden');
-            
-            if (loginButtonNav) {
-                loginButtonNav.classList.remove('hidden');
-                loginButtonNav.textContent = 'Iniciar Sesión';
-            }
-            if (logoutButton) logoutButton.classList.add('hidden');
-
-            let guestId = sessionStorage.getItem('guestUserId');
-            if (!guestId) {
-                guestId = crypto.randomUUID();
-                sessionStorage.setItem('guestUserId', guestId);
-            }
-            window.currentUserIdGlobal = guestId;
-
-            if (profileName) { profileName.textContent = 'Usuario Invitado'; }
-            if (profileEmail) { profileEmail.textContent = 'Invítalo a iniciar sesión'; }
-            if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
-            
-            window.updateCartDisplay();
-        }
-    });
-
     logoutButton = document.getElementById('logout-button');
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
@@ -358,5 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    window.updateCartDisplay();
+    // Inicia el proceso de espera
+    waitForGlobalScripts();
 });
