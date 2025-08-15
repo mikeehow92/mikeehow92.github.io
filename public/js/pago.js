@@ -24,7 +24,7 @@ const departmentsAndMunicipalities = {
     "Usulután": ["Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán", "Usulután"]
 };
 
-// Variables globales para elementos del DOM
+// Variables globales
 let shippingForm;
 let shippingFullNameInput;
 let shippingEmailInput;
@@ -34,57 +34,47 @@ let shippingMunicipalitySelect;
 let shippingAddressInput;
 let paypalButtonContainer;
 let validationMessageDiv;
-let cartItemsContainer;
-let emptyCartMessage;
-let cartTotalElement;
 
 // Función para validar el formulario de envío
 function validateShippingForm() {
-    console.log("Iniciando validación del formulario...");
+    if (!shippingForm) return false;
     
-    if (!shippingForm) {
-        console.error("shippingForm no está definido.");
-        return false;
-    }
+    const requiredFields = [
+        shippingFullNameInput,
+        shippingEmailInput,
+        shippingPhoneInput,
+        shippingDepartmentSelect,
+        shippingMunicipalitySelect,
+        shippingAddressInput
+    ];
     
     let isValid = true;
     
-    // Lista de campos y sus validaciones
-    const validations = [
-        { field: shippingFullNameInput, validation: val => val.trim() !== '', message: 'Nombre completo es obligatorio.' },
-        { field: shippingEmailInput, validation: val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), message: 'Formato de correo electrónico inválido.' },
-        { field: shippingPhoneInput, validation: val => /^\d{8,}$/.test(val), message: 'Teléfono debe tener al menos 8 dígitos.' },
-        { field: shippingDepartmentSelect, validation: val => val.trim() !== '', message: 'Departamento es obligatorio.' },
-        { field: shippingMunicipalitySelect, validation: val => val.trim() !== '', message: 'Municipio es obligatorio.' },
-        { field: shippingAddressInput, validation: val => val.trim() !== '', message: 'Dirección exacta es obligatoria.' }
-    ];
-
-    // Limpiar mensajes de error anteriores
-    if(validationMessageDiv) {
-        validationMessageDiv.textContent = '';
-    }
-    validations.forEach(({ field }) => {
-        if (field) field.classList.remove('border-red-500');
-    });
-
-    // Validar cada campo
-    for (const { field, validation, message } of validations) {
-        if (field && !validation(field.value)) {
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
             isValid = false;
-            console.error(`Campo no válido: ${field.id}. Razón: ${message}`);
             field.classList.add('border-red-500');
-            if (validationMessageDiv) {
-                validationMessageDiv.textContent = message;
-            }
-            break; // Salir del bucle en el primer error
+        } else {
+            field.classList.remove('border-red-500');
         }
+    });
+    
+    // Validación de email
+    if (shippingEmailInput && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shippingEmailInput.value.trim())) {
+        isValid = false;
+        shippingEmailInput.classList.add('border-red-500');
     }
-
-    console.log(`Validación del formulario completada. ¿Es válido?: ${isValid}`);
+    
+    // Validación de teléfono (al menos 8 dígitos)
+    if (shippingPhoneInput && !/^\d{8,}$/.test(shippingPhoneInput.value.trim())) {
+        isValid = false;
+        shippingPhoneInput.classList.add('border-red-500');
+    }
+    
     return isValid;
 }
 
-// Función para cargar departamentos en el select
+// Función para cargar departamentos
 function loadShippingDepartments() {
     if (!shippingDepartmentSelect) return;
     shippingDepartmentSelect.innerHTML = '<option value="">Seleccione un departamento</option>';
@@ -96,7 +86,7 @@ function loadShippingDepartments() {
     }
 }
 
-// Función para cargar municipios en el select basado en el departamento
+// Función para cargar municipios
 function loadShippingMunicipalities(department) {
     if (!shippingMunicipalitySelect) return;
     shippingMunicipalitySelect.innerHTML = '<option value="">Seleccione un municipio</option>';
@@ -115,7 +105,7 @@ function loadShippingMunicipalities(department) {
     }
 }
 
-// Función para renderizar los botones de PayPal
+// Función para renderizar botones de PayPal
 function renderPayPalButtons() {
     console.log('renderPayPalButtons: Función iniciada.');
     const cart = window.getCart();
@@ -124,13 +114,11 @@ function renderPayPalButtons() {
         console.error('Contenedor de PayPal no encontrado.');
         return;
     }
-
     if (cart.length === 0) {
         paypalButtonContainer.innerHTML = '';
         return;
     }
 
-    // Limpiar el contenedor antes de renderizar
     paypalButtonContainer.innerHTML = '';
 
     const buttonsDiv = document.createElement('div');
@@ -162,18 +150,14 @@ function renderPayPalButtons() {
             label: 'paypal'
         },
         createOrder: function(data, actions) {
-            // Validar el formulario antes de crear la orden
             if (!validateShippingForm()) {
-                // Si la validación falla, PayPal evitará el flujo de pago.
-                // La función `validateShippingForm` ya maneja los mensajes de error.
-                return Promise.reject('Formulario de envío inválido');
+                validationMessageDiv.textContent = 'Por favor, completa todos los campos requeridos correctamente.';
+                validationMessageDiv.classList.remove('hidden');
+                throw new Error('Formulario de envío inválido');
+            } else {
+                validationMessageDiv.classList.add('hidden');
             }
-            
-            // Limpiar mensaje de validación si el formulario es válido
-            if(validationMessageDiv) {
-                validationMessageDiv.textContent = '';
-            }
-            
+
             const total = window.getCartTotal();
             const items = cart.map(item => ({
                 name: item.name,
@@ -269,12 +253,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartItemCountElement = document.getElementById('cartItemCount');
 
     // Elementos del cuerpo principal
-    cartItemsContainer = document.getElementById('cartItemsContainer');
-    emptyCartMessage = document.getElementById('emptyCartMessage');
-    cartTotalElement = document.getElementById('cartTotal');
+    const cartItemsContainer = document.getElementById('cartItemsContainer');
+    const emptyCartMessage = document.getElementById('emptyCartMessage');
+    const cartTotalElement = document.getElementById('cartTotal');
     paypalButtonContainer = document.getElementById('paypal-button-container');
-    
-    // Obtener los elementos del formulario de envío
+
+    // Elementos del formulario de envío
     shippingForm = document.getElementById('shippingDetailsForm');
     shippingFullNameInput = document.getElementById('shippingFullName');
     shippingEmailInput = document.getElementById('shippingEmail');
@@ -282,17 +266,8 @@ document.addEventListener('DOMContentLoaded', () => {
     shippingDepartmentSelect = document.getElementById('shippingDepartment');
     shippingMunicipalitySelect = document.getElementById('shippingMunicipality');
     shippingAddressInput = document.getElementById('shippingAddress');
-    
-    // Se crea un elemento para mostrar los mensajes de validación
-    validationMessageDiv = document.createElement('p');
-    validationMessageDiv.id = 'paypal-validation-message';
-    validationMessageDiv.className = 'text-red-500 text-sm mt-2 text-center';
-    if(paypalButtonContainer) {
-        paypalButtonContainer.appendChild(validationMessageDiv);
-    }
 
-
-    // Referencias de Firebase (se asume que se inicializan en common.js)
+    // Referencias de Firebase
     const auth = window.firebaseAuth;
     const app = window.firebaseApp;
     const storage = app ? getStorage(app) : null;
@@ -301,18 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Variable global para el ID de usuario
     window.currentUserIdGlobal = null;
 
-    // Función para obtener el carrito del almacenamiento local
-    window.getCart = function() {
-        const cart = localStorage.getItem('shoppingCart');
-        return cart ? JSON.parse(cart) : [];
-    };
-
-    // Función para obtener el total del carrito
-    window.getCartTotal = function() {
-        return window.getCart().reduce((total, item) => total + item.price * item.quantity, 0);
-    };
-
-    // Función para actualizar el contador del carrito en el encabezado
+    // Función para actualizar el contador del carrito
     function updateCartCountDisplay() {
         const cart = window.getCart();
         const totalItemsInCart = cart.reduce((total, item) => total + item.quantity, 0);
@@ -325,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (navCarrito) navCarrito.classList.remove('hidden');
     }
 
-    // Función para actualizar la visualización del carrito y los botones de PayPal
+    // Función para actualizar la visualización del carrito
     window.updateCartDisplay = function() {
         updateCartCountDisplay();
         const cart = window.getCart();
@@ -378,19 +342,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            // Vuelve a renderizar los botones de PayPal después de cualquier cambio en el formulario o en el carrito
+            if (shippingForm) {
+                shippingForm.addEventListener('input', () => {
+                    if (typeof paypal !== 'undefined' && window.getCart().length > 0) {
+                        renderPayPalButtons();
+                    }
+                });
+            }
+
             if (typeof paypal !== 'undefined' && cart.length > 0) {
                 renderPayPalButtons();
             } else if (cart.length > 0) {
                 window.loadPayPalSDK();
             }
         }
-        if(cartTotalElement) {
-            cartTotalElement.textContent = `$${window.getCartTotal().toFixed(2)}`;
-        }
+        cartTotalElement.textContent = `$${window.getCartTotal().toFixed(2)}`;
     };
 
-    // Cargar departamentos y municipios al inicio
+    // Cargar departamentos y municipios
     loadShippingDepartments();
     loadShippingMunicipalities(shippingDepartmentSelect ? shippingDepartmentSelect.value : '');
 
@@ -403,24 +372,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Agregar un listener para los cambios en los campos del formulario
-    if (shippingForm) {
-        shippingForm.addEventListener('input', () => {
-            // Re-renderizar los botones de PayPal cada vez que el formulario cambia
-            if (typeof paypal !== 'undefined' && window.getCart().length > 0) {
-                renderPayPalButtons();
-            }
-        });
-    }
-
-    // Manejo de autenticación y carga de datos de usuario
+    // Manejo de autenticación
     if (auth) {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 // Usuario autenticado
-                if (loginButton) loginButton.classList.add('hidden');
-                if (loggedInUserDisplay) loggedInUserDisplay.classList.remove('hidden');
-                if (userNameDisplay) userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
+                loginButton.classList.add('hidden');
+                loggedInUserDisplay.classList.remove('hidden');
+                userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
                 window.currentUserIdGlobal = user.uid;
 
                 // Cargar avatar
@@ -446,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                // Precargar datos de envío desde Firestore
+                // Precargar datos de envío
                 if (db && shippingForm) {
                     try {
                         const userDocRef = doc(db, "users", user.uid);
@@ -472,8 +431,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 // Usuario invitado
-                if (loginButton) loginButton.classList.remove('hidden');
-                if (loggedInUserDisplay) loggedInUserDisplay.classList.add('hidden');
+                loginButton.classList.remove('hidden');
+                loggedInUserDisplay.classList.add('hidden');
                 if (profileAvatarHeader) profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
 
                 let guestId = sessionStorage.getItem('guestUserId');
@@ -487,8 +446,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     } else {
         console.warn("Firebase Auth no inicializado. Modo invitado.");
-        if (loginButton) loginButton.classList.remove('hidden');
-        if (loggedInUserDisplay) loggedInUserDisplay.classList.add('hidden');
+        loginButton.classList.remove('hidden');
+        loggedInUserDisplay.classList.add('hidden');
         if (profileAvatarHeader) profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
 
         let guestId = sessionStorage.getItem('guestUserId');
@@ -515,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cargar SDK de PayPal y escuchar el evento
+    // Cargar SDK de PayPal
     window.loadPayPalSDK();
     document.addEventListener('paypalSDKLoaded', () => {
         window.updateCartDisplay();
