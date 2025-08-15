@@ -73,7 +73,8 @@ exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res)
         return;
     }
 
-    const inventoryCollectionRef = db.collection('products');
+    // Se cambió el nombre de la colección a 'productos'
+    const inventoryCollectionRef = db.collection('productos');
     const userOrdersCollectionRef = db.collection('users').doc(userId).collection('orders');
 
     try {
