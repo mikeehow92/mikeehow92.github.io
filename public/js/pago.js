@@ -1,9 +1,10 @@
 // js/pago.js
 
-// Importa las funciones necesarias de Firebase Auth, Firestore y Storage
+// Importa las funciones necesarias de Firebase
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // Importar getDoc
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
 
 // Datos de Departamentos y Municipios de El Salvador
 const departmentsAndMunicipalities = {
@@ -23,8 +24,7 @@ const departmentsAndMunicipalities = {
     "Usulután": ["Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán", "Usulután"]
 };
 
-// Declaración de variables globales para los elementos del formulario de envío y contenedores
-// Se asignarán sus valores dentro de DOMContentLoaded
+// Variables globales para elementos del DOM
 let shippingForm;
 let shippingFullNameInput;
 let shippingEmailInput;
@@ -33,68 +33,139 @@ let shippingDepartmentSelect;
 let shippingMunicipalitySelect;
 let shippingAddressInput;
 let paypalButtonContainer;
-let validationMessageDiv; // Para el mensaje de validación de PayPal
+let validationMessageDiv;
+let cartItemsContainer;
+let emptyCartMessage;
+let cartTotalElement;
+
+// Función para validar el formulario de envío
+function validateShippingForm() {
+    if (!shippingForm) return false;
+    
+    const requiredFields = [
+        shippingFullNameInput,
+        shippingEmailInput,
+        shippingPhoneInput,
+        shippingDepartmentSelect,
+        shippingMunicipalitySelect,
+        shippingAddressInput
+    ];
+    
+    let isValid = true;
+    
+    // Validar campos obligatorios
+    requiredFields.forEach(field => {
+        if (!field || !field.value || !field.value.trim()) {
+            isValid = false;
+            if (field) field.classList.add('border-red-500');
+        } else {
+            if (field) field.classList.remove('border-red-500');
+        }
+    });
+    
+    // Validación de email
+    if (shippingEmailInput && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shippingEmailInput.value.trim())) {
+        isValid = false;
+        shippingEmailInput.classList.add('border-red-500');
+    } else {
+        shippingEmailInput.classList.remove('border-red-500');
+    }
+    
+    // Validación de teléfono (al menos 8 dígitos)
+    if (shippingPhoneInput && !/^\d{8,}$/.test(shippingPhoneInput.value.trim())) {
+        isValid = false;
+        shippingPhoneInput.classList.add('border-red-500');
+    } else {
+        shippingPhoneInput.classList.remove('border-red-500');
+    }
+    
+    return isValid;
+}
+
+// Función para cargar departamentos en el select
+function loadShippingDepartments() {
+    if (!shippingDepartmentSelect) return;
+    shippingDepartmentSelect.innerHTML = '<option value="">Seleccione un departamento</option>';
+    for (const dept in departmentsAndMunicipalities) {
+        const option = document.createElement('option');
+        option.value = dept;
+        option.textContent = dept;
+        shippingDepartmentSelect.appendChild(option);
+    }
+}
+
+// Función para cargar municipios en el select basado en el departamento
+function loadShippingMunicipalities(department) {
+    if (!shippingMunicipalitySelect) return;
+    shippingMunicipalitySelect.innerHTML = '<option value="">Seleccione un municipio</option>';
+    shippingMunicipalitySelect.disabled = true;
+
+    if (department && departmentsAndMunicipalities[department]) {
+        departmentsAndMunicipalities[department].forEach(muni => {
+            const option = document.createElement('option');
+            option.value = muni;
+            option.textContent = muni;
+            shippingMunicipalitySelect.appendChild(option);
+        });
+        shippingMunicipalitySelect.disabled = false;
+    } else {
+        shippingMunicipalitySelect.innerHTML = '<option value="">Primero seleccione un departamento</option>';
+    }
+}
 
 // Función para renderizar los botones de PayPal
 function renderPayPalButtons() {
     console.log('renderPayPalButtons: Función iniciada.');
     const cart = window.getCart();
 
-    // Asegúrate de que el contenedor exista y el carrito no esté vacío
     if (!paypalButtonContainer) {
-        console.error('renderPayPalButtons: Contenedor #paypal-button-container no encontrado. Asegúrate de que pago.html tenga este ID.');
-        return;
-    }
-    if (cart.length === 0) {
-        console.log('renderPayPalButtons: Carrito vacío, no se renderizan los botones de PayPal.');
-        paypalButtonContainer.innerHTML = ''; // Limpia si no hay carrito
+        console.error('Contenedor de PayPal no encontrado.');
         return;
     }
 
-    // Limpia el contenedor antes de renderizar para evitar duplicados
+    if (cart.length === 0) {
+        paypalButtonContainer.innerHTML = '';
+        return;
+    }
+
+    // Limpiar el contenedor antes de renderizar
     paypalButtonContainer.innerHTML = '';
 
-    // Crea un div para los botones de PayPal
     const buttonsDiv = document.createElement('div');
     buttonsDiv.id = 'paypal-buttons-actual';
     paypalButtonContainer.appendChild(buttonsDiv);
 
-    // Crea o actualiza el div para el mensaje de validación del formulario
     if (!validationMessageDiv) {
         validationMessageDiv = document.createElement('p');
         validationMessageDiv.id = 'paypal-validation-message';
         validationMessageDiv.className = 'text-red-500 text-sm mt-2 text-center';
         paypalButtonContainer.appendChild(validationMessageDiv);
-    } else {
-        // Si ya existe, asegúrate de que esté en el lugar correcto
-        if (!paypalButtonContainer.contains(validationMessageDiv)) {
-            paypalButtonContainer.appendChild(validationMessageDiv);
-        }
     }
 
-
-    // Verifica si el objeto paypal está disponible
     if (typeof paypal === 'undefined') {
-        console.error('renderPayPalButtons: Objeto "paypal" no definido. El SDK de PayPal no se ha cargado correctamente. Verifica tu PAYPAL_CLIENT_ID en common.js.');
-        validationMessageDiv.textContent = 'Error: El servicio de pago no está disponible. Por favor, recarga la página o inténtalo más tarde.';
+        validationMessageDiv.textContent = 'Error: El servicio de pago no está disponible.';
         validationMessageDiv.classList.remove('hidden');
         return;
-    } else {
-        console.log('renderPayPalButtons: Objeto "paypal" detectado, intentando renderizar botones.');
     }
 
-    // Renderiza los botones de PayPal
+    // Inicializar Firebase Functions
+    const functions = getFunctions();
+    const updateInventoryAndSaveOrder = httpsCallable(functions, 'updateInventoryAndSaveOrder');
+
     paypal.Buttons({
+        style: {
+            layout: 'vertical',
+            color: 'blue',
+            shape: 'pill',
+            label: 'paypal'
+        },
         createOrder: function(data, actions) {
-            // Realiza la validación del formulario de envío aquí
-            // Asegúrate de que shippingForm no sea null antes de llamar a checkValidity
-            if (!shippingForm || !shippingForm.checkValidity()) {
-                validationMessageDiv.textContent = 'Por favor, completa todos los detalles de envío para continuar.';
+            if (!validateShippingForm()) {
+                validationMessageDiv.textContent = 'Por favor, completa todos los campos requeridos correctamente.';
                 validationMessageDiv.classList.remove('hidden');
-                // Lanza un error para detener la creación de la orden si el formulario no es válido
-                throw new Error('Formulario de envío incompleto o inválido.');
+                throw new Error('Formulario de envío inválido');
             } else {
-                validationMessageDiv.classList.add('hidden'); // Oculta el mensaje si el formulario es válido
+                validationMessageDiv.classList.add('hidden');
             }
 
             const total = window.getCartTotal();
@@ -124,123 +195,80 @@ function renderPayPalButtons() {
             });
         },
         onApprove: function(data, actions) {
-            // Captura el pedido una vez aprobado
-            return actions.order.capture().then(function(details) {
-                console.log('Pago completado por ' + details.payer.name.given_name, details);
-                window.showAlert('¡Pago completado con éxito! Procesando tu pedido...', 'success');
+            return actions.order.capture().then(async function(details) {
+                window.showAlert('¡Pago completado! Procesando tu pedido...', 'success');
 
-                // --- Recopilar detalles de envío del formulario local ---
-                // Asegúrate de que los elementos de input existan antes de acceder a .value
-                const shippingFullName = shippingFullNameInput ? shippingFullNameInput.value : '';
-                const shippingEmail = shippingEmailInput ? shippingEmailInput.value : '';
-                const shippingPhone = shippingPhoneInput ? shippingPhoneInput.value : '';
-                const shippingDepartment = shippingDepartmentSelect ? shippingDepartmentSelect.value : '';
-                const shippingMunicipality = shippingMunicipalitySelect ? shippingMunicipalitySelect.value : '';
-                const shippingAddress = shippingAddressInput ? shippingAddressInput.value : '';
-
-
-                const cloudFunctionUrl = 'https://us-central1-mitienda-c2609.cloudfunctions.net/updateInventoryAndSaveOrder'; // Reemplaza con la URL REAL de tu Cloud Function
+                const shippingDetails = {
+                    fullName: shippingFullNameInput.value,
+                    email: shippingEmailInput.value,
+                    phone: shippingPhoneInput.value,
+                    department: shippingDepartmentSelect.value,
+                    municipality: shippingMunicipalitySelect.value,
+                    address: shippingAddressInput.value
+                };
 
                 const orderDetails = {
                     paypalTransactionId: details.id,
                     paymentStatus: details.status,
                     payerId: details.payer.payer_id,
-                    payerEmail: shippingEmail, // Usar email del formulario de envío
+                    payerEmail: details.payer.email_address || shippingDetails.email,
                     total: parseFloat(details.purchase_units[0].amount.value),
-                    items: window.getCart(), // Obtiene los ítems del carrito actual
-                    shippingDetails: { // Usar los detalles del formulario
-                        fullName: shippingFullName,
-                        email: shippingEmail,
-                        phone: shippingPhone,
-                        department: shippingDepartment,
-                        municipality: shippingMunicipality,
-                        address: shippingAddress
-                    }
+                    items: window.getCart(),
+                    shippingDetails: shippingDetails
                 };
 
-                // Asegúrate de que currentUserId esté disponible
-                const currentUserId = window.currentUserIdGlobal; // Accede a la variable global
-                if (!currentUserId) {
-                    console.error("Error: currentUserId no está definido al intentar enviar la orden a la Cloud Function.");
-                    window.showAlert('Error interno: No se pudo identificar al usuario para procesar el pedido.', 'error');
-                    return; // Detener el proceso si no hay ID de usuario
-                }
-
-                fetch(cloudFunctionUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        items: window.getCart(), // Los ítems del carrito para actualizar inventario
-                        orderDetails: orderDetails, // Detalles completos de la orden
-                        userId: currentUserId // El ID del usuario (autenticado o invitado)
-                    })
-                })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    }
-                    // Manejo de errores mejorado: Intenta leer el mensaje de error de la Cloud Function
-                    return response.json().then(errorData => {
-                        // Si la Cloud Function devuelve un mensaje específico (ej. "Inventario insuficiente")
-                        // lo usamos, de lo contrario, un mensaje genérico.
-                        throw new Error(errorData.message || 'Error desconocido de la Cloud Function');
+                try {
+                    const result = await updateInventoryAndSaveOrder({ 
+                        orderDetails: orderDetails,
+                        userId: window.currentUserIdGlobal
                     });
-                })
-                .then(data => {
-                    console.log('Respuesta de la Cloud Function:', data);
-                    window.showAlert('¡Tu pedido ha sido procesado y guardado con éxito! Gracias por tu compra.', 'success');
-                    localStorage.removeItem('shoppingCart'); // Limpiar el carrito después de un pago exitoso
-                    sessionStorage.removeItem('guestUserId'); // Limpiar ID de invitado si se completó la compra
-                    window.updateCartDisplay(); // Actualiza la UI del carrito
-                    // Redirigir al usuario a una página de confirmación de pedido
-                    // window.location.href = 'confirmacion-pedido.html';
-                })
-                .catch(error => {
-                    console.error('Error al llamar a la Cloud Function:', error);
-                    // Muestra el mensaje de error específico de la Cloud Function si está disponible
-                    window.showAlert(`Hubo un error al procesar tu pago: ${error.message}. Por favor, inténtalo de nuevo.`, 'error');
-                });
 
+                    if (result.data.success) {
+                        window.showAlert('¡Pedido procesado con éxito!', 'success');
+                        localStorage.removeItem('shoppingCart');
+                        sessionStorage.removeItem('guestUserId');
+                        window.updateCartDisplay();
+                        // window.location.href = 'confirmacion-pedido.html';
+                    } else {
+                        throw new Error(result.data.message || 'Error al procesar la orden');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    window.showAlert(`Error: ${error.message}`, 'error');
+                }
             }).catch(error => {
                 console.error('Error al capturar el pago:', error);
-                window.showAlert('Hubo un error al procesar tu pago. Por favor, inténtalo de nuevo.', 'error');
+                window.showAlert('Error al procesar el pago. Inténtalo de nuevo.', 'error');
             });
         },
         onError: function(err) {
             console.error('Error en PayPal:', err);
-            window.showAlert('Ocurrió un error con PayPal. Por favor, inténtalo de nuevo o elige otro método de pago.', 'error');
+            window.showAlert('Error con PayPal. Intenta otro método de pago.', 'error');
         },
         onCancel: function(data) {
-            console.log('Pago cancelado por el usuario.');
-            window.showAlert('El pago ha sido cancelado.', 'info');
+            window.showAlert('Pago cancelado.', 'info');
         }
-    }).render(buttonsDiv); // Renderiza los botones en el div específico
+    }).render(buttonsDiv);
 }
 
-
+// Evento cuando el DOM está cargado
 document.addEventListener('DOMContentLoaded', () => {
-    // Elementos del encabezado para el estado de autenticación
+    // Elementos del encabezado
     const loginButton = document.getElementById('loginButton');
     const loggedInUserDisplay = document.getElementById('loggedInUserDisplay');
     const userNameDisplay = document.getElementById('userNameDisplay');
     const profileAvatarHeader = document.getElementById('profileAvatarHeader');
     const logoutButton = document.getElementById('logoutButton');
     const navCarrito = document.getElementById('navCarrito');
-    // const navPerfil = document.getElementById('navPerfil'); // Se comenta o elimina ya que el elemento se quitará del HTML
-    const cartItemCountElement = document.getElementById('cartItemCount'); // Obtener el elemento del contador de ítems del carrito
+    const cartItemCountElement = document.getElementById('cartItemCount');
 
-    // Elementos del cuerpo principal de la página de pago
-    const cartItemsContainer = document.getElementById('cartItemsContainer');
-    const emptyCartMessage = document.getElementById('emptyCartMessage');
-    const cartTotalElement = document.getElementById('cartTotal');
-    // Asignar paypalButtonContainer a la variable global aquí
+    // Elementos del cuerpo principal
+    cartItemsContainer = document.getElementById('cartItemsContainer');
+    emptyCartMessage = document.getElementById('emptyCartMessage');
+    cartTotalElement = document.getElementById('cartTotal');
     paypalButtonContainer = document.getElementById('paypal-button-container');
 
-
-    // Asignar elementos del formulario de envío a las variables globales aquí
-    // CORRECCIÓN: El ID del formulario en pago.html es 'shippingDetailsForm'
+    // Elementos del formulario de envío
     shippingForm = document.getElementById('shippingDetailsForm');
     shippingFullNameInput = document.getElementById('shippingFullName');
     shippingEmailInput = document.getElementById('shippingEmail');
@@ -249,48 +277,48 @@ document.addEventListener('DOMContentLoaded', () => {
     shippingMunicipalitySelect = document.getElementById('shippingMunicipality');
     shippingAddressInput = document.getElementById('shippingAddress');
 
-    // Verificar si el formulario de envío se encontró
-    if (!shippingForm) {
-        console.error('Error: El formulario de envío con ID "shippingDetailsForm" no se encontró en el DOM. Los botones de PayPal podrían no funcionar correctamente.');
-    }
-
-    // Obtener referencias de Firebase
+    // Referencias de Firebase (se asume que se inicializan en common.js)
     const auth = window.firebaseAuth;
     const app = window.firebaseApp;
     const storage = app ? getStorage(app) : null;
     const db = window.firebaseDb;
 
-    // Variable global para almacenar el UID del usuario o un ID de invitado
+    // Variable global para el ID de usuario
     window.currentUserIdGlobal = null;
 
-    // Función para actualizar el contador del carrito en el header
+    // Función para obtener el carrito del almacenamiento local
+    window.getCart = function() {
+        const cart = localStorage.getItem('shoppingCart');
+        return cart ? JSON.parse(cart) : [];
+    };
+
+    // Función para obtener el total del carrito
+    window.getCartTotal = function() {
+        return window.getCart().reduce((total, item) => total + item.price * item.quantity, 0);
+    };
+
+    // Función para actualizar el contador del carrito en el encabezado
     function updateCartCountDisplay() {
-        const cart = window.getCart(); // Obtiene el carrito desde common.js
+        const cart = window.getCart();
         const totalItemsInCart = cart.reduce((total, item) => total + item.quantity, 0);
         if (cartItemCountElement) {
             cartItemCountElement.textContent = totalItemsInCart;
-            if (totalItemsInCart > 0) {
-                cartItemCountElement.classList.remove('hidden'); // Muestra el contador si hay ítems
-            } else {
-                cartItemCountElement.classList.add('hidden'); // Oculta el contador si no hay ítems
-            }
+            totalItemsInCart > 0 
+                ? cartItemCountElement.classList.remove('hidden')
+                : cartItemCountElement.classList.add('hidden');
         }
-        // Asegura que el enlace del carrito sea visible si hay ítems o si la página lo requiere
-        if (navCarrito) {
-            navCarrito.classList.remove('hidden');
-        }
+        if (navCarrito) navCarrito.classList.remove('hidden');
     }
 
-    // Define la función global updateCartDisplay para esta página.
+    // Función para actualizar la visualización del carrito y los botones de PayPal
     window.updateCartDisplay = function() {
         updateCartCountDisplay();
-        // Lógica de visualización de ítems del carrito en la página de pago
         const cart = window.getCart();
         cartItemsContainer.innerHTML = '';
 
         if (cart.length === 0) {
             emptyCartMessage.classList.remove('hidden');
-            if (paypalButtonContainer) paypalButtonContainer.innerHTML = ''; // Limpiar si el carrito está vacío
+            if (paypalButtonContainer) paypalButtonContainer.innerHTML = '';
         } else {
             emptyCartMessage.classList.add('hidden');
             cart.forEach(item => {
@@ -335,99 +363,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            // Agrega un listener al formulario de envío para re-renderizar los botones de PayPal
-            // cada vez que un campo cambia, para que la validación se refleje.
-            // Asegúrate de que shippingForm exista antes de añadir el listener
-            if (shippingForm) {
-                shippingForm.addEventListener('input', () => {
-                    if (typeof paypal !== 'undefined' && window.getCart().length > 0) {
-                        renderPayPalButtons();
-                    }
-                });
-            }
-
-
-            // Renderizar botones de PayPal si el SDK está cargado y el carrito no está vacío
+            // Vuelve a renderizar los botones de PayPal después de cualquier cambio en el formulario o en el carrito
             if (typeof paypal !== 'undefined' && cart.length > 0) {
                 renderPayPalButtons();
             } else if (cart.length > 0) {
                 window.loadPayPalSDK();
             }
         }
-        cartTotalElement.textContent = `$${window.getCartTotal().toFixed(2)}`;
+        if(cartTotalElement) {
+            cartTotalElement.textContent = `$${window.getCartTotal().toFixed(2)}`;
+        }
     };
 
-    // --- Lógica para cargar departamentos y municipios en el formulario de envío ---
-    function loadShippingDepartments() {
-        if (!shippingDepartmentSelect) return; // Protección adicional
-        shippingDepartmentSelect.innerHTML = '<option value="">Seleccione un departamento</option>';
-        for (const dept in departmentsAndMunicipalities) {
-            const option = document.createElement('option');
-            option.value = dept;
-            option.textContent = dept;
-            shippingDepartmentSelect.appendChild(option);
-        }
-    }
+    // Cargar departamentos y municipios al inicio
+    loadShippingDepartments();
+    loadShippingMunicipalities(shippingDepartmentSelect ? shippingDepartmentSelect.value : '');
 
-    function loadShippingMunicipalities(department) {
-        if (!shippingMunicipalitySelect) return; // Protección adicional
-        shippingMunicipalitySelect.innerHTML = '<option value="">Seleccione un municipio</option>';
-        shippingMunicipalitySelect.disabled = true;
-
-        if (department && departmentsAndMunicipalities[department]) {
-            departmentsAndMunicipalities[department].forEach(muni => {
-                const option = document.createElement('option');
-                option.value = muni;
-                option.textContent = muni;
-                shippingMunicipalitySelect.appendChild(option);
-            });
-            shippingMunicipalitySelect.disabled = false;
-        } else {
-            shippingMunicipalitySelect.innerHTML = '<option value="">Primero seleccione un departamento</option>';
-        }
-    }
-
-    // Event listener para el cambio de departamento en el formulario de envío
-    if (shippingDepartmentSelect) { // Protección adicional
+    if (shippingDepartmentSelect) {
         shippingDepartmentSelect.addEventListener('change', (event) => {
             loadShippingMunicipalities(event.target.value);
-            // Re-renderizar PayPal para actualizar el mensaje de validación
             if (typeof paypal !== 'undefined' && window.getCart().length > 0) {
                 renderPayPalButtons();
             }
         });
     }
 
-
-    // Cargar departamentos al inicio de la página de pago
-    loadShippingDepartments();
-    loadShippingMunicipalities(shippingDepartmentSelect ? shippingDepartmentSelect.value : ''); // Cargar municipios iniciales (vacío)
-
-    // --- Asegurar que el enlace del Carrito siempre sea visible ---
-    if (navCarrito) {
-        navCarrito.classList.remove('hidden');
-    }
-
-    // Manejo del botón "Iniciar Sesión" en el encabezado
-    if (loginButton) {
-        loginButton.addEventListener('click', () => {
-            console.log('Botón "Iniciar Sesión" clickeado en pago.html. Redirigiendo a login.html...');
-            window.location.href = 'login.html';
+    // Agregar un listener para los cambios en los campos del formulario
+    if (shippingForm) {
+        shippingForm.addEventListener('input', () => {
+            // Re-renderizar los botones de PayPal cada vez que el formulario cambia
+            if (typeof paypal !== 'undefined' && window.getCart().length > 0) {
+                renderPayPalButtons();
+            }
         });
     }
 
-    // Manejo del estado de autenticación en el encabezado
+    // Manejo de autenticación y carga de datos de usuario
     if (auth) {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Usuario logueado
-                loginButton.classList.add('hidden');
-                loggedInUserDisplay.classList.remove('hidden');
-                userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
-                // navPerfil.classList.remove('hidden'); // Se comenta o elimina ya que el elemento se quitará del HTML
+                // Usuario autenticado
+                if (loginButton) loginButton.classList.add('hidden');
+                if (loggedInUserDisplay) loggedInUserDisplay.classList.remove('hidden');
+                if (userNameDisplay) userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
+                window.currentUserIdGlobal = user.uid;
 
                 // Cargar avatar
-                if (profileAvatarHeader) { // Protección adicional
+                if (profileAvatarHeader) {
                     if (user.photoURL) {
                         profileAvatarHeader.src = user.photoURL;
                     } else if (storage) {
@@ -448,10 +430,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
                     }
                 }
-                window.currentUserIdGlobal = user.uid;
 
-                // Precargar datos de envío del usuario desde Firestore
-                if (db && shippingForm) { // Asegúrate de que db y shippingForm existan
+                // Precargar datos de envío desde Firestore
+                if (db && shippingForm) {
                     try {
                         const userDocRef = doc(db, "users", user.uid);
                         const userDocSnap = await getDoc(userDocRef);
@@ -461,7 +442,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             shippingEmailInput.value = userData.email || '';
                             shippingPhoneInput.value = userData.phone || '';
                             shippingAddressInput.value = userData.address || '';
-                            // Cargar departamento y municipio
                             if (userData.department) {
                                 shippingDepartmentSelect.value = userData.department;
                                 loadShippingMunicipalities(userData.department);
@@ -471,17 +451,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                     } catch (error) {
-                        console.error("Error al precargar datos de envío del usuario:", error);
-                        window.showAlert("Error al cargar tus datos de envío. Por favor, introdúcelos manualmente.", "error");
+                        console.error("Error al cargar datos de envío:", error);
+                        window.showAlert("Error al cargar tus datos. Introdúcelos manualmente.", "error");
                     }
                 }
-
             } else {
-                // Usuario no logueado (invitado)
-                loginButton.classList.remove('hidden');
-                loggedInUserDisplay.classList.add('hidden');
-                // navPerfil.classList.add('hidden'); // Se comenta o elimina ya que el elemento se quitará del HTML
-                if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
+                // Usuario invitado
+                if (loginButton) loginButton.classList.remove('hidden');
+                if (loggedInUserDisplay) loggedInUserDisplay.classList.add('hidden');
+                if (profileAvatarHeader) profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
 
                 let guestId = sessionStorage.getItem('guestUserId');
                 if (!guestId) {
@@ -489,16 +467,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     sessionStorage.setItem('guestUserId', guestId);
                 }
                 window.currentUserIdGlobal = guestId;
-                // Para usuarios invitados, el formulario de envío estará vacío para que lo llenen.
             }
-            window.updateCartDisplay(); // Actualiza la UI del carrito y renderiza PayPal
+            window.updateCartDisplay();
         });
     } else {
-        console.warn("Firebase Auth no está inicializado. Procediendo como invitado.");
-        loginButton.classList.remove('hidden');
-        loggedInUserDisplay.classList.add('hidden');
-        // navPerfil.classList.add('hidden'); // Se comenta o elimina ya que el elemento se quitará del HTML
-        if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
+        console.warn("Firebase Auth no inicializado. Modo invitado.");
+        if (loginButton) loginButton.classList.remove('hidden');
+        if (loggedInUserDisplay) loggedInUserDisplay.classList.add('hidden');
+        if (profileAvatarHeader) profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
 
         let guestId = sessionStorage.getItem('guestUserId');
         if (!guestId) {
@@ -509,29 +485,24 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateCartDisplay();
     }
 
-    // Manejo del botón "Cerrar Sesión"
+    // Manejo de cierre de sesión
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
             if (auth) {
                 try {
                     await signOut(auth);
-                    window.showAlert('Has cerrado sesión correctamente.', 'success');
+                    window.showAlert('Sesión cerrada correctamente.', 'success');
                 } catch (error) {
                     console.error('Error al cerrar sesión:', error.message);
-                    window.showAlert('Error al cerrar sesión. Por favor, inténtalo de nuevo.', 'error');
+                    window.showAlert('Error al cerrar sesión. Inténtalo de nuevo.', 'error');
                 }
-            } else {
-                window.showAlert('Firebase Auth no está disponible para cerrar sesión.', 'error');
             }
         });
     }
 
-    // Carga el SDK de PayPal cuando la página del carrito se carga
+    // Cargar SDK de PayPal y escuchar el evento
     window.loadPayPalSDK();
-
-    // Escucha el evento 'paypalSDKLoaded' para renderizar los botones
     document.addEventListener('paypalSDKLoaded', () => {
-        console.log('Evento paypalSDKLoaded disparado. Actualizando display del carrito para renderizar botones.');
         window.updateCartDisplay();
     });
 });
