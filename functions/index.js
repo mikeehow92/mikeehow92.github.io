@@ -45,6 +45,92 @@ exports.api = functions.https.onRequest(async (req, res) => {
     }
 });
 
+
+// =============================================================================
+// Cloud Function para actualizar el inventario y guardar la orden
+// Se corrigió el error de CORS al añadir los encabezados correspondientes.
+// =============================================================================
+exports.updateInventoryAndSaveOrder = functions.https.onRequest(async (req, res) => {
+    // Middleware CORS para manejar las solicitudes desde el frontend
+    res.set('Access-Control-Allow-Origin', '*');
+
+    if (req.method === 'OPTIONS') {
+        res.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+        res.set('Access-Control-Allow-Headers', 'Content-Type');
+        res.set('Access-Control-Max-Age', '3600');
+        return res.status(204).send('');
+    }
+
+    if (req.method !== 'POST') {
+        return res.status(405).send('Método no permitido. Solo POST.');
+    }
+
+    const { orderDetails, userId } = req.body;
+
+    if (!orderDetails || !userId || !orderDetails.items || orderDetails.items.length === 0) {
+        functions.logger.error('Datos de la orden incompletos:', { orderDetails, userId });
+        res.status(400).json({ message: 'Datos de la orden incompletos o inválidos.' });
+        return;
+    }
+
+    const inventoryCollectionRef = db.collection('products');
+    const userOrdersCollectionRef = db.collection('users').doc(userId).collection('orders');
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            const productDocs = await Promise.all(orderDetails.items.map(item => transaction.get(inventoryCollectionRef.doc(item.id))));
+            
+            for (let i = 0; i < productDocs.length; i++) {
+                const productDoc = productDocs[i];
+                const item = orderDetails.items[i];
+
+                if (!productDoc.exists) {
+                    throw new Error(`El producto con ID ${item.id} no existe.`);
+                }
+
+                const newStock = productDoc.data().stock - item.quantity;
+                if (newStock < 0) {
+                    throw new Error(`No hay suficiente stock para el producto ${productDoc.data().name}.`);
+                }
+
+                transaction.update(productDoc.ref, { stock: newStock });
+            }
+
+            const orderToSaveUser = {
+                fechaOrden: admin.firestore.FieldValue.serverTimestamp(),
+                total: orderDetails.total,
+                items: orderDetails.items.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    imageUrl: item.imageUrl || ''
+                })),
+                shippingDetails: orderDetails.shippingDetails,
+                paypalTransactionId: orderDetails.paypalTransactionId,
+                paymentStatus: orderDetails.paymentStatus,
+                payerId: orderDetails.payerId,
+                payerEmail: orderDetails.payerEmail,
+                estado: 'pendiente' // Establecer el estado inicial
+            };
+
+            const orderToSave = { ...orderToSaveUser, userId: userId };
+
+            const newOrderRef = db.collection('orders').doc();
+            transaction.set(newOrderRef, orderToSave);
+            transaction.set(userOrdersCollectionRef.doc(newOrderRef.id), orderToSaveUser);
+        });
+
+        res.status(200).json({ message: 'Inventario actualizado y orden guardada con éxito.' });
+
+    } catch (error) {
+        functions.logger.error('Error en la transacción de actualización de inventario o guardado de orden:', error);
+        const errorMessage = error.message || 'Error interno del servidor.';
+        res.status(500).json({ message: `Error interno del servidor: ${errorMessage}` });
+    }
+});
+
+
 // =============================================================================
 // Nueva Cloud Function para actualizar el estado de las órdenes
 // Se invoca desde el front-end (Orders.jsx)
