@@ -40,6 +40,8 @@ let cartTotalElement;
 
 // Función para validar el formulario de envío
 function validateShippingForm() {
+    console.log("Iniciando validación del formulario...");
+    
     if (!shippingForm) {
         console.error("shippingForm no está definido.");
         return false;
@@ -58,7 +60,9 @@ function validateShippingForm() {
     ];
 
     // Limpiar mensajes de error anteriores
-    validationMessageDiv.textContent = '';
+    if(validationMessageDiv) {
+        validationMessageDiv.textContent = '';
+    }
     validations.forEach(({ field }) => {
         if (field) field.classList.remove('border-red-500');
     });
@@ -67,12 +71,16 @@ function validateShippingForm() {
     for (const { field, validation, message } of validations) {
         if (field && !validation(field.value)) {
             isValid = false;
+            console.error(`Campo no válido: ${field.id}. Razón: ${message}`);
             field.classList.add('border-red-500');
-            validationMessageDiv.textContent = message;
+            if (validationMessageDiv) {
+                validationMessageDiv.textContent = message;
+            }
             break; // Salir del bucle en el primer error
         }
     }
-    
+
+    console.log(`Validación del formulario completada. ¿Es válido?: ${isValid}`);
     return isValid;
 }
 
@@ -156,10 +164,15 @@ function renderPayPalButtons() {
         createOrder: function(data, actions) {
             // Validar el formulario antes de crear la orden
             if (!validateShippingForm()) {
-                throw new Error('Formulario de envío inválido');
+                // Si la validación falla, PayPal evitará el flujo de pago.
+                // La función `validateShippingForm` ya maneja los mensajes de error.
+                return Promise.reject('Formulario de envío inválido');
             }
+            
             // Limpiar mensaje de validación si el formulario es válido
-            validationMessageDiv.textContent = '';
+            if(validationMessageDiv) {
+                validationMessageDiv.textContent = '';
+            }
             
             const total = window.getCartTotal();
             const items = cart.map(item => ({
