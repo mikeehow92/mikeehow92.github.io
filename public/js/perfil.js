@@ -1,16 +1,11 @@
-// js/perfil.js - Versión 2024-07-25 2:00 PM CST - Depuración de campo 'estado' faltante
-
-console.log("perfil.js: Versión 2024-07-25 2:00 PM CST - Script cargado.");
+// js/perfil.js
 
 // Importa las funciones necesarias de Firebase Auth, Firestore y Storage
 import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-// Importa onSnapshot, doc, getDoc, collection, query, updateDoc
-import { doc, getDoc, collection, query, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc, collection, query, where, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getStorage, ref, listAll, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("perfil.js: DOMContentLoaded - Inicializando elementos.");
-
     // Elementos del encabezado
     const loginButton = document.getElementById('loginButton');
     const loggedInUserDisplay = document.getElementById('loggedInUserDisplay');
@@ -43,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const avatarGallery = document.getElementById('avatarGallery');
     const loadingAvatarsMessage = document.getElementById('loadingAvatarsMessage');
     const errorAvatarsMessage = document.getElementById('errorAvatarsMessage');
-    const noAvatarsMessageAvatars = document.getElementById('noAvatarsMessage'); // Renombrado para evitar conflicto si existía otro noAvatarsMessage
+    const noAvatarsMessage = document.getElementById('noAvatarsMessage');
 
     // Elementos del modal de edición de dirección
     const addressModal = document.getElementById('addressModal');
@@ -65,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const departmentsAndMunicipalities = {
         "Ahuachapán": ["Ahuachapán", "Apaneca", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
         "Cabañas": ["Cinquera", "Dolores", "Guacotecti", "Ilobasco", "Sensuntepeque", "Tejutepeque", "Victoria"],
-        "Chalatenango": ["Agua Caliente", "Arcatao", "Azacualpa", "Cancasque", "Chalatenango", "Chesal", "Citalá", "Comalapa", "Concepción Quezaltepeque", "Dulce Nombre de María", "El Carrizal", "El Paraíso", "La Laguna", "La Palma", "La Reina", "Las Vueltas", "Nombre de Jesús", "Nueva Concepción", "Nueva Trinidad", "Ojos de Agua", "Potonico", "San Antonio de la Cruz", "San Antonio Los Ranchos", "San Fernando", "San Ignacio", "San Isidro Labrador", "San Luis del Carmen", "San Miguel de Mercedes", "San Rafael", "Santa Rita", "Tejutla"],
+        "Chalatenango": ["Agua Caliente", "Arcatao", "Azacualpa", "Cancasque", "Chalatenango", "Chesal", "Citalá", "Comalapa", "Concepción Quezaltepeque", "Dulce Nombre de María", "El Carrizal", "El Paraíso", "La Laguna", "La Palma", "La Reina", "Las Vueltas", "Nombre de Jesús", "Nueva Concepción", "Nueva Trinidad", "Ojos de Agua", "Potonico", "San Antonio de la Cruz", "San Antonio Los Ranchos", "San Fernando", "San Francisco Lempa", "San Ignacio", "San Isidro Labrador", "San Luis del Carmen", "San Miguel de Mercedes", "San Rafael", "Santa Rita", "Tejutla"],
         "Cuscatlán": ["Cojutepeque", "Candelaria", "El Carmen", "El Rosario", "Monte San Juan", "Oratorio de Concepción", "San Bartolomé Perulapía", "San Cristóbal", "San José Guayabal", "San Pedro Perulapán", "San Rafael Cedros", "San Ramón", "Santa Cruz Analquito", "Santa Cruz Michapa", "Suchitoto", "Tenancingo"],
         "La Libertad": ["Antiguo Cuscatlán", "Chiltiupán", "Ciudad Arce", "Colón", "Comasagua", "Huizúcar", "Jayaque", "Jicalapa", "La Libertad", "Santa Tecla", "Nuevo Cuscatlán", "Quezaltepeque", "Sacacoyo", "San Juan Opico", "San Matías", "San Pablo Tacachico", "Talnique", "Tamanique", "Teotepeque", "Tepecoyo", "Zaragoza"],
         "La Paz": ["Cuyultitán", "El Rosario", "Jerusalén", "Mercedes La Ceiba", "Olocuilta", "Paraíso de Osorio", "San Antonio Masahuat", "San Emigdio", "San Francisco Chinameca", "San Juan Nonualco", "San Juan Talpa", "San Juan Tepezontes", "San Luis La Herradura", "San Luis Talpa", "San Miguel Tepezontes", "San Pedro Masahuat", "San Pedro Nonualco", "San Rafael Obrajuelo", "Santa María Ostuma", "Santiago Nonualco", "Tapalhuaca", "Zacatecoluca"],
@@ -132,36 +127,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Define la función global updateCartDisplay para esta página.
     window.updateCartDisplay = function() {
-        updateCartDisplay();
+        updateCartCountDisplay();
         // Lógica adicional específica de UI para perfil.html si es necesaria
     };
-
-    // Variable para almacenar la función de desuscripción del listener de órdenes
-    let unsubscribeOrdersListener = null;
 
     // Manejo del estado de autenticación en el encabezado
     if (auth) {
         onAuthStateChanged(auth, async (user) => {
-            // Limpiar el listener anterior si existe
-            if (unsubscribeOrdersListener) {
-                console.log("perfil.js: onAuthStateChanged - Desuscribiendo listener anterior.");
-                unsubscribeOrdersListener();
-                unsubscribeOrdersListener = null;
-            }
-
             if (user) {
-                console.log("perfil.js: onAuthStateChanged - Usuario autenticado:", user.uid);
                 loginButton.classList.add('hidden');
                 loggedInUserDisplay.classList.remove('hidden');
                 userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
 
-                // Cargar datos del perfil
+                // Cargar datos del perfil y pedidos
                 await loadUserProfile(user);
-                // Iniciar el listener de órdenes y guardar la función de desuscripción
-                unsubscribeOrdersListener = setupOrdersListener(user.uid); // Usar nueva función para el listener
+                await loadRecentOrders(user.uid); // Pasar el UID del usuario logueado
 
             } else {
-                console.log("perfil.js: onAuthStateChanged - Usuario no autenticado. Redirigiendo a login.");
                 // Usuario no logueado, redirigir a la página de inicio de sesión
                 window.showAlert('Debes iniciar sesión para ver tu perfil.', 'info');
                 window.location.href = 'login.html';
@@ -169,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.updateCartDisplay(); // Llama a la función para actualizar el contador al cambiar el estado de autenticación
         });
     } else {
-        console.warn("perfil.js: Firebase Auth no está inicializado. La funcionalidad de autenticación en el encabezado no estará disponible.");
+        console.warn("Firebase Auth no está inicializado. La funcionalidad de autenticación en el encabezado no estará disponible.");
         window.showAlert("Error: Firebase Auth no está disponible. Redirigiendo a inicio de sesión.", "error");
         window.location.href = 'login.html';
         window.updateCartDisplay(); // Llama a la función para actualizar el contador incluso sin autenticación
@@ -180,12 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (auth) {
             try {
                 await signOut(auth);
-                // Limpiar el listener de órdenes al cerrar sesión
-                if (unsubscribeOrdersListener) {
-                    console.log("perfil.js: handleLogout - Desuscribiendo listener de órdenes.");
-                    unsubscribeOrdersListener();
-                    unsubscribeOrdersListener = null;
-                }
                 window.showAlert('Has cerrado sesión correctamente.', 'success');
                 window.location.href = 'login.html';
             } catch (error) {
@@ -204,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Función para cargar datos del perfil del usuario
     async function loadUserProfile(user) {
-        console.log("perfil.js: loadUserProfile - Cargando datos del perfil para:", user.uid);
         profileName.textContent = user.displayName || 'Cargando Nombre...';
         profileEmail.textContent = user.email || 'Cargando Correo...';
         profileLastLogin.textContent = user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleString() : 'N/A';
@@ -252,117 +227,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 editAddress.value = userData.address || '';
 
             } else {
-                console.warn("perfil.js: loadUserProfile - No se encontraron datos adicionales del perfil en Firestore para el usuario:", user.uid);
+                console.warn("No se encontraron datos adicionales del perfil en Firestore para el usuario:", user.uid);
                 profilePhone.textContent = 'No disponible';
                 profileDepartment.textContent = 'No disponible';
                 profileMunicipality.textContent = 'No disponible';
                 profileAddress.textContent = 'No disponible';
             }
         } catch (error) {
-            console.error("perfil.js: Error al cargar datos adicionales del perfil desde Firestore:", error);
+            console.error("Error al cargar datos adicionales del perfil desde Firestore:", error);
             window.showAlert("Error al cargar información adicional del perfil.", "error");
         }
     }
 
-    // Función para configurar el listener de pedidos en tiempo real
-    function setupOrdersListener(userId) {
-        console.log("perfil.js: setupOrdersListener - Iniciando listener de órdenes para userId:", userId); // Log de inicio
-        const ordersCollectionRef = collection(db, "users", userId, "orders");
-        // No se añade orderBy("timestamp", "desc") en la consulta para evitar errores de índice.
-        // La ordenación se realizará en el cliente.
-        const q = query(ordersCollectionRef); // Consulta sin ordenación inicial
+    // Función para cargar pedidos recientes
+    async function loadRecentOrders(userId) {
+        ordersList.innerHTML = '';
+        noOrdersMessage.classList.add('hidden');
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            console.log("perfil.js: onSnapshot - Datos de órdenes recibidos. Cantidad:", snapshot.docs.length); // Log de recepción de datos
-            ordersList.innerHTML = ''; // Limpiar la lista cada vez que hay una actualización
-            noOrdersMessage.classList.add('hidden'); // Ocultar mensaje inicialmente
+        try {
+            // --- CAMBIO CLAVE AQUÍ: Leer de la subcolección de órdenes del usuario ---
+            const ordersCollectionRef = collection(db, "users", userId, "orders"); // Ruta correcta
+            // NOTA: Se ha eliminado orderBy("timestamp", "desc") para evitar errores de índice.
+            // La ordenación se realizará en el cliente si es estrictamente necesaria.
+            const querySnapshot = await getDocs(ordersCollectionRef);
 
-            if (snapshot.empty) {
-                console.log("perfil.js: onSnapshot - No hay órdenes para este usuario."); // Log si no hay órdenes
+            if (querySnapshot.empty) {
                 noOrdersMessage.classList.remove('hidden');
                 return;
             }
 
+            // Convertir a array y ordenar en el cliente si es necesario
             const orders = [];
-            snapshot.forEach((doc) => {
+            querySnapshot.forEach((doc) => {
                 orders.push({ id: doc.id, ...doc.data() });
             });
 
-            // Ordenar por timestamp en el cliente (si existe y es un objeto con toDate)
+            // Ordenar por timestamp si existe y es un objeto con toDate
             orders.sort((a, b) => {
                 const dateA = a.timestamp && typeof a.timestamp.toDate === 'function' ? a.timestamp.toDate() : new Date(0);
                 const dateB = b.timestamp && typeof b.timestamp.toDate === 'function' ? b.timestamp.toDate() : new Date(0);
                 return dateB - dateA; // Orden descendente
             });
 
+
             orders.forEach((order) => {
-                console.log(`perfil.js: Processing order ID: ${order.id}`);
-                console.log(`perfil.js: Order object received:`, order); // Log del objeto completo de la orden
-
                 const orderDate = order.timestamp && typeof order.timestamp.toDate === 'function' ? order.timestamp.toDate().toLocaleDateString() : 'N/A';
-                const rawOrderStatus = order.estado; // Valor original del estado desde Firestore
-                let displayStatus = 'Pendiente'; // Estado a mostrar
-                let statusClass = 'text-orange-500'; // Clase CSS por defecto (para pendiente/procesando)
-
-                console.log(`perfil.js: Raw order status for order ${order.id}:`, rawOrderStatus);
-                console.log(`perfil.js: Order total value from Firestore:`, order.total);
-
-                if (typeof rawOrderStatus === 'string') {
-                    const normalizedStatus = rawOrderStatus.toLowerCase().trim(); // Normalizar a minúsculas y sin espacios
-                    switch (normalizedStatus) {
-                        case 'entregado':
-                            displayStatus = 'Entregado';
-                            statusClass = 'text-green-600';
-                            break;
-                        case 'procesando':
-                            displayStatus = 'Procesando';
-                            statusClass = 'text-blue-500'; // Añadir clase para procesando
-                            break;
-                        case 'enviado':
-                            displayStatus = 'Enviado';
-                            statusClass = 'text-purple-500'; // Añadir clase para enviado
-                            break;
-                        case 'cancelado':
-                            displayStatus = 'Cancelado';
-                            statusClass = 'text-red-500'; // Clase para cancelado
-                            break;
-                        default:
-                            displayStatus = 'Pendiente';
-                            statusClass = 'text-orange-500';
-                            break;
-                    }
-                } else if (rawOrderStatus && typeof rawOrderStatus === 'object' && rawOrderStatus.hasOwnProperty('stringValue')) {
-                    // Si el estado es un objeto con una propiedad stringValue (común en Firestore)
-                    const normalizedStatus = rawOrderStatus.stringValue.toLowerCase().trim();
-                    switch (normalizedStatus) {
-                        case 'entregado':
-                            displayStatus = 'Entregado';
-                            statusClass = 'text-green-600';
-                            break;
-                        case 'procesando':
-                            displayStatus = 'Procesando';
-                            statusClass = 'text-blue-500';
-                            break;
-                        case 'enviado':
-                            displayStatus = 'Enviado';
-                            statusClass = 'text-purple-500';
-                            break;
-                        case 'cancelado':
-                            displayStatus = 'Cancelado';
-                            statusClass = 'text-red-500';
-                            break;
-                        default:
-                            displayStatus = 'Pendiente';
-                            statusClass = 'text-orange-500';
-                            break;
-                    }
-                }
-                // Si no es string ni objeto con stringValue, se mantiene 'Pendiente' y 'text-orange-500'
-
-                console.log(`perfil.js: Normalized display status:`, displayStatus);
-                console.log(`perfil.js: Applied status class:`, statusClass);
-
-                // Declarar orderTotal aquí, antes de usarlo en orderHtml
+                const orderStatus = order.estado || 'Pendiente'; // Usar 'estado' de la Cloud Function
                 const orderTotal = order.total ? `$${order.total.toFixed(2)}` : '$0.00';
 
                 let productsHtml = '';
@@ -370,19 +280,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     productsHtml = order.items.map(item => `<li>${item.name} (x${item.quantity})</li>`).join('');
                 }
 
-                // Obtener nombre del cliente y dirección de envío
-                const clientName = order.shippingDetails?.fullName || 'N/A';
-                const shippingAddress = order.shippingDetails?.address || 'N/A';
-
-                console.log(`perfil.js: onSnapshot - Procesando orden ${order.id}, estado: ${displayStatus}`); // Log de cada orden
-
                 const orderHtml = `
-                    <div class="border border-gray-200 p-4 rounded-md mb-4">
-                        <p class="font-bold">Pedido #${order.id.substring(0, 8)} - <span class="${statusClass}">${displayStatus}</span></p>
+                    <div class="border border-gray-200 p-4 rounded-md">
+                        <p class="font-bold">Pedido #${order.id.substring(0, 8)} - <span class="${orderStatus === 'entregado' ? 'text-green-600' : 'text-orange-500'}">${orderStatus}</span></p>
                         <p class="text-gray-700">Fecha: ${orderDate}</p>
                         <p class="text-gray-700">Total: ${orderTotal}</p>
-                        <p class="text-gray-700">Cliente: ${clientName}</p>
-                        <p class="text-gray-700">Dirección: ${shippingAddress}</p>
                         <ul class="list-disc list-inside text-sm text-gray-600 mt-2">
                             ${productsHtml}
                         </ul>
@@ -391,14 +293,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 ordersList.innerHTML += orderHtml;
             });
 
-        }, (error) => {
-            console.error("perfil.js: Error al cargar pedidos en tiempo real:", error);
-            window.showAlert("Error al cargar tus pedidos recientes: " + error.message, "error");
+        } catch (error) {
+            console.error("Error al cargar pedidos:", error);
+            window.showAlert("Error al cargar tus pedidos recientes: " + error.message, "error"); // Mostrar mensaje de error más específico
             noOrdersMessage.textContent = "Error al cargar pedidos.";
             noOrdersMessage.classList.remove('hidden');
-        });
-
-        return unsubscribe; // Devuelve la función de desuscripción
+        }
     }
 
     // --- Lógica para el Modal de Selección de Avatar ---
@@ -408,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
         avatarGallery.innerHTML = ''; // Limpiar galería
         loadingAvatarsMessage.classList.remove('hidden');
         errorAvatarsMessage.classList.add('hidden');
-        noAvatarsMessageAvatars.classList.add('hidden'); // Usar el renombrado
+        noAvatarsMessage.classList.add('hidden');
 
         if (!storage) {
             errorAvatarsMessage.textContent = "Error: Firebase Storage no está inicializado.";
@@ -422,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await listAll(avatarsRef); // Listar todos los ítems en la carpeta
 
             if (result.items.length === 0) {
-                noAvatarsMessageAvatars.classList.remove('hidden'); // Usar el renombrado
+                noAvatarsMessage.classList.remove('hidden');
                 loadingAvatarsMessage.classList.add('hidden');
                 return;
             }
