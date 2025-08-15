@@ -40,43 +40,37 @@ let cartTotalElement;
 
 // Función para validar el formulario de envío
 function validateShippingForm() {
-    if (!shippingForm) return false;
-    
-    const requiredFields = [
-        shippingFullNameInput,
-        shippingEmailInput,
-        shippingPhoneInput,
-        shippingDepartmentSelect,
-        shippingMunicipalitySelect,
-        shippingAddressInput
-    ];
+    if (!shippingForm) {
+        console.error("shippingForm no está definido.");
+        return false;
+    }
     
     let isValid = true;
     
-    // Validar campos obligatorios
-    requiredFields.forEach(field => {
-        if (!field || !field.value || !field.value.trim()) {
-            isValid = false;
-            if (field) field.classList.add('border-red-500');
-        } else {
-            if (field) field.classList.remove('border-red-500');
-        }
+    // Lista de campos y sus validaciones
+    const validations = [
+        { field: shippingFullNameInput, validation: val => val.trim() !== '', message: 'Nombre completo es obligatorio.' },
+        { field: shippingEmailInput, validation: val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), message: 'Formato de correo electrónico inválido.' },
+        { field: shippingPhoneInput, validation: val => /^\d{8,}$/.test(val), message: 'Teléfono debe tener al menos 8 dígitos.' },
+        { field: shippingDepartmentSelect, validation: val => val.trim() !== '', message: 'Departamento es obligatorio.' },
+        { field: shippingMunicipalitySelect, validation: val => val.trim() !== '', message: 'Municipio es obligatorio.' },
+        { field: shippingAddressInput, validation: val => val.trim() !== '', message: 'Dirección exacta es obligatoria.' }
+    ];
+
+    // Limpiar mensajes de error anteriores
+    validationMessageDiv.textContent = '';
+    validations.forEach(({ field }) => {
+        if (field) field.classList.remove('border-red-500');
     });
-    
-    // Validación de email
-    if (shippingEmailInput && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shippingEmailInput.value.trim())) {
-        isValid = false;
-        shippingEmailInput.classList.add('border-red-500');
-    } else {
-        shippingEmailInput.classList.remove('border-red-500');
-    }
-    
-    // Validación de teléfono (al menos 8 dígitos)
-    if (shippingPhoneInput && !/^\d{8,}$/.test(shippingPhoneInput.value.trim())) {
-        isValid = false;
-        shippingPhoneInput.classList.add('border-red-500');
-    } else {
-        shippingPhoneInput.classList.remove('border-red-500');
+
+    // Validar cada campo
+    for (const { field, validation, message } of validations) {
+        if (field && !validation(field.value)) {
+            isValid = false;
+            field.classList.add('border-red-500');
+            validationMessageDiv.textContent = message;
+            break; // Salir del bucle en el primer error
+        }
     }
     
     return isValid;
@@ -160,14 +154,13 @@ function renderPayPalButtons() {
             label: 'paypal'
         },
         createOrder: function(data, actions) {
+            // Validar el formulario antes de crear la orden
             if (!validateShippingForm()) {
-                validationMessageDiv.textContent = 'Por favor, completa todos los campos requeridos correctamente.';
-                validationMessageDiv.classList.remove('hidden');
                 throw new Error('Formulario de envío inválido');
-            } else {
-                validationMessageDiv.classList.add('hidden');
             }
-
+            // Limpiar mensaje de validación si el formulario es válido
+            validationMessageDiv.textContent = '';
+            
             const total = window.getCartTotal();
             const items = cart.map(item => ({
                 name: item.name,
@@ -267,8 +260,8 @@ document.addEventListener('DOMContentLoaded', () => {
     emptyCartMessage = document.getElementById('emptyCartMessage');
     cartTotalElement = document.getElementById('cartTotal');
     paypalButtonContainer = document.getElementById('paypal-button-container');
-
-    // Elementos del formulario de envío
+    
+    // Obtener los elementos del formulario de envío
     shippingForm = document.getElementById('shippingDetailsForm');
     shippingFullNameInput = document.getElementById('shippingFullName');
     shippingEmailInput = document.getElementById('shippingEmail');
@@ -276,6 +269,15 @@ document.addEventListener('DOMContentLoaded', () => {
     shippingDepartmentSelect = document.getElementById('shippingDepartment');
     shippingMunicipalitySelect = document.getElementById('shippingMunicipality');
     shippingAddressInput = document.getElementById('shippingAddress');
+    
+    // Se crea un elemento para mostrar los mensajes de validación
+    validationMessageDiv = document.createElement('p');
+    validationMessageDiv.id = 'paypal-validation-message';
+    validationMessageDiv.className = 'text-red-500 text-sm mt-2 text-center';
+    if(paypalButtonContainer) {
+        paypalButtonContainer.appendChild(validationMessageDiv);
+    }
+
 
     // Referencias de Firebase (se asume que se inicializan en common.js)
     const auth = window.firebaseAuth;
