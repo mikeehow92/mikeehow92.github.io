@@ -16,7 +16,69 @@ const MAX_ORDER_ITEMS = 20;
 const MAX_ORDER_VALUE = 10000;
 
 // =============================================================================
-// 1. Función HTTP para Formulario de Contacto (exports.api) - GEN 2
+// 0. FUNCIÓN DE DEBUG (Para diagnosticar problemas)
+// =============================================================================
+exports.debugFunction = onCall(
+  {
+    enforceAppCheck: false,
+    minInstances: 0,
+    maxInstances: 3,
+  },
+  async (request) => {
+    console.log("=== 🐛 DEBUG FUNCTION STARTED ===");
+    console.log("📋 Request data:", JSON.stringify(request.data, null, 2));
+    console.log("🔐 Request auth:", request.auth);
+    console.log("📅 Timestamp:", new Date().toISOString());
+
+    try {
+      // Test de conexión a Firestore
+      const testRef = db.collection("debug_logs").doc();
+      await testRef.set({
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        auth: request.auth ? {
+          uid: request.auth.uid,
+          email: request.auth.token?.email || "no-email"
+        } : "no-auth",
+        data: request.data || "no-data",
+        type: "debug_test",
+        status: "success"
+      });
+
+      console.log("✅ Firestore connection test passed");
+
+      return {
+        success: true,
+        message: "Debug function executed successfully",
+        debugInfo: {
+          auth: request.auth,
+          dataReceived: request.data,
+          firestoreWrite: "success",
+          timestamp: new Date().toISOString()
+        }
+      };
+
+    } catch (error) {
+      console.error("❌ DEBUG ERROR:", error);
+      console.error("Stack trace:", error.stack);
+
+      return {
+        success: false,
+        error: {
+          message: error.message,
+          code: error.code,
+          stack: error.stack
+        },
+        debugInfo: {
+          timestamp: new Date().toISOString(),
+          firestoreError: "Failed to write to debug_logs"
+        }
+      };
+    }
+  }
+);
+
+// =============================================================================
+// 1. Función HTTP para Formulario de Contacto (exports.api)
 // =============================================================================
 exports.api = onRequest(
   {
@@ -25,6 +87,8 @@ exports.api = onRequest(
     maxInstances: 3,
   },
   async (req, res) => {
+    console.log("📨 Contact form API called");
+    
     if (req.method === "OPTIONS") {
       res.set("Access-Control-Allow-Methods", "POST");
       res.set("Access-Control-Allow-Headers", "Content-Type");
@@ -36,6 +100,8 @@ exports.api = onRequest(
     }
 
     const { fullName, email, message } = req.body;
+    console.log("📝 Form data:", { fullName, email, message });
+
     if (!fullName || !email || !message) {
       return res.status(400).json({ error: "Faltan campos requeridos" });
     }
@@ -47,16 +113,19 @@ exports.api = onRequest(
         message,
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
+      
+      console.log("✅ Contact saved successfully");
       return res.status(200).json({ success: true });
+      
     } catch (error) {
-      console.error("Error en api:", error);
+      console.error("❌ Error en api:", error);
       return res.status(500).json({ error: "Error interno del servidor" });
     }
   }
 );
 
 // =============================================================================
-// 2. Función para Procesar Órdenes (exports.updateInventoryAndSaveOrder) - GEN 2
+// 2. Función para Procesar Órdenes (VERSIÓN SIMPLIFICADA)
 // =============================================================================
 exports.updateInventoryAndSaveOrder = onCall(
   {
@@ -65,100 +134,136 @@ exports.updateInventoryAndSaveOrder = onCall(
     maxInstances: 5,
   },
   async (request) => {
-    // 1. Validar usuario (autenticado o invitado)
-    let userId;
-    if (request.auth) {
-      userId = request.auth.uid;
-    } else if (request.data.guestUserId) {
-      userId = request.data.guestUserId;
-    } else {
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "Debes iniciar sesión o proporcionar un ID de invitado"
-      );
-    }
+    console.log("=== 🛒 updateInventoryAndSaveOrder STARTED ===");
+    console.log("📦 Request data:", JSON.stringify(request.data, null, 2));
+    console.log("👤 Request auth:", request.auth);
 
-    // 2. Validar datos de la orden
-    const orderDetails = request.data.orderDetails;
-    if (!orderDetails?.items?.length || typeof orderDetails?.total !== "number") {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "La orden debe incluir items y total válido"
-      );
-    }
-
-    if (orderDetails.items.length > MAX_ORDER_ITEMS) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        `Máximo ${MAX_ORDER_ITEMS} productos por orden`
-      );
-    }
-
-    if (orderDetails.total > MAX_ORDER_VALUE) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        `El total no puede exceder $${MAX_ORDER_VALUE}`
-      );
-    }
-
-    // 3. Procesar transacción
     try {
-      const orderRef = db.collection("orders").doc();
-      await db.runTransaction(async (transaction) => {
-        // Actualizar inventario
-        for (const item of orderDetails.items) {
-          const productRef = db.collection("products").doc(item.id);
-          const productDoc = await transaction.get(productRef);
-
-          if (!productDoc.exists) {
-            throw new functions.https.HttpsError("not-found", `Producto ${item.id} no existe`);
-          }
-
-          const newStock = productDoc.data().stock - item.quantity;
-          if (newStock < 0) {
-            throw new functions.https.HttpsError(
-              "failed-precondition",
-              `Stock insuficiente para ${productDoc.data().name}`
-            );
-          }
-          transaction.update(productRef, { stock: newStock });
-        }
-
-        // Crear orden
-        const orderData = {
-          ...orderDetails,
-          userId,
-          orderId: orderRef.id,
-          status: "pending",
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-          isGuestOrder: !request.auth,
-        };
-
-        // Guardar en ambas colecciones
-        transaction.set(orderRef, orderData);
-        transaction.set(
-          db.collection("users").doc(userId).collection("orders").doc(orderRef.id),
-          orderData
+      // 1. Validaciones básicas
+      if (!request.data) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "No se proporcionaron datos"
         );
+      }
+
+      const orderDetails = request.data.orderDetails;
+      if (!orderDetails) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "No se proporcionaron detalles de la orden"
+        );
+      }
+
+      // 2. Obtener userId (auth o guest)
+      const userId = request.auth?.uid || request.data.guestUserId;
+      if (!userId) {
+        throw new functions.https.HttpsError(
+          "unauthenticated",
+          "Usuario no autenticado y no se proporcionó guestUserId"
+        );
+      }
+
+      console.log("👤 User ID:", userId);
+
+      // 3. Validaciones simples
+      if (!Array.isArray(orderDetails.items)) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Items debe ser un array"
+        );
+      }
+
+      if (typeof orderDetails.total !== "number") {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Total debe ser un número"
+        );
+      }
+
+      // 4. Crear orden simple (sin transactions complejas)
+      const orderRef = db.collection("orders").doc();
+      const orderData = {
+        items: orderDetails.items,
+        total: orderDetails.total,
+        userId: userId,
+        orderId: orderRef.id,
+        status: "pending",
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        isGuestOrder: !request.auth,
+        createdAt: new Date().toISOString(),
+        debug: {
+          source: "simplified_version",
+          auth: request.auth ? request.auth.uid : "guest"
+        }
+      };
+
+      console.log("📝 Order data to save:", JSON.stringify(orderData, null, 2));
+
+      // 5. Guardar orden en colección principal
+      await orderRef.set(orderData);
+      console.log("✅ Order saved in main collection:", orderRef.id);
+
+      // 6. Guardar en subcolección del usuario
+      const userOrderRef = db.collection("users")
+        .doc(userId)
+        .collection("orders")
+        .doc(orderRef.id);
+      
+      await userOrderRef.set(orderData);
+      console.log("✅ Order saved in user subcollection:", orderRef.id);
+
+      // 7. Log de éxito
+      await db.collection("debug_logs").add({
+        type: "order_created",
+        orderId: orderRef.id,
+        userId: userId,
+        timestamp: new Date().toISOString(),
+        status: "success",
+        itemsCount: orderDetails.items.length,
+        total: orderDetails.total
       });
+
+      console.log("🎉 Order created successfully:", orderRef.id);
 
       return {
         success: true,
         orderId: orderRef.id,
-        message: "Orden procesada exitosamente",
+        message: "Orden creada exitosamente",
+        debug: {
+          timestamp: new Date().toISOString(),
+          version: "simplified"
+        }
       };
+
     } catch (error) {
-      console.error("Error en updateInventoryAndSaveOrder:", error);
+      console.error("💥 ERROR in updateInventoryAndSaveOrder:", error);
+      console.error("📋 Error stack:", error.stack);
+
+      // Log del error
+      await db.collection("debug_logs").add({
+        type: "order_error",
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+        status: "error",
+        data: request.data
+      }).catch(e => console.error("Failed to log error:", e));
+
       throw new functions.https.HttpsError(
         "internal",
-        error.message || "Error al procesar la orden"
+        error.message || "Error interno del servidor",
+        { 
+          details: error.stack,
+          debug: "Check Firebase logs for more info"
+        }
       );
     }
   }
 );
 
 // =============================================================================
-// 3. Función para Actualizar Estado (exports.updateOrderStatus) - GEN 2
+// 3. Función para Actualizar Estado
 // =============================================================================
 exports.updateOrderStatus = onCall(
   {
@@ -167,6 +272,8 @@ exports.updateOrderStatus = onCall(
     maxInstances: 3,
   },
   async (request) => {
+    console.log("🔄 updateOrderStatus called");
+    
     if (!request.auth) {
       throw new functions.https.HttpsError(
         "unauthenticated",
@@ -175,6 +282,8 @@ exports.updateOrderStatus = onCall(
     }
 
     const { orderId, userId, newStatus } = request.data;
+    console.log("📋 Update data:", { orderId, userId, newStatus });
+
     if (!orderId || !userId || !newStatus) {
       throw new functions.https.HttpsError(
         "invalid-argument",
@@ -191,22 +300,26 @@ exports.updateOrderStatus = onCall(
         status: newStatus,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
+      
       batch.update(userOrderRef, {
         status: newStatus,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
       await batch.commit();
+      console.log("✅ Order status updated:", orderId);
+      
       return { success: true };
+
     } catch (error) {
-      console.error("Error en updateOrderStatus:", error);
+      console.error("❌ Error en updateOrderStatus:", error);
       throw new functions.https.HttpsError("internal", "Error al actualizar estado");
     }
   }
 );
 
 // =============================================================================
-// 4. Trigger para Sincronizar Estados (exports.syncOrderStatus) - GEN 2
+// 4. Trigger para Sincronizar Estados
 // =============================================================================
 exports.syncOrderStatus = onDocumentUpdated(
   {
@@ -220,6 +333,8 @@ exports.syncOrderStatus = onDocumentUpdated(
 
     if (newData.status === oldData.status) return;
 
+    console.log("🔄 Sync trigger for order:", orderId, "New status:", newData.status);
+
     try {
       await db
         .collection("users")
@@ -230,12 +345,16 @@ exports.syncOrderStatus = onDocumentUpdated(
           status: newData.status,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-      console.log(`Sincronizado: Orden ${orderId} -> ${newData.status}`);
+      
+      console.log("✅ Status synced for order:", orderId);
+      
     } catch (error) {
-      console.error("Error en syncOrderStatus:", error);
+      console.error("❌ Error en syncOrderStatus:", error);
       if (["unavailable", "resource-exhausted"].includes(error.code)) {
-        throw error; // Reintentar automáticamente
+        throw error;
       }
     }
   }
 );
+
+console.log("✅ Firebase Functions initialized successfully");
