@@ -32,13 +32,13 @@ exports.api = functions.https.onRequest(async (req, res) => {
 
     try {
         functions.logger.info('Mensaje de contacto recibido:', { fullName, email, message });
-        await db.collection('contactMessages').add({
-            fullName: fullName,
-            email: email,
-            message: message,
+        await db.collection('contacts').add({
+            fullName,
+            email,
+            message,
             timestamp: admin.firestore.FieldValue.serverTimestamp()
         });
-        return res.status(200).send('Mensaje enviado con éxito.');
+        return res.status(200).send({ message: 'Mensaje enviado con éxito.' });
     } catch (error) {
         functions.logger.error('Error al guardar el mensaje de contacto:', error);
         return res.status(500).send('Error interno del servidor.');
@@ -46,135 +46,76 @@ exports.api = functions.https.onRequest(async (req, res) => {
 });
 
 // =============================================================================
-// Cloud Function para actualizar el estado de una orden
+// Cloud Function para actualizar el inventario y guardar la orden
 // =============================================================================
-exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError(
-            'unauthenticated',
-            'Se requiere autenticación para realizar esta acción.'
-        );
-    }
-
-    const { orderId, userId, newStatus } = data;
-
-    if (!orderId || !userId || !newStatus) {
-        throw new functions.https.HttpsError(
-            'invalid-argument',
-            'Faltan parámetros para actualizar la orden (orderId, userId, newStatus).'
-        );
-    }
-
-    const validStatuses = ['pendiente', 'procesando', 'enviado', 'entregado', 'cancelado'];
-    if (!validStatuses.includes(newStatus)) {
-        throw new functions.https.HttpsError(
-            'invalid-argument',
-            'El estado de la orden no es válido.'
-        );
-    }
-
-    try {
-        const orderRef = db.collection('orders').doc(orderId);
-        await orderRef.update({ estado: newStatus });
-        functions.logger.info(`Estado de la orden ${orderId} actualizado a ${newStatus} en la colección principal.`);
-
-        const userOrderRef = db.collection('users').doc(userId).collection('orders').doc(orderId);
-        await userOrderRef.update({ estado: newStatus });
-        functions.logger.info(`Estado de la orden ${orderId} del usuario ${userId} actualizado a ${newStatus} en la subcolección.`);
-
-        return { success: true, message: 'Estado de la orden actualizado con éxito.' };
-    } catch (error) {
-        functions.logger.error('Error al actualizar el estado de la orden:', error);
-        throw new functions.https.HttpsError(
-            'internal',
-            'Error al actualizar el estado de la orden. Por favor, inténtalo de nuevo más tarde.',
-            error.message
-        );
-    }
-});
-
-// =============================================================================
-// Cloud Function para actualizar inventario y guardar la orden
-// =============================================================================
+// Esta función consolida la lógica de actualizar el inventario y guardar la orden.
+// Ahora genera un único ID y lo usa para ambas colecciones, resolviendo el problema de sincronización inicial.
 exports.updateInventoryAndSaveOrder = functions.https.onCall(async (data, context) => {
-    // 1. Verificar la autenticación
+    // 1. Verificar si la solicitud está autenticada
     if (!context.auth) {
         throw new functions.https.HttpsError(
             'unauthenticated',
-            'Se requiere autenticación para realizar esta acción.'
+            'La función requiere autenticación.'
         );
     }
+    const userId = context.auth.uid; // Usar el userId del contexto de autenticación
 
-    const userId = context.auth.uid;
-    const { orderDetails } = data;
-
-    if (!orderDetails || !orderDetails.items || !orderDetails.shippingDetails || !orderDetails.total) {
+    // 2. Extraer los datos de la llamada.
+    const orderDetails = data.orderDetails;
+    if (!orderDetails || !orderDetails.items || !orderDetails.total) {
         throw new functions.https.HttpsError(
             'invalid-argument',
-            'Faltan detalles de la orden (ítems, detalles de envío, total).'
+            'Faltan detalles de la orden para procesar la compra.'
         );
     }
 
+    // 3. Iniciar una transacción de Firestore para garantizar la atomicidad.
     try {
         await db.runTransaction(async (transaction) => {
-            const userOrdersCollectionRef = db.collection('users').doc(userId).collection('orders');
-            const ordersCollectionRef = db.collection('orders');
-
-            // 2. Crear un ID de documento único para la nueva orden
-            // Este ID se usa para ambas colecciones
-            const newOrderRef = ordersCollectionRef.doc();
-            const orderId = newOrderRef.id;
-
-            // 3. Preparar el objeto de la orden para guardar
-            const orderToSave = {
-                id: orderId,
-                userId: userId,
-                fechaOrden: admin.firestore.FieldValue.serverTimestamp(),
-                estado: 'pendiente',
-                total: orderDetails.total,
-                items: orderDetails.items.map(item => ({
-                    id: item.id,
-                    name: item.name,
-                    price: item.price,
-                    quantity: item.quantity,
-                    imageUrl: item.imageUrl || ''
-                })),
-                shippingDetails: orderDetails.shippingDetails,
-                paypalTransactionId: orderDetails.paypalTransactionId,
-                paymentStatus: orderDetails.paymentStatus,
-                payerId: orderDetails.payerId,
-                payerEmail: orderDetails.payerEmail,
-            };
-
-            // 4. Guardar la orden en la colección principal 'orders'
-            transaction.set(newOrderRef, orderToSave);
-            functions.logger.info(`Orden ${orderId} guardada en la colección principal 'orders'.`);
-
-            // 5. Guardar la misma orden en la subcolección 'orders' del usuario
-            const userOrderRef = userOrdersCollectionRef.doc(orderId);
-            transaction.set(userOrderRef, orderToSave);
-            functions.logger.info(`Orden ${orderId} guardada en la subcolección 'users/${userId}/orders'.`);
-            
-            // 6. Actualizar el inventario de los productos
+            // 4. Actualizar el inventario de los productos
             const productsCollection = db.collection('products');
             for (const item of orderDetails.items) {
                 const productRef = productsCollection.doc(item.id);
                 const productDoc = await transaction.get(productRef);
-                
+
                 if (!productDoc.exists) {
                     throw new Error(`El producto con ID ${item.id} no existe.`);
                 }
-                
+
                 const currentStock = productDoc.data().stock;
                 const newStock = currentStock - item.quantity;
-                
+
                 if (newStock < 0) {
                     throw new Error(`No hay suficiente stock para el producto ${productDoc.data().name}.`);
                 }
-                
+
                 transaction.update(productRef, { stock: newStock });
             }
             functions.logger.info('Inventario actualizado con éxito.');
+            
+            // 5. Generar un único ID para la orden y usarlo para ambas colecciones.
+            const newOrderRef = db.collection('orders').doc(); // Genera un ID de documento único
+            const orderId = newOrderRef.id;
+
+            // 6. Crear el objeto de la orden final con el estado 'pending'
+            const newOrder = {
+                ...orderDetails,
+                userId: userId,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                status: 'pending', // Estado inicial: pendiente
+                orderId: orderId // Referencia al ID único de la orden
+            };
+
+            // 7. Guardar la orden en la colección principal 'orders'
+            transaction.set(newOrderRef, newOrder);
+            functions.logger.info(`Orden con ID ${orderId} guardada en la colección principal 'orders'.`);
+
+            // 8. Guardar la orden en la subcolección 'orders' del usuario usando el mismo ID
+            const userOrdersCollection = db.collection('users').doc(userId).collection('orders');
+            const userOrderRef = userOrdersCollection.doc(orderId);
+            transaction.set(userOrderRef, newOrder);
+            functions.logger.info(`Orden con ID ${orderId} guardada en la subcolección 'users/${userId}/orders'.`);
+            
         });
 
         return { success: true, message: 'Inventario actualizado y orden guardada con éxito.' };
@@ -187,3 +128,40 @@ exports.updateInventoryAndSaveOrder = functions.https.onCall(async (data, contex
         );
     }
 });
+
+// =============================================================================
+// Cloud Function para sincronizar el estado de la orden (exports.syncOrderStatus)
+// =============================================================================
+// Se activa cuando una orden en la colección 'orders' es actualizada.
+// Sincroniza el estado con la subcolección del usuario para mantener la consistencia.
+exports.syncOrderStatus = functions.firestore
+    .document('orders/{orderId}')
+    .onUpdate(async (change, context) => {
+        const orderId = context.params.orderId;
+        const newStatus = change.after.data().status;
+        const userId = change.after.data().userId;
+
+        // Validaciones básicas
+        if (!userId || !newStatus) {
+            console.log('No userId or status in order, skipping sync');
+            return null;
+        }
+
+        try {
+            // Referencia a la orden en la subcolección del usuario
+            const userOrderRef = admin.firestore()
+                .collection('users')
+                .doc(userId)
+                .collection('orders')
+                .doc(orderId); // Usamos el ID único para encontrar el documento
+
+            // Actualizar el estado de la orden del usuario
+            await userOrderRef.update({ status: newStatus });
+
+            console.log(`Successfully synced status for order ${orderId} in user subcollection`);
+            
+        } catch (error) {
+            console.error('Error syncing order status:', error);
+            // La función no debe fallar si la orden no se encuentra, solo registrar el error.
+        }
+    });
