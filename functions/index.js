@@ -1,4 +1,4 @@
-const functions = require("firebase-functions");
+const functions = require("firebase-functions/v1"); // ¡Importante el /v1 aquí!
 const admin = require("firebase-admin");
 admin.initializeApp();
 
@@ -7,7 +7,7 @@ const MAX_ORDER_ITEMS = 20;
 const MAX_ORDER_VALUE = 10000;
 
 // =============================================================================
-// Cloud Function para el Formulario de Contacto (exports.api)
+// 1. Cloud Function para el Formulario de Contacto (HTTP)
 // =============================================================================
 exports.api = functions.https.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
@@ -25,12 +25,11 @@ exports.api = functions.https.onRequest(async (req, res) => {
 
   const { fullName, email, message } = req.body;
   if (!fullName || !email || !message) {
-    functions.logger.error('Datos del formulario de contacto incompletos:', req.body);
-    return res.status(400).send('Por favor, proporciona nombre completo, correo electrónico y mensaje.');
+    console.error('Datos incompletos:', req.body);
+    return res.status(400).send('Por favor completa todos los campos.');
   }
 
   try {
-    functions.logger.info('Mensaje de contacto recibido:', { fullName, email, message });
     await db.collection('contacts').add({
       fullName,
       email,
@@ -39,16 +38,16 @@ exports.api = functions.https.onRequest(async (req, res) => {
     });
     return res.status(200).send({ message: 'Mensaje enviado con éxito.' });
   } catch (error) {
-    functions.logger.error('Error al guardar el mensaje de contacto:', error);
+    console.error('Error:', error);
     return res.status(500).send('Error interno del servidor.');
   }
 });
 
 // =============================================================================
-// Cloud Function para actualizar el inventario y guardar la orden
+// 2. Cloud Function para Procesar Órdenes (Callable)
 // =============================================================================
 exports.updateInventoryAndSaveOrder = functions.https.onCall(async (data, context) => {
-  // 1. Determinar userId (cambio solicitado)
+  // 1. Determinar userId
   let userId;
   if (context.auth) {
     userId = context.auth.uid;
@@ -61,131 +60,103 @@ exports.updateInventoryAndSaveOrder = functions.https.onCall(async (data, contex
     );
   }
 
-  // 2. Validaciones de la orden
+  // 2. Validaciones
   const orderDetails = data.orderDetails;
-  if (!orderDetails || !orderDetails.items || !orderDetails.total) {
+  if (!orderDetails?.items?.length || typeof orderDetails?.total !== 'number') {
     throw new functions.https.HttpsError(
       'invalid-argument',
-      'Faltan detalles de la orden para procesar la compra.'
+      'La orden debe contener items y un total válido.'
     );
   }
 
   if (orderDetails.items.length > MAX_ORDER_ITEMS) {
     throw new functions.https.HttpsError(
       'invalid-argument',
-      `No se pueden ordenar más de ${MAX_ORDER_ITEMS} productos en una sola orden.`
+      `Límite de ${MAX_ORDER_ITEMS} productos por orden.`
     );
   }
 
   if (orderDetails.total > MAX_ORDER_VALUE) {
     throw new functions.https.HttpsError(
       'invalid-argument',
-      `El valor total de la orden no puede exceder $${MAX_ORDER_VALUE}.`
+      `El total no puede exceder $${MAX_ORDER_VALUE}.`
     );
   }
 
-  // 3. Procesamiento de la transacción
   try {
     await db.runTransaction(async (transaction) => {
       // Actualizar inventario
-      const productsCollection = db.collection('products');
       for (const item of orderDetails.items) {
-        const productRef = productsCollection.doc(item.id);
+        const productRef = db.collection('products').doc(item.id);
         const productDoc = await transaction.get(productRef);
 
         if (!productDoc.exists) {
-          throw new Error(`El producto con ID ${item.id} no existe.`);
+          throw new functions.https.HttpsError('not-found', `Producto ${item.id} no existe.`);
         }
 
-        const currentStock = productDoc.data().stock;
-        const newStock = currentStock - item.quantity;
-
+        const newStock = productDoc.data().stock - item.quantity;
         if (newStock < 0) {
-          throw new Error(`No hay suficiente stock para el producto ${productDoc.data().name}.`);
+          throw new functions.https.HttpsError(
+            'failed-precondition',
+            `Stock insuficiente para ${productDoc.data().name}.`
+          );
         }
-
         transaction.update(productRef, { stock: newStock });
       }
 
       // Crear orden
-      const newOrderRef = db.collection('orders').doc();
+      const orderRef = db.collection('orders').doc();
       const orderData = {
         ...orderDetails,
         userId,
-        orderId: newOrderRef.id,
+        orderId: orderRef.id,
         status: 'pending',
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
         isGuestOrder: !context.auth
       };
 
-      // Guardar en ambas colecciones
-      transaction.set(newOrderRef, orderData);
+      transaction.set(orderRef, orderData);
       transaction.set(
-        db.collection('users').doc(userId).collection('orders').doc(newOrderRef.id),
+        db.collection('users').doc(userId).collection('orders').doc(orderRef.id),
         orderData
       );
     });
 
     return { 
       success: true,
-      message: 'Inventario actualizado y orden guardada con éxito.'
+      orderId: orderRef.id,
+      message: 'Orden procesada exitosamente'
     };
 
   } catch (error) {
-    functions.logger.error('Transaction error:', error, { 
-      userId,
-      orderDetails: { 
-        itemsCount: orderDetails.items.length, 
-        total: orderDetails.total 
-      } 
-    });
-
-    let errorCode = 'internal';
-    let errorMessage = 'Error al procesar la orden';
-
-    if (error.message.includes('no hay suficiente stock')) {
-      errorCode = 'failed-precondition';
-      errorMessage = 'Uno o más productos no tienen suficiente stock';
-    } else if (error.message.includes('no existe')) {
-      errorCode = 'not-found';
-      errorMessage = 'Uno o más productos no existen';
+    console.error('Error:', error);
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
     }
-
-    throw new functions.https.HttpsError(errorCode, errorMessage);
+    throw new functions.https.HttpsError('internal', 'Error al procesar la orden.');
   }
 });
 
 // =============================================================================
-// Cloud Function para actualizar el estado de las órdenes
+// 3. Cloud Function para Actualizar Estado de Órdenes (Callable)
 // =============================================================================
 exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
-  // 1. Verificar autenticación
   if (!context.auth) {
     throw new functions.https.HttpsError(
       'unauthenticated',
-      'Solo los usuarios autenticados pueden actualizar el estado de las órdenes.'
+      'Se requiere autenticación.'
     );
   }
 
-  // 2. Validar datos de entrada
   const { orderId, userId, newStatus } = data;
   if (!orderId || !userId || !newStatus) {
     throw new functions.https.HttpsError(
       'invalid-argument',
-      'Faltan parámetros para actualizar la orden (orderId, userId, newStatus).'
-    );
-  }
-
-  // 3. Verificar permisos
-  if (context.auth.uid !== userId && !context.auth.token.admin) {
-    throw new functions.https.HttpsError(
-      'permission-denied',
-      'No tienes permisos para actualizar esta orden.'
+      'Faltan parámetros requeridos.'
     );
   }
 
   try {
-    // 4. Actualizar estado
     const batch = db.batch();
     const orderRef = db.collection('orders').doc(orderId);
     const userOrderRef = db.collection('users').doc(userId).collection('orders').doc(orderId);
@@ -200,23 +171,16 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
     });
 
     await batch.commit();
-
-    return { 
-      success: true,
-      message: 'Estado de la orden actualizado con éxito.'
-    };
+    return { success: true, message: 'Estado actualizado.' };
 
   } catch (error) {
-    functions.logger.error('Error al actualizar el estado de la orden:', error);
-    throw new functions.https.HttpsError(
-      'internal',
-      'Error al actualizar el estado de la orden. Por favor, inténtalo de nuevo más tarde.'
-    );
+    console.error('Error:', error);
+    throw new functions.https.HttpsError('internal', 'Error al actualizar estado.');
   }
 });
 
 // =============================================================================
-// Trigger para sincronización de estados
+// 4. Trigger para Sincronizar Estados (Firestore) - Versión corregida
 // =============================================================================
 exports.syncOrderStatus = functions.firestore
   .document('orders/{orderId}')
@@ -234,14 +198,19 @@ exports.syncOrderStatus = functions.firestore
         .doc(orderId)
         .update({
           status: newData.status,
-          updatedAt: newData.updatedAt || admin.firestore.FieldValue.serverTimestamp()
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
-
-      functions.logger.log(`Estado sincronizado para orden ${orderId}`);
+      console.log(`Estado sincronizado para ${orderId}`);
     } catch (error) {
-      functions.logger.error('Error al sincronizar estado:', error);
-      if (error.code === 14 || error.code === 'UNAVAILABLE') {
-        throw error; // Reintentar para errores temporales
-      }
+      console.error('Error al sincronizar:', error);
+      if (shouldRetry(error)) throw error;
     }
   });
+
+// =============================================================================
+// Funciones de Utilidad
+// =============================================================================
+function shouldRetry(error) {
+  const retryableErrors = ["resource-exhausted", "unavailable", "deadline-exceeded"];
+  return retryableErrors.includes(error.code);
+}
