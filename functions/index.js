@@ -2,6 +2,8 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
 
+// Importación explícita para triggers de Firestore
+const firestore = admin.firestore;
 const db = admin.firestore();
 const MAX_ORDER_ITEMS = 20;
 const MAX_ORDER_VALUE = 10000;
