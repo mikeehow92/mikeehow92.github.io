@@ -1,6 +1,6 @@
 // js/pago.js
 
-// Importa las funciones necesarias de Firebase
+// Importa las funciones necesarias de Firebase Auth, Firestore, Storage y Functions
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -24,7 +24,7 @@ const departmentsAndMunicipalities = {
     "Usulután": ["Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán", "Usulután"]
 };
 
-// Variables globales
+// Declaración de variables globales para los elementos del formulario de envío y contenedores
 let shippingForm;
 let shippingFullNameInput;
 let shippingEmailInput;
@@ -35,86 +35,17 @@ let shippingAddressInput;
 let paypalButtonContainer;
 let validationMessageDiv;
 
-// Función para validar el formulario de envío
-function validateShippingForm() {
-    if (!shippingForm) return false;
-    
-    const requiredFields = [
-        shippingFullNameInput,
-        shippingEmailInput,
-        shippingPhoneInput,
-        shippingDepartmentSelect,
-        shippingMunicipalitySelect,
-        shippingAddressInput
-    ];
-    
-    let isValid = true;
-    
-    requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-            isValid = false;
-            field.classList.add('border-red-500');
-        } else {
-            field.classList.remove('border-red-500');
-        }
-    });
-    
-    // Validación de email
-    if (shippingEmailInput && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shippingEmailInput.value.trim())) {
-        isValid = false;
-        shippingEmailInput.classList.add('border-red-500');
-    }
-    
-    // Validación de teléfono (al menos 8 dígitos)
-    if (shippingPhoneInput && !/^\d{8,}$/.test(shippingPhoneInput.value.trim())) {
-        isValid = false;
-        shippingPhoneInput.classList.add('border-red-500');
-    }
-    
-    return isValid;
-}
-
-// Función para cargar departamentos
-function loadShippingDepartments() {
-    if (!shippingDepartmentSelect) return;
-    shippingDepartmentSelect.innerHTML = '<option value="">Seleccione un departamento</option>';
-    for (const dept in departmentsAndMunicipalities) {
-        const option = document.createElement('option');
-        option.value = dept;
-        option.textContent = dept;
-        shippingDepartmentSelect.appendChild(option);
-    }
-}
-
-// Función para cargar municipios
-function loadShippingMunicipalities(department) {
-    if (!shippingMunicipalitySelect) return;
-    shippingMunicipalitySelect.innerHTML = '<option value="">Seleccione un municipio</option>';
-    shippingMunicipalitySelect.disabled = true;
-
-    if (department && departmentsAndMunicipalities[department]) {
-        departmentsAndMunicipalities[department].forEach(muni => {
-            const option = document.createElement('option');
-            option.value = muni;
-            option.textContent = muni;
-            shippingMunicipalitySelect.appendChild(option);
-        });
-        shippingMunicipalitySelect.disabled = false;
-    } else {
-        shippingMunicipalitySelect.innerHTML = '<option value="">Primero seleccione un departamento</option>';
-    }
-}
-
-// Función para renderizar botones de PayPal
+// Función para renderizar los botones de PayPal
 function renderPayPalButtons() {
     console.log('renderPayPalButtons: Función iniciada.');
     const cart = window.getCart();
 
     if (!paypalButtonContainer) {
-        console.error('Contenedor de PayPal no encontrado.');
+        console.error('renderPayPalButtons: Contenedor #paypal-button-container no encontrado.');
         return;
     }
     if (cart.length === 0) {
+        console.log('renderPayPalButtons: Carrito vacío, no se renderizan los botones de PayPal.');
         paypalButtonContainer.innerHTML = '';
         return;
     }
@@ -130,30 +61,27 @@ function renderPayPalButtons() {
         validationMessageDiv.id = 'paypal-validation-message';
         validationMessageDiv.className = 'text-red-500 text-sm mt-2 text-center';
         paypalButtonContainer.appendChild(validationMessageDiv);
+    } else {
+        if (!paypalButtonContainer.contains(validationMessageDiv)) {
+            paypalButtonContainer.appendChild(validationMessageDiv);
+        }
     }
 
     if (typeof paypal === 'undefined') {
-        validationMessageDiv.textContent = 'Error: El servicio de pago no está disponible.';
+        console.error('renderPayPalButtons: Objeto "paypal" no definido.');
+        validationMessageDiv.textContent = 'Error: El servicio de pago no está disponible. Por favor, recarga la página o inténtalo más tarde.';
         validationMessageDiv.classList.remove('hidden');
         return;
+    } else {
+        console.log('renderPayPalButtons: Objeto "paypal" detectado, intentando renderizar botones.');
     }
 
-    // Inicializar Firebase Functions
-    const functions = getFunctions();
-    const updateInventoryAndSaveOrder = httpsCallable(functions, 'updateInventoryAndSaveOrder');
-
     paypal.Buttons({
-        style: {
-            layout: 'vertical',
-            color: 'blue',
-            shape: 'pill',
-            label: 'paypal'
-        },
         createOrder: function(data, actions) {
-            if (!validateShippingForm()) {
-                validationMessageDiv.textContent = 'Por favor, completa todos los campos requeridos correctamente.';
+            if (!shippingForm || !shippingForm.checkValidity()) {
+                validationMessageDiv.textContent = 'Por favor, completa todos los detalles de envío para continuar.';
                 validationMessageDiv.classList.remove('hidden');
-                throw new Error('Formulario de envío inválido');
+                throw new Error('Formulario de envío incompleto o inválido.');
             } else {
                 validationMessageDiv.classList.add('hidden');
             }
@@ -184,66 +112,69 @@ function renderPayPalButtons() {
                 }]
             });
         },
-        onApprove: function(data, actions) {
-            return actions.order.capture().then(async function(details) {
-                window.showAlert('¡Pago completado! Procesando tu pedido...', 'success');
+        onApprove: async function(data, actions) {
+            try {
+                const details = await actions.order.capture();
+                console.log('Pago completado por ' + details.payer.name.given_name, details);
+                window.showAlert('¡Pago completado con éxito! Procesando tu pedido...', 'success');
 
-                const shippingDetails = {
-                    fullName: shippingFullNameInput.value,
-                    email: shippingEmailInput.value,
-                    phone: shippingPhoneInput.value,
-                    department: shippingDepartmentSelect.value,
-                    municipality: shippingMunicipalitySelect.value,
-                    address: shippingAddressInput.value
-                };
+                const shippingFullName = shippingFullNameInput ? shippingFullNameInput.value : '';
+                const shippingEmail = shippingEmailInput ? shippingEmailInput.value : '';
+                const shippingPhone = shippingPhoneInput ? shippingPhoneInput.value : '';
+                const shippingDepartment = shippingDepartmentSelect ? shippingDepartmentSelect.value : '';
+                const shippingMunicipality = shippingMunicipalitySelect ? shippingMunicipalitySelect.value : '';
+                const shippingAddress = shippingAddressInput ? shippingAddressInput.value : '';
 
                 const orderDetails = {
                     paypalTransactionId: details.id,
                     paymentStatus: details.status,
                     payerId: details.payer.payer_id,
-                    payerEmail: details.payer.email_address || shippingDetails.email,
+                    payerEmail: shippingEmail,
                     total: parseFloat(details.purchase_units[0].amount.value),
                     items: window.getCart(),
-                    shippingDetails: shippingDetails
+                    shippingDetails: {
+                        fullName: shippingFullName,
+                        email: shippingEmail,
+                        phone: shippingPhone,
+                        department: shippingDepartment,
+                        municipality: shippingMunicipality,
+                        address: shippingAddress
+                    }
                 };
 
-                try {
-                    const result = await updateInventoryAndSaveOrder({ 
-                        orderDetails: orderDetails,
-                        userId: window.currentUserIdGlobal
-                    });
+                const functions = getFunctions();
+                const updateInventoryAndSaveOrder = httpsCallable(functions, 'updateInventoryAndSaveOrder');
 
-                    if (result.data.success) {
-                        window.showAlert('¡Pedido procesado con éxito!', 'success');
-                        localStorage.removeItem('shoppingCart');
-                        sessionStorage.removeItem('guestUserId');
-                        window.updateCartDisplay();
-                        // window.location.href = 'confirmacion-pedido.html';
-                    } else {
-                        throw new Error(result.data.message || 'Error al procesar la orden');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    window.showAlert(`Error: ${error.message}`, 'error');
-                }
-            }).catch(error => {
-                console.error('Error al capturar el pago:', error);
-                window.showAlert('Error al procesar el pago. Inténtalo de nuevo.', 'error');
-            });
+                const result = await updateInventoryAndSaveOrder({
+                    items: window.getCart(),
+                    orderDetails: orderDetails,
+                    userId: window.currentUserIdGlobal
+                });
+
+                console.log('Respuesta de la Cloud Function:', result.data);
+                window.showAlert('¡Tu pedido ha sido procesado y guardado con éxito! Gracias por tu compra.', 'success');
+                
+                localStorage.removeItem('shoppingCart');
+                sessionStorage.removeItem('guestUserId');
+                window.updateCartDisplay();
+
+            } catch (error) {
+                console.error('Error en el proceso de pago:', error);
+                window.showAlert(`Hubo un error al procesar tu pago: ${error.message}. Por favor, inténtalo de nuevo.`, 'error');
+            }
         },
         onError: function(err) {
             console.error('Error en PayPal:', err);
-            window.showAlert('Error con PayPal. Intenta otro método de pago.', 'error');
+            window.showAlert('Ocurrió un error con PayPal. Por favor, inténtalo de nuevo o elige otro método de pago.', 'error');
         },
         onCancel: function(data) {
-            window.showAlert('Pago cancelado.', 'info');
+            console.log('Pago cancelado por el usuario.');
+            window.showAlert('El pago ha sido cancelado.', 'info');
         }
     }).render(buttonsDiv);
 }
 
-// Evento cuando el DOM está cargado
 document.addEventListener('DOMContentLoaded', () => {
-    // Elementos del encabezado
     const loginButton = document.getElementById('loginButton');
     const loggedInUserDisplay = document.getElementById('loggedInUserDisplay');
     const userNameDisplay = document.getElementById('userNameDisplay');
@@ -252,13 +183,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const navCarrito = document.getElementById('navCarrito');
     const cartItemCountElement = document.getElementById('cartItemCount');
 
-    // Elementos del cuerpo principal
     const cartItemsContainer = document.getElementById('cartItemsContainer');
     const emptyCartMessage = document.getElementById('emptyCartMessage');
     const cartTotalElement = document.getElementById('cartTotal');
     paypalButtonContainer = document.getElementById('paypal-button-container');
 
-    // Elementos del formulario de envío
     shippingForm = document.getElementById('shippingDetailsForm');
     shippingFullNameInput = document.getElementById('shippingFullName');
     shippingEmailInput = document.getElementById('shippingEmail');
@@ -267,29 +196,33 @@ document.addEventListener('DOMContentLoaded', () => {
     shippingMunicipalitySelect = document.getElementById('shippingMunicipality');
     shippingAddressInput = document.getElementById('shippingAddress');
 
-    // Referencias de Firebase
+    if (!shippingForm) {
+        console.error('Error: El formulario de envío con ID "shippingDetailsForm" no se encontró en el DOM.');
+    }
+
     const auth = window.firebaseAuth;
     const app = window.firebaseApp;
     const storage = app ? getStorage(app) : null;
     const db = window.firebaseDb;
 
-    // Variable global para el ID de usuario
     window.currentUserIdGlobal = null;
 
-    // Función para actualizar el contador del carrito
     function updateCartCountDisplay() {
         const cart = window.getCart();
         const totalItemsInCart = cart.reduce((total, item) => total + item.quantity, 0);
         if (cartItemCountElement) {
             cartItemCountElement.textContent = totalItemsInCart;
-            totalItemsInCart > 0 
-                ? cartItemCountElement.classList.remove('hidden')
-                : cartItemCountElement.classList.add('hidden');
+            if (totalItemsInCart > 0) {
+                cartItemCountElement.classList.remove('hidden');
+            } else {
+                cartItemCountElement.classList.add('hidden');
+            }
         }
-        if (navCarrito) navCarrito.classList.remove('hidden');
+        if (navCarrito) {
+            navCarrito.classList.remove('hidden');
+        }
     }
 
-    // Función para actualizar la visualización del carrito
     window.updateCartDisplay = function() {
         updateCartCountDisplay();
         const cart = window.getCart();
@@ -359,9 +292,34 @@ document.addEventListener('DOMContentLoaded', () => {
         cartTotalElement.textContent = `$${window.getCartTotal().toFixed(2)}`;
     };
 
-    // Cargar departamentos y municipios
-    loadShippingDepartments();
-    loadShippingMunicipalities(shippingDepartmentSelect ? shippingDepartmentSelect.value : '');
+    function loadShippingDepartments() {
+        if (!shippingDepartmentSelect) return;
+        shippingDepartmentSelect.innerHTML = '<option value="">Seleccione un departamento</option>';
+        for (const dept in departmentsAndMunicipalities) {
+            const option = document.createElement('option');
+            option.value = dept;
+            option.textContent = dept;
+            shippingDepartmentSelect.appendChild(option);
+        }
+    }
+
+    function loadShippingMunicipalities(department) {
+        if (!shippingMunicipalitySelect) return;
+        shippingMunicipalitySelect.innerHTML = '<option value="">Seleccione un municipio</option>';
+        shippingMunicipalitySelect.disabled = true;
+
+        if (department && departmentsAndMunicipalities[department]) {
+            departmentsAndMunicipalities[department].forEach(muni => {
+                const option = document.createElement('option');
+                option.value = muni;
+                option.textContent = muni;
+                shippingMunicipalitySelect.appendChild(option);
+            });
+            shippingMunicipalitySelect.disabled = false;
+        } else {
+            shippingMunicipalitySelect.innerHTML = '<option value="">Primero seleccione un departamento</option>';
+        }
+    }
 
     if (shippingDepartmentSelect) {
         shippingDepartmentSelect.addEventListener('change', (event) => {
@@ -372,17 +330,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Manejo de autenticación
+    loadShippingDepartments();
+    loadShippingMunicipalities(shippingDepartmentSelect ? shippingDepartmentSelect.value : '');
+
+    if (navCarrito) {
+        navCarrito.classList.remove('hidden');
+    }
+
+    if (loginButton) {
+        loginButton.addEventListener('click', () => {
+            console.log('Botón "Iniciar Sesión" clickeado en pago.html. Redirigiendo a login.html...');
+            window.location.href = 'login.html';
+        });
+    }
+
     if (auth) {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Usuario autenticado
                 loginButton.classList.add('hidden');
                 loggedInUserDisplay.classList.remove('hidden');
                 userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
-                window.currentUserIdGlobal = user.uid;
 
-                // Cargar avatar
                 if (profileAvatarHeader) {
                     if (user.photoURL) {
                         profileAvatarHeader.src = user.photoURL;
@@ -404,8 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
                     }
                 }
+                window.currentUserIdGlobal = user.uid;
 
-                // Precargar datos de envío
                 if (db && shippingForm) {
                     try {
                         const userDocRef = doc(db, "users", user.uid);
@@ -425,15 +393,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                     } catch (error) {
-                        console.error("Error al cargar datos de envío:", error);
-                        window.showAlert("Error al cargar tus datos. Introdúcelos manualmente.", "error");
+                        console.error("Error al precargar datos de envío del usuario:", error);
+                        window.showAlert("Error al cargar tus datos de envío. Por favor, introdúcelos manualmente.", "error");
                     }
                 }
+
             } else {
-                // Usuario invitado
                 loginButton.classList.remove('hidden');
                 loggedInUserDisplay.classList.add('hidden');
-                if (profileAvatarHeader) profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
+                if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
 
                 let guestId = sessionStorage.getItem('guestUserId');
                 if (!guestId) {
@@ -445,10 +413,10 @@ document.addEventListener('DOMContentLoaded', () => {
             window.updateCartDisplay();
         });
     } else {
-        console.warn("Firebase Auth no inicializado. Modo invitado.");
+        console.warn("Firebase Auth no está inicializado. Procediendo como invitado.");
         loginButton.classList.remove('hidden');
         loggedInUserDisplay.classList.add('hidden');
-        if (profileAvatarHeader) profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
+        if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
 
         let guestId = sessionStorage.getItem('guestUserId');
         if (!guestId) {
@@ -459,24 +427,26 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateCartDisplay();
     }
 
-    // Manejo de cierre de sesión
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
             if (auth) {
                 try {
                     await signOut(auth);
-                    window.showAlert('Sesión cerrada correctamente.', 'success');
+                    window.showAlert('Has cerrado sesión correctamente.', 'success');
                 } catch (error) {
                     console.error('Error al cerrar sesión:', error.message);
-                    window.showAlert('Error al cerrar sesión. Inténtalo de nuevo.', 'error');
+                    window.showAlert('Error al cerrar sesión. Por favor, inténtalo de nuevo.', 'error');
                 }
+            } else {
+                window.showAlert('Firebase Auth no está disponible para cerrar sesión.', 'error');
             }
         });
     }
 
-    // Cargar SDK de PayPal
     window.loadPayPalSDK();
+
     document.addEventListener('paypalSDKLoaded', () => {
+        console.log('Evento paypalSDKLoaded disparado. Actualizando display del carrito para renderizar botones.');
         window.updateCartDisplay();
     });
 });
