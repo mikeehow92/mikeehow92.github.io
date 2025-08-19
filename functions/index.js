@@ -1,243 +1,247 @@
-const { onRequest } = require("firebase-functions/v2/https");
-const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
-const { onCall } = require("firebase-functions/v2/https");
-const { setGlobalOptions } = require("firebase-functions/v2");
+const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
-
-// Configuración global para Functions v2
-setGlobalOptions({
-  maxInstances: 10,
-  region: "us-central1",
-});
 
 const db = admin.firestore();
 const MAX_ORDER_ITEMS = 20;
 const MAX_ORDER_VALUE = 10000;
 
 // =============================================================================
-// 1. Cloud Function para el Formulario de Contacto (HTTP)
+// Cloud Function para el Formulario de Contacto (exports.api)
 // =============================================================================
-exports.api = onRequest(
-  {
-    cors: true,
-    maxInstances: 2,
-  },
-  async (req, res) => {
-    if (req.method !== "POST") {
-      return res.status(405).send("Método no permitido. Solo POST.");
-    }
-
-    const { fullName, email, message } = req.body;
-
-    if (!fullName || !email || !message) {
-      return res.status(400).send("Faltan campos requeridos.");
-    }
-
-    try {
-      await db.collection("contacts").add({
-        fullName,
-        email,
-        message,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      return res.status(200).send({ success: true, message: "Mensaje enviado." });
-    } catch (error) {
-      console.error("Error:", error);
-      return res.status(500).send("Error interno del servidor.");
-    }
+exports.api = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  
+  if (req.method === 'OPTIONS') {
+    res.set('Access-Control-Allow-Methods', 'POST');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    res.set('Access-Control-Max-Age', '3600');
+    return res.status(204).send('');
   }
-);
+
+  if (req.method !== 'POST') {
+    return res.status(405).send('Método no permitido. Solo POST.');
+  }
+
+  const { fullName, email, message } = req.body;
+  if (!fullName || !email || !message) {
+    functions.logger.error('Datos del formulario de contacto incompletos:', req.body);
+    return res.status(400).send('Por favor, proporciona nombre completo, correo electrónico y mensaje.');
+  }
+
+  try {
+    functions.logger.info('Mensaje de contacto recibido:', { fullName, email, message });
+    await db.collection('contacts').add({
+      fullName,
+      email,
+      message,
+      timestamp: admin.firestore.FieldValue.serverTimestamp()
+    });
+    return res.status(200).send({ message: 'Mensaje enviado con éxito.' });
+  } catch (error) {
+    functions.logger.error('Error al guardar el mensaje de contacto:', error);
+    return res.status(500).send('Error interno del servidor.');
+  }
+});
 
 // =============================================================================
-// 2. Cloud Function para Procesar Órdenes (Callable)
+// Cloud Function para actualizar el inventario y guardar la orden
 // =============================================================================
-exports.processOrder = onCall(
-  {
-    enforceAppCheck: false, // Cambia a true en producción
-    consumeAppCheckToken: false,
-  },
-  async (request) => {
-    // 1. Determinar userId
-    let userId;
-    if (request.auth) {
-      userId = request.auth.uid;
-    } else if (request.data.guestUserId) {
-      userId = request.data.guestUserId;
-    } else {
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "Debes estar autenticado o proporcionar un guestUserId."
-      );
-    }
+exports.updateInventoryAndSaveOrder = functions.https.onCall(async (data, context) => {
+  // 1. Determinar userId (cambio solicitado)
+  let userId;
+  if (context.auth) {
+    userId = context.auth.uid;
+  } else if (data.guestUserId) {
+    userId = data.guestUserId;
+  } else {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Debes estar autenticado o proporcionar un guestUserId.'
+    );
+  }
 
-    const orderDetails = request.data.orderDetails;
+  // 2. Validaciones de la orden
+  const orderDetails = data.orderDetails;
+  if (!orderDetails || !orderDetails.items || !orderDetails.total) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Faltan detalles de la orden para procesar la compra.'
+    );
+  }
 
-    // Validar datos de la orden
-    if (!orderDetails?.items || !orderDetails?.total) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Datos de la orden incompletos."
-      );
-    }
+  if (orderDetails.items.length > MAX_ORDER_ITEMS) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      `No se pueden ordenar más de ${MAX_ORDER_ITEMS} productos en una sola orden.`
+    );
+  }
 
-    if (orderDetails.items.length > MAX_ORDER_ITEMS) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        `Máximo ${MAX_ORDER_ITEMS} productos por orden.`
-      );
-    }
+  if (orderDetails.total > MAX_ORDER_VALUE) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      `El valor total de la orden no puede exceder $${MAX_ORDER_VALUE}.`
+    );
+  }
 
-    if (orderDetails.total > MAX_ORDER_VALUE) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        `El total no puede exceder $${MAX_ORDER_VALUE}.`
-      );
-    }
+  // 3. Procesamiento de la transacción
+  try {
+    await db.runTransaction(async (transaction) => {
+      // Actualizar inventario
+      const productsCollection = db.collection('products');
+      for (const item of orderDetails.items) {
+        const productRef = productsCollection.doc(item.id);
+        const productDoc = await transaction.get(productRef);
 
-    try {
-      await db.runTransaction(async (transaction) => {
-        // Actualizar inventario
-        for (const item of orderDetails.items) {
-          const productRef = db.collection("products").doc(item.id);
-          const productDoc = await transaction.get(productRef);
-
-          if (!productDoc.exists) {
-            throw new Error(`Producto ${item.id} no encontrado.`);
-          }
-
-          const currentStock = productDoc.data().stock;
-          const newStock = currentStock - item.quantity;
-
-          if (newStock < 0) {
-            throw new Error(`Stock insuficiente para ${productDoc.data().name}.`);
-          }
-
-          transaction.update(productRef, { stock: newStock });
+        if (!productDoc.exists) {
+          throw new Error(`El producto con ID ${item.id} no existe.`);
         }
 
-        // Crear orden
-        const orderRef = db.collection("orders").doc();
-        const orderId = orderRef.id;
-        const orderData = {
-          ...orderDetails,
-          userId,
-          orderId,
-          status: "pending",
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-          isGuestOrder: !request.auth,
-        };
+        const currentStock = productDoc.data().stock;
+        const newStock = currentStock - item.quantity;
 
-        // Guardar en ambas colecciones
-        transaction.set(orderRef, orderData);
-        transaction.set(
-          db.collection("users").doc(userId).collection("orders").doc(orderId),
-          orderData
-        );
-      });
+        if (newStock < 0) {
+          throw new Error(`No hay suficiente stock para el producto ${productDoc.data().name}.`);
+        }
 
-      return { success: true, message: "Orden procesada correctamente." };
-    } catch (error) {
-      console.error("Error en la transacción:", error);
-      throw new functions.https.HttpsError("internal", error.message);
+        transaction.update(productRef, { stock: newStock });
+      }
+
+      // Crear orden
+      const newOrderRef = db.collection('orders').doc();
+      const orderData = {
+        ...orderDetails,
+        userId,
+        orderId: newOrderRef.id,
+        status: 'pending',
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        isGuestOrder: !context.auth
+      };
+
+      // Guardar en ambas colecciones
+      transaction.set(newOrderRef, orderData);
+      transaction.set(
+        db.collection('users').doc(userId).collection('orders').doc(newOrderRef.id),
+        orderData
+      );
+    });
+
+    return { 
+      success: true,
+      message: 'Inventario actualizado y orden guardada con éxito.'
+    };
+
+  } catch (error) {
+    functions.logger.error('Transaction error:', error, { 
+      userId,
+      orderDetails: { 
+        itemsCount: orderDetails.items.length, 
+        total: orderDetails.total 
+      } 
+    });
+
+    let errorCode = 'internal';
+    let errorMessage = 'Error al procesar la orden';
+
+    if (error.message.includes('no hay suficiente stock')) {
+      errorCode = 'failed-precondition';
+      errorMessage = 'Uno o más productos no tienen suficiente stock';
+    } else if (error.message.includes('no existe')) {
+      errorCode = 'not-found';
+      errorMessage = 'Uno o más productos no existen';
     }
+
+    throw new functions.https.HttpsError(errorCode, errorMessage);
   }
-);
+});
 
 // =============================================================================
-// 3. Trigger para Sincronizar Estados (Firestore)
+// Cloud Function para actualizar el estado de las órdenes
 // =============================================================================
-exports.syncOrderStatus = onDocumentUpdated(
-  {
-    document: "orders/{orderId}",
-    maxInstances: 5,
-  },
-  async (event) => {
-    const newData = event.data.after.data();
-    const oldData = event.data.before.data();
-    const orderId = event.params.orderId;
+exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
+  // 1. Verificar autenticación
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Solo los usuarios autenticados pueden actualizar el estado de las órdenes.'
+    );
+  }
 
-    // Solo sincronizar si cambió el estado
-    if (newData.status === oldData.status) return;
+  // 2. Validar datos de entrada
+  const { orderId, userId, newStatus } = data;
+  if (!orderId || !userId || !newStatus) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Faltan parámetros para actualizar la orden (orderId, userId, newStatus).'
+    );
+  }
+
+  // 3. Verificar permisos
+  if (context.auth.uid !== userId && !context.auth.token.admin) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'No tienes permisos para actualizar esta orden.'
+    );
+  }
+
+  try {
+    // 4. Actualizar estado
+    const batch = db.batch();
+    const orderRef = db.collection('orders').doc(orderId);
+    const userOrderRef = db.collection('users').doc(userId).collection('orders').doc(orderId);
+
+    batch.update(orderRef, { 
+      status: newStatus,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    batch.update(userOrderRef, { 
+      status: newStatus,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    await batch.commit();
+
+    return { 
+      success: true,
+      message: 'Estado de la orden actualizado con éxito.'
+    };
+
+  } catch (error) {
+    functions.logger.error('Error al actualizar el estado de la orden:', error);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Error al actualizar el estado de la orden. Por favor, inténtalo de nuevo más tarde.'
+    );
+  }
+});
+
+// =============================================================================
+// Trigger para sincronización de estados
+// =============================================================================
+exports.syncOrderStatus = functions.firestore
+  .document('orders/{orderId}')
+  .onUpdate(async (change, context) => {
+    const newData = change.after.data();
+    const oldData = change.before.data();
+    const orderId = context.params.orderId;
+
+    if (newData.status === oldData.status) return null;
 
     try {
-      await db
-        .collection("users")
+      await db.collection('users')
         .doc(newData.userId)
-        .collection("orders")
+        .collection('orders')
         .doc(orderId)
         .update({
           status: newData.status,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: newData.updatedAt || admin.firestore.FieldValue.serverTimestamp()
         });
 
-      console.log(`Estado sincronizado para orden ${orderId}`);
+      functions.logger.log(`Estado sincronizado para orden ${orderId}`);
     } catch (error) {
-      console.error("Error al sincronizar:", error);
-      if (shouldRetry(error)) throw error;
-    }
-  }
-);
-
-// =============================================================================
-// 4. Trigger para Notificaciones (Firestore)
-// =============================================================================
-exports.sendOrderNotification = onDocumentUpdated(
-  {
-    document: "users/{userId}/orders/{orderId}",
-    maxInstances: 5,
-  },
-  async (event) => {
-    const newStatus = event.data.after.data().status;
-    const oldStatus = event.data.before.data().status;
-    const userId = event.params.userId;
-
-    // Solo notificar si cambió el estado
-    if (newStatus === oldStatus) return;
-
-    try {
-      const userDoc = await db.collection("users").doc(userId).get();
-      const fcmToken = userDoc.data()?.fcmToken;
-
-      if (!fcmToken) {
-        console.log("Usuario sin token FCM.");
-        return;
+      functions.logger.error('Error al sincronizar estado:', error);
+      if (error.code === 14 || error.code === 'UNAVAILABLE') {
+        throw error; // Reintentar para errores temporales
       }
-
-      await admin.messaging().send({
-        token: fcmToken,
-        notification: {
-          title: `Actualización de tu orden`,
-          body: `Estado: ${translateStatus(newStatus)}`,
-        },
-        data: {
-          orderId: event.params.orderId,
-          type: "status_update",
-        },
-      });
-
-      console.log("Notificación enviada.");
-    } catch (error) {
-      console.error("Error al enviar notificación:", error);
     }
-  }
-);
-
-// =============================================================================
-// Funciones de Utilidad
-// =============================================================================
-function shouldRetry(error) {
-  const retryableErrors = ["resource-exhausted", "unavailable", "deadline-exceeded"];
-  return retryableErrors.includes(error.code);
-}
-
-function translateStatus(status) {
-  const statusMap = {
-    pending: "pendiente",
-    processing: "en proceso",
-    shipped: "enviado",
-    delivered: "entregado",
-    cancelled: "cancelado",
-  };
-  return statusMap[status] || status;
-}
+  });
