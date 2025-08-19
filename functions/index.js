@@ -125,7 +125,7 @@ exports.api = onRequest(
 );
 
 // =============================================================================
-// 2. Función para Procesar Órdenes (VERSIÓN SIMPLIFICADA)
+// 2. Función para Procesar Órdenes (VERSIÓN SIMPLIFICADA) - ACTUALIZADA A ESPAÑOL
 // =============================================================================
 exports.updateInventoryAndSaveOrder = onCall(
   {
@@ -188,8 +188,8 @@ exports.updateInventoryAndSaveOrder = onCall(
         total: orderDetails.total,
         userId: userId,
         orderId: orderRef.id,
-        status: "pending",
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        estado: "pendiente", // CAMBIO: status -> estado
+        fechaOrden: admin.firestore.FieldValue.serverTimestamp(), // CAMBIO: timestamp -> fechaOrden
         isGuestOrder: !request.auth,
         createdAt: new Date().toISOString(),
         debug: {
@@ -263,7 +263,7 @@ exports.updateInventoryAndSaveOrder = onCall(
 );
 
 // =============================================================================
-// 3. Función para Actualizar Estado
+// 3. Función para Actualizar Estado - ACTUALIZADA A ESPAÑOL
 // =============================================================================
 exports.updateOrderStatus = onCall(
   {
@@ -296,13 +296,15 @@ exports.updateOrderStatus = onCall(
       const orderRef = db.collection("orders").doc(orderId);
       const userOrderRef = db.collection("users").doc(userId).collection("orders").doc(orderId);
 
+      // CAMBIO: status -> estado
       batch.update(orderRef, {
-        status: newStatus,
+        estado: newStatus,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
       
+      // CAMBIO: status -> estado
       batch.update(userOrderRef, {
-        status: newStatus,
+        estado: newStatus,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
@@ -319,7 +321,7 @@ exports.updateOrderStatus = onCall(
 );
 
 // =============================================================================
-// 4. Trigger para Sincronizar Estados
+// 4. Trigger para Sincronizar Estados - ACTUALIZADA A ESPAÑOL
 // =============================================================================
 exports.syncOrderStatus = onDocumentUpdated(
   {
@@ -331,9 +333,10 @@ exports.syncOrderStatus = onDocumentUpdated(
     const oldData = event.data.before.data();
     const orderId = event.params.orderId;
 
-    if (newData.status === oldData.status) return;
+    // CAMBIO: status -> estado
+    if (newData.estado === oldData.estado) return;
 
-    console.log("🔄 Sync trigger for order:", orderId, "New status:", newData.status);
+    console.log("🔄 Sync trigger for order:", orderId, "New status:", newData.estado);
 
     try {
       await db
@@ -342,7 +345,8 @@ exports.syncOrderStatus = onDocumentUpdated(
         .collection("orders")
         .doc(orderId)
         .update({
-          status: newData.status,
+          // CAMBIO: status -> estado
+          estado: newData.estado,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
       
