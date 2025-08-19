@@ -1,4 +1,4 @@
-const functions = require("firebase-functions/v1"); // ¡Importante el /v1 aquí!
+const functions = require("firebase-functions/v1"); // Versión v1
 const admin = require("firebase-admin");
 admin.initializeApp();
 
@@ -10,8 +10,9 @@ const MAX_ORDER_VALUE = 10000;
 // 1. Cloud Function para el Formulario de Contacto (HTTP)
 // =============================================================================
 exports.api = functions.https.onRequest(async (req, res) => {
+  // Configuración CORS
   res.set('Access-Control-Allow-Origin', '*');
-  
+
   if (req.method === 'OPTIONS') {
     res.set('Access-Control-Allow-Methods', 'POST');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
@@ -36,7 +37,7 @@ exports.api = functions.https.onRequest(async (req, res) => {
       message,
       timestamp: admin.firestore.FieldValue.serverTimestamp()
     });
-    return res.status(200).send({ message: 'Mensaje enviado con éxito.' });
+    return res.status(200).send({ success: true, message: 'Mensaje enviado con éxito.' });
   } catch (error) {
     console.error('Error:', error);
     return res.status(500).send('Error interno del servidor.');
@@ -47,7 +48,7 @@ exports.api = functions.https.onRequest(async (req, res) => {
 // 2. Cloud Function para Procesar Órdenes (Callable)
 // =============================================================================
 exports.updateInventoryAndSaveOrder = functions.https.onCall(async (data, context) => {
-  // 1. Determinar userId
+  // 1. Determinar userId (soporta usuarios invitados)
   let userId;
   if (context.auth) {
     userId = context.auth.uid;
@@ -60,7 +61,7 @@ exports.updateInventoryAndSaveOrder = functions.https.onCall(async (data, contex
     );
   }
 
-  // 2. Validaciones
+  // 2. Validar datos de la orden
   const orderDetails = data.orderDetails;
   if (!orderDetails?.items?.length || typeof orderDetails?.total !== 'number') {
     throw new functions.https.HttpsError(
@@ -85,7 +86,7 @@ exports.updateInventoryAndSaveOrder = functions.https.onCall(async (data, contex
 
   try {
     await db.runTransaction(async (transaction) => {
-      // Actualizar inventario
+      // 3. Actualizar inventario
       for (const item of orderDetails.items) {
         const productRef = db.collection('products').doc(item.id);
         const productDoc = await transaction.get(productRef);
@@ -104,7 +105,7 @@ exports.updateInventoryAndSaveOrder = functions.https.onCall(async (data, contex
         transaction.update(productRef, { stock: newStock });
       }
 
-      // Crear orden
+      // 4. Crear orden
       const orderRef = db.collection('orders').doc();
       const orderData = {
         ...orderDetails,
@@ -115,6 +116,7 @@ exports.updateInventoryAndSaveOrder = functions.https.onCall(async (data, contex
         isGuestOrder: !context.auth
       };
 
+      // 5. Guardar en ambas colecciones
       transaction.set(orderRef, orderData);
       transaction.set(
         db.collection('users').doc(userId).collection('orders').doc(orderRef.id),
@@ -156,6 +158,14 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
     );
   }
 
+  // Verificar permisos (opcional)
+  if (context.auth.uid !== userId && !context.auth.token.admin) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'No tienes permisos para esta acción'
+    );
+  }
+
   try {
     const batch = db.batch();
     const orderRef = db.collection('orders').doc(orderId);
@@ -180,7 +190,7 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
 });
 
 // =============================================================================
-// 4. Trigger para Sincronizar Estados (Firestore) - Versión corregida
+// 4. Trigger para Sincronizar Estados (Firestore)
 // =============================================================================
 exports.syncOrderStatus = functions.firestore
   .document('orders/{orderId}')
@@ -203,14 +213,8 @@ exports.syncOrderStatus = functions.firestore
       console.log(`Estado sincronizado para ${orderId}`);
     } catch (error) {
       console.error('Error al sincronizar:', error);
-      if (shouldRetry(error)) throw error;
+      if (error.code === 14 || error.code === 'UNAVAILABLE') {
+        throw error; // Reintentar para errores temporales
+      }
     }
   });
-
-// =============================================================================
-// Funciones de Utilidad
-// =============================================================================
-function shouldRetry(error) {
-  const retryableErrors = ["resource-exhausted", "unavailable", "deadline-exceeded"];
-  return retryableErrors.includes(error.code);
-}
