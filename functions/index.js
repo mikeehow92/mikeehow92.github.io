@@ -45,18 +45,24 @@ exports.api = functions.https.onRequest(async (req, res) => {
 });
 
 // =============================================================================
-// 2. Cloud Function para Procesar Órdenes (Callable)
+// 2. Cloud Function para Procesar Órdenes (Callable) - MODIFICADA
 // =============================================================================
 exports.processOrder = functions.https.onCall(async (data, context) => {
-  // Validar autenticación
-  if (!context.auth) {
+  // 1. Determinar userId
+  let userId;
+  if (context.auth) {
+    // Usuario autenticado
+    userId = context.auth.uid;
+  } else if (data.guestUserId) {
+    // Invitado
+    userId = data.guestUserId;
+  } else {
     throw new functions.https.HttpsError(
       "unauthenticated",
-      "Debes iniciar sesión para realizar pedidos."
+      "Debes estar autenticado o proporcionar un guestUserId."
     );
   }
 
-  const userId = context.auth.uid;
   const orderDetails = data.orderDetails;
 
   // Validar datos de la orden
@@ -111,6 +117,7 @@ exports.processOrder = functions.https.onCall(async (data, context) => {
         orderId,
         status: "pending",
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        isGuestOrder: !context.auth // Añadir flag para identificar órdenes de invitados
       };
 
       // Guardar en ambas colecciones
