@@ -2,8 +2,6 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
 
-// Importación explícita para triggers de Firestore
-const firestore = admin.firestore;
 const db = admin.firestore();
 const MAX_ORDER_ITEMS = 20;
 const MAX_ORDER_VALUE = 10000;
@@ -47,7 +45,7 @@ exports.api = functions.https.onRequest(async (req, res) => {
 });
 
 // =============================================================================
-// 2. Cloud Function para Procesar Órdenes (Callable) - MODIFICADA
+// 2. Cloud Function para Procesar Órdenes (Callable)
 // =============================================================================
 exports.processOrder = functions.https.onCall(async (data, context) => {
   // 1. Determinar userId
@@ -119,7 +117,7 @@ exports.processOrder = functions.https.onCall(async (data, context) => {
         orderId,
         status: "pending",
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        isGuestOrder: !context.auth // Añadir flag para identificar órdenes de invitados
+        isGuestOrder: !context.auth
       };
 
       // Guardar en ambas colecciones
@@ -142,7 +140,7 @@ exports.processOrder = functions.https.onCall(async (data, context) => {
 // =============================================================================
 exports.syncOrderStatus = functions.firestore
   .document("orders/{orderId}")
-  .onUpdate(async (change, context) => {
+  .onUpdate((change, context) => {
     const newData = change.after.data();
     const oldData = change.before.data();
     const orderId = context.params.orderId;
@@ -150,22 +148,24 @@ exports.syncOrderStatus = functions.firestore
     // Solo sincronizar si cambió el estado
     if (newData.status === oldData.status) return null;
 
-    try {
-      await db
-        .collection("users")
-        .doc(newData.userId)
-        .collection("orders")
-        .doc(orderId)
-        .update({
-          status: newData.status,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-      console.log(`Estado sincronizado para orden ${orderId}`);
-    } catch (error) {
-      console.error("Error al sincronizar:", error);
-      if (shouldRetry(error)) throw error; // Reintentar si es un error temporal
-    }
+    return db
+      .collection("users")
+      .doc(newData.userId)
+      .collection("orders")
+      .doc(orderId)
+      .update({
+        status: newData.status,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      })
+      .then(() => {
+        console.log(`Estado sincronizado para orden ${orderId}`);
+        return null;
+      })
+      .catch((error) => {
+        console.error("Error al sincronizar:", error);
+        if (shouldRetry(error)) throw error;
+        return null;
+      });
   });
 
 // =============================================================================
@@ -173,7 +173,7 @@ exports.syncOrderStatus = functions.firestore
 // =============================================================================
 exports.sendOrderNotification = functions.firestore
   .document("users/{userId}/orders/{orderId}")
-  .onUpdate(async (change, context) => {
+  .onUpdate((change, context) => {
     const newStatus = change.after.data().status;
     const oldStatus = change.before.data().status;
     const userId = context.params.userId;
@@ -181,31 +181,35 @@ exports.sendOrderNotification = functions.firestore
     // Solo notificar si cambió el estado
     if (newStatus === oldStatus) return null;
 
-    try {
-      const userDoc = await db.collection("users").doc(userId).get();
-      const fcmToken = userDoc.data()?.fcmToken;
+    return db.collection("users").doc(userId).get()
+      .then((userDoc) => {
+        const fcmToken = userDoc.data()?.fcmToken;
 
-      if (!fcmToken) {
-        console.log("Usuario sin token FCM.");
+        if (!fcmToken) {
+          console.log("Usuario sin token FCM.");
+          return null;
+        }
+
+        return admin.messaging().send({
+          token: fcmToken,
+          notification: {
+            title: `Actualización de tu orden`,
+            body: `Estado: ${translateStatus(newStatus)}`,
+          },
+          data: {
+            orderId: context.params.orderId,
+            type: "status_update",
+          },
+        });
+      })
+      .then(() => {
+        console.log("Notificación enviada.");
         return null;
-      }
-
-      await admin.messaging().send({
-        token: fcmToken,
-        notification: {
-          title: `Actualización de tu orden`,
-          body: `Estado: ${translateStatus(newStatus)}`,
-        },
-        data: {
-          orderId: context.params.orderId,
-          type: "status_update",
-        },
+      })
+      .catch((error) => {
+        console.error("Error al enviar notificación:", error);
+        return null;
       });
-
-      console.log("Notificación enviada.");
-    } catch (error) {
-      console.error("Error al enviar notificación:", error);
-    }
   });
 
 // =============================================================================
