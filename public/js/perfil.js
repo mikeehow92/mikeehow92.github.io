@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ordersList = document.getElementById('ordersList');
     const noOrdersMessage = document.getElementById('noOrdersMessage');
     const logoutButtonProfile = document.getElementById('logoutButtonProfile');
-    const mainContent = document.querySelector('main'); // Referencia al contenido principal para ocultar/mostrar
+    const mainContent = document.querySelector('main');
     const loadingMessage = document.getElementById('loadingMessage'); // Asume que tienes un mensaje de carga
 
     // Elementos de visualización de dirección
@@ -129,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Define la función global updateCartDisplay para esta página.
     window.updateCartDisplay = function() {
         updateCartCountDisplay();
-        // Lógica adicional específica de UI para perfil.html si es necesaria
     };
 
     // Manejo del estado de autenticación en el encabezado
