@@ -130,12 +130,14 @@ window.showAlert = showAlert; // Asegura que showAlert sea accesible globalmente
 
 // --- Inicialización de Firebase (Descomenta y configura con tus credenciales) ---
 // Comentario: Es crucial que esta inicialización se haga una vez y se exporte.
-// Puedes instalar Firebase con: npm install firebase
-// Luego, asegúrate de que los imports apunten a la versión modular correcta.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+// AÑADIDO: Importa getFunctions para Cloud Functions
+import { getFunctions } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
@@ -151,11 +153,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
+// AÑADIDO: Inicializa Firebase Functions
+const functions = getFunctions(app);
+
 
 // Exporta las instancias de Firebase para que otros scripts puedan usarlas
 window.firebaseApp = app;
 window.firebaseDb = db;
 window.firebaseAuth = auth;
+window.firebaseStorage = storage;
+// AÑADIDO: Exporta firebaseFunctions
+window.firebaseFunctions = functions;
+
 
 // Opcional: Puedes añadir un listener global para el estado de autenticación aquí
 // Si lo haces, asegúrate de que no duplique la lógica en index.js o perfil.js
@@ -166,4 +176,3 @@ onAuthStateChanged(auth, (user) => {
         console.log("Usuario no autenticado globalmente.");
     }
 });
-
