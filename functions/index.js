@@ -1,4 +1,4 @@
-const { onRequest, HttpsError } = require("firebase-functions/v2/https");
+const { onRequest } = require("firebase-functions/v2/https");
 const { onCall } = require("firebase-functions/v2/https");
 const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { setGlobalOptions } = require("firebase-functions/v2");
@@ -141,7 +141,7 @@ exports.updateInventoryAndSaveOrder = onCall(
     try {
       // 1. Validaciones básicas
       if (!request.data) {
-        throw new HttpsError(
+        throw new functions.https.HttpsError(
           "invalid-argument",
           "No se proporcionaron datos"
         );
@@ -158,7 +158,7 @@ exports.updateInventoryAndSaveOrder = onCall(
       } = request.data;
       
       if (!orderDetails) {
-        throw new HttpsError(
+        throw new functions.https.HttpsError(
           "invalid-argument",
           "No se proporcionaron detalles de la orden"
         );
@@ -167,7 +167,7 @@ exports.updateInventoryAndSaveOrder = onCall(
       // 2. Obtener userId (auth o guest)
       const userId = request.auth?.uid || request.data.guestUserId;
       if (!userId) {
-        throw new HttpsError(
+        throw new functions.https.HttpsError(
           "unauthenticated",
           "Usuario no autenticado y no se proporcionó guestUserId"
         );
@@ -177,14 +177,14 @@ exports.updateInventoryAndSaveOrder = onCall(
 
       // 3. Validaciones simples
       if (!Array.isArray(orderDetails.items)) {
-        throw new HttpsError(
+        throw new functions.https.HttpsError(
           "invalid-argument",
           "Items debe ser un array"
         );
       }
 
       if (typeof orderDetails.total !== "number") {
-        throw new HttpsError(
+        throw new functions.https.HttpsError(
           "invalid-argument",
           "Total debe ser un número"
         );
@@ -269,7 +269,7 @@ exports.updateInventoryAndSaveOrder = onCall(
         })
         .catch((e) => console.error("Failed to log error:", e));
 
-      throw new HttpsError(
+      throw new functions.https.HttpsError(
         "internal",
         error.message || "Error interno del servidor",
         {
@@ -294,7 +294,7 @@ exports.updateOrderStatus = onCall(
     console.log("🔄 updateOrderStatus called");
     
     if (!request.auth) {
-      throw new HttpsError(
+      throw new functions.https.HttpsError(
         "unauthenticated",
         "Solo usuarios autenticados pueden actualizar órdenes"
       );
@@ -304,7 +304,7 @@ exports.updateOrderStatus = onCall(
     console.log("📋 Update data:", { orderId, userId, newStatus });
 
     if (!orderId || !userId || !newStatus) {
-      throw new HttpsError(
+      throw new functions.https.HttpsError(
         "invalid-argument",
         "Faltan parámetros: orderId, userId o newStatus"
       );
@@ -334,7 +334,7 @@ exports.updateOrderStatus = onCall(
 
     } catch (error) {
       console.error("❌ Error en updateOrderStatus:", error);
-      throw new HttpsError("internal", "Error al actualizar estado");
+      throw new functions.https.HttpsError("internal", "Error al actualizar estado");
     }
   }
 );
