@@ -35,16 +35,6 @@ let shippingAddressInput;
 let paypalButtonContainer;
 let validationMessageDiv;
 
-// Función para obtener o crear el ID de usuario invitado
-function getOrCreateGuestUserId() {
-    let guestId = sessionStorage.getItem('guestUserId');
-    if (!guestId) {
-        guestId = crypto.randomUUID();
-        sessionStorage.setItem('guestUserId', guestId);
-    }
-    return guestId;
-}
-
 // Función para renderizar los botones de PayPal
 function renderPayPalButtons() {
     console.log('renderPayPalButtons: Función iniciada.');
@@ -135,37 +125,31 @@ function renderPayPalButtons() {
                 const shippingMunicipality = shippingMunicipalitySelect ? shippingMunicipalitySelect.value : '';
                 const shippingAddress = shippingAddressInput ? shippingAddressInput.value : '';
 
-                // **CAMBIO IMPORTANTE AQUÍ**
-                // Aseguramos que el userId esté disponible antes de la llamada a la función
-                const userId = window.currentUserIdGlobal || getOrCreateGuestUserId();
-                if (!userId) {
-                    throw new Error("No se pudo determinar un ID de usuario.");
-                }
-
-                const payload = {
-                    payerEmail: details.payer.email_address,
-                    payerId: details.payer.payer_id,
-                    paymentStatus: details.status,
+                const orderDetails = {
                     paypalTransactionId: details.id,
-                    shippingDetails: {
-                        fullName: shippingFullName,
+                    paymentStatus: details.status,
+                    payerId: details.payer.payer_id,
+                    payerEmail: shippingEmail,
+                    total: parseFloat(details.purchase_units[0].amount.value),
+                    items: window.getCart(),
+                    fullName: shippingFullName, // Añadido campo fullName
+                    shippingInfo: { // Estructura modificada para coincidir con la función Cloud
                         department: shippingDepartment,
                         municipality: shippingMunicipality,
                         address: shippingAddress,
                         phone: shippingPhone,
                         email: shippingEmail
-                    },
-                    orderDetails: {
-                        items: window.getCart(),
-                        total: parseFloat(details.purchase_units[0].amount.value),
-                    },
-                    userId: userId // Usamos la variable local `userId`
+                    }
                 };
 
                 const functions = getFunctions();
                 const updateInventoryAndSaveOrder = httpsCallable(functions, 'updateInventoryAndSaveOrder');
 
-                const result = await updateInventoryAndSaveOrder(payload);
+                const result = await updateInventoryAndSaveOrder({
+                    items: window.getCart(),
+                    orderDetails: orderDetails, // Enviar el objeto completo
+                    userId: window.currentUserIdGlobal
+                });
 
                 console.log('Respuesta de la Cloud Function:', result.data);
                 window.showAlert('¡Tu pedido ha sido procesado y guardado con éxito! Gracias por tu compra.', 'success');
