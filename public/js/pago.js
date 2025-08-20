@@ -1,5 +1,11 @@
 // js/pago.js
 
+// Importa las funciones necesarias de Firebase
+import { httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
+import { getDownloadURL, ref } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
 // Datos de Departamentos y Municipios de El Salvador
 const departmentsAndMunicipalities = {
     "Ahuachapán": ["Ahuachapán", "Apaneca", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
