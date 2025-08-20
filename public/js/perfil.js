@@ -278,7 +278,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 let orderDate = 'N/A';
                 
                 // Muestra en la consola lo que el código está recibiendo en el campo 'timestamp'
-                console.log("Datos del timestamp para el pedido:", order.timestamp);
+                // Para que el mensaje sea más claro cuando el campo no existe.
+                console.log("Datos del timestamp para el pedido:", order.timestamp || "Campo 'timestamp' no encontrado");
 
                 // El código para convertir el Timestamp a una fecha legible
                 if (order.timestamp && order.timestamp.seconds) {
