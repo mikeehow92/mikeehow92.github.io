@@ -124,30 +124,30 @@ function renderPayPalButtons() {
                 const shippingDepartment = shippingDepartmentSelect ? shippingDepartmentSelect.value : '';
                 const shippingMunicipality = shippingMunicipalitySelect ? shippingMunicipalitySelect.value : '';
                 const shippingAddress = shippingAddressInput ? shippingAddressInput.value : '';
-
-                const orderDetails = {
-                    paypalTransactionId: details.id,
-                    paymentStatus: details.status,
-                    payerId: details.payer.payer_id,
-                    payerEmail: shippingEmail,
-                    total: parseFloat(details.purchase_units[0].amount.value),
-                    items: window.getCart(),
-                    fullName: shippingFullName, // Añadido campo fullName
-                    shippingInfo: { // Estructura modificada para coincidir con la función Cloud
-                        department: shippingDepartment,
-                        municipality: shippingMunicipality,
-                        address: shippingAddress,
-                        phone: shippingPhone,
-                        email: shippingEmail
-                    }
-                };
-
+                
+                // CÓDIGO CORREGIDO:
+                // Se envía la información de PayPal y del envío directamente
+                // a la función de Cloud en el mismo nivel, en lugar de anidada.
                 const functions = getFunctions();
                 const updateInventoryAndSaveOrder = httpsCallable(functions, 'updateInventoryAndSaveOrder');
 
                 const result = await updateInventoryAndSaveOrder({
-                    items: window.getCart(),
-                    orderDetails: orderDetails, // Enviar el objeto completo
+                    orderDetails: {
+                        items: window.getCart(),
+                        total: parseFloat(details.purchase_units[0].amount.value)
+                    },
+                    paypalTransactionId: details.id,
+                    paymentStatus: details.status,
+                    payerId: details.payer.payer_id,
+                    payerEmail: shippingEmail,
+                    shippingDetails: {
+                        department: shippingDepartment,
+                        municipality: shippingMunicipality,
+                        address: shippingAddress,
+                        phone: shippingPhone,
+                        email: shippingEmail,
+                        fullName: shippingFullName,
+                    },
                     userId: window.currentUserIdGlobal
                 });
 
