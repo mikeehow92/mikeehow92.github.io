@@ -1,10 +1,10 @@
 // js/pago.js
 
-// Importa las funciones necesarias de Firebase
-import { httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
-import { getDownloadURL, ref } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+// Importa las funciones necesarias de Firebase Auth, Firestore, Storage y Functions
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
 
 // Datos de Departamentos y Municipios de El Salvador
 const departmentsAndMunicipalities = {
@@ -14,14 +14,14 @@ const departmentsAndMunicipalities = {
     "Cuscatlán": ["Cojutepeque", "Candelaria", "El Carmen", "El Rosario", "Monte San Juan", "Oratorio de Concepción", "San Bartolomé Perulapía", "San Cristóbal", "San José Guayabal", "San Pedro Perulapán", "San Rafael Cedros", "San Ramón", "Santa Cruz Analquito", "Santa Cruz Michapa", "Suchitoto", "Tenancingo"],
     "La Libertad": ["Antiguo Cuscatlán", "Chiltiupán", "Ciudad Arce", "Colón", "Comasagua", "Huizúcar", "Jayaque", "Jicalapa", "La Libertad", "Santa Tecla", "Nuevo Cuscatlán", "Quezaltepeque", "Sacacoyo", "San Juan Opico", "San Matías", "San Pablo Tacachico", "Talnique", "Tamanique", "Teotepeque", "Tepecoyo", "Zaragoza"],
     "La Paz": ["Cuyultitán", "El Rosario", "Jerusalén", "Mercedes La Ceiba", "Olocuilta", "Paraíso de Osorio", "San Antonio Masahuat", "San Emigdio", "San Francisco Chinameca", "San Juan Nonualco", "San Juan Talpa", "San Juan Tepezontes", "San Luis La Herradura", "San Luis Talpa", "San Miguel Tepezontes", "San Pedro Masahuat", "San Pedro Nonualco", "San Rafael Obrajuelo", "Santa María Ostuma", "Santiago Nonualco", "Tapalhuaca", "Zacatecoluca"],
-    "La Unión": ["Anamorós", "Bolívar", "Concepción de Oriente", "Conchagua", "El Sauce", "Intipucá", "La Unión", "Lislique", "Meanguera del Golfo", "Nueva Esparta", "Pasaquina", "Polorós", "San Alejo", "San José", "Santa Rosa de Lima", "Yayantique", "Yucuaiquín"],
-    "Morazán": ["Arambala", "Cacaopera", "Chilanga", "Corinto", "Delicias de Concepción", "El Divisadero", "El Rosario", "Gualococti", "Guatajiagua", "Joateca", "Jocoaitique", "Jocoro", "Lolotiquillo", "Meanguera", "Osicala", "Perquín", "San Carlos", "San Fernando", "San Francisco Gotera", "San Simón", "Sensembra", "Sociedad", "Torola", "Yamabal", "Yoloaiquín"],
+    "La Unión": ["Anamorós", "Bolívar", "Concepción de Oriente", "Conchagua", "El Carmen", "El Sauce", "Intipucá", "La Unión", "Lislique", "Meanguera del Golfo", "Nueva Esparta", "Pasaquina", "Polorós", "San Alejo", "San José", "Santa Rosa de Lima", "Yayantique", "Yucuaiquín"],
+    "Morazán": ["Arambala", "Cacaopera", "Chilanga", "Corinto", "Delicias de Concepción", "El Divisadero", "El Rosario", "Gualococti", "Guatajiagua", "Joateca", "Jocoro", "Lolotique", "Meanguera", "Osicala", "Perquín", "San Fernando", "San Isidro", "San Simón", "Sensembra", "Sociedad", "Torola", "Yamabal", "Yoloaiquín"],
     "San Miguel": ["Carolina", "Chapeltique", "Chinameca", "Chirilagua", "Ciudad Barrios", "Comacarán", "El Tránsito", "Lolotique", "Moncagua", "Nueva Guadalupe", "Quelepa", "San Antonio del Mosco", "San Gerardo", "San Jorge", "San Luis de la Reina", "San Miguel", "San Rafael Oriente", "Sesori", "Uluazapa"],
-    "San Salvador": ["Aguilares", "Apopa", "Ayutuxtepeque", "Ciudad Delgado", "Cuscatancingo", "El Paisnal", "Guazapa", "Ilopango", "Mejicanos", "Nejapa", "Panchimalco", "Rosario de Mora", "San Marcos", "San Martín", "San Salvador", "Santiago Texacuangos", "Santo Tomás", "Soyapango", "Tonacatepeque"],
-    "San Vicente": ["Apastepeque", "Guadalupe", "San Cayetano Istepeque", "San Ildefonso", "San Vicente", "Santa Clara", "Tecoluca", "Tepetitán", "Verapaz"],
-    "Santa Ana": ["Candelaria de la Frontera", "Chalchuapa", "Coatepeque", "El Congo", "El Porvenir", "Masahuat", "Metapán", "San Sebastián Salitrillo", "Santa Ana", "Santa Rosa Guachipilín", "Santiago de la Frontera"],
-    "Sonsonate": ["Acajutla", "Armenia", "Caluco", "Cuisnahuat", "Izalco", "Juayúa", "Nahuizalco", "Nahulingo", "Salcoatitán", "San Antonio del Monte", "San Julián", "Santa Catarina Masahuat", "Santa Isabel Ishuatán", "Santo Domingo de Guzmán", "Sonsonate", "Sonzaacate"],
-    "Usulután": ["Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán", "Usulután"]
+    "San Salvador": ["Aguilares", "Apopa", "Ayutuxtepeque", "Cuscatancingo", "Delgado", "El Paisnal", "Guazapa", "Ilopango", "Mejicanos", "Nejapa", "Panchimalco", "Rosario de Mora", "San Marcos", "San Martín", "San Salvador", "Soyapango", "Santo Tomás", "Tonacatepeque"],
+    "San Vicente": ["Apastepeque", "Guadalupe", "San Cayetano Istepeque", "San Esteban Catarina", "San Ildefonso", "San Lorenzo", "San Sebastián", "San Simón", "Sensembra", "Sociedad", "Torola", "Yamabal", "Yoloaiquín"],
+    "Santa Ana": ["Candelaria de la Frontera", "Chalchuapa", "Coatepeque", "El Congo", "El Porvenir", "Masahuat", "Metapán", "Santa Ana", "Santa Rosa Guachipilín", "Santiago de la Frontera", "Texistepeque"],
+    "Sonsonate": ["Acajutla", "Armenia", "Caluco", "Cuisnahuat", "Izalco", "Juayúa", "Nahualingo", "Nahulingo", "Salcoatitán", "San Antonio del Monte", "San Julián", "Santa Catarina Masahuat", "Santa Isabel Ishuatán", "Santo Domingo de Guzmán", "Sonsonate", "Sonzacate"],
+    "Usulután": ["Alegría", "Berlín", "California", "Concepción Batres", "El Triunfo", "Ereguayquín", "Estanzuelas", "Jiquilisco", "Jucuapa", "Jucuarán", "Mercedes Umaña", "Nueva Granada", "Ozatlán", "Puerto El Triunfo", "San Agustín", "San Buenaventura", "San Dionisio", "San Francisco Javier", "Santa Elena", "Santa María", "Santiago de María", "Tecapán", "Usulután"]
 };
 
 // Declaración de variables globales para los elementos del formulario de envío y contenedores
@@ -35,88 +35,7 @@ let shippingAddressInput;
 let paypalButtonContainer;
 let validationMessageDiv;
 
-// Variable global para la URL de la imagen de perfil
-window.profileImageUrlGlobal = '';
-window.currentUserIdGlobal = null;
-
-// =============================================================================
-// FUNCIÓN PARA PROCESAR EL PAGO Y ENVIAR DATOS A CLOUD FUNCTION
-// =============================================================================
-window.processOrder = async () => {
-    try {
-        if (!shippingForm || !shippingForm.checkValidity()) {
-            window.showAlert('Por favor, completa todos los campos del formulario de envío.', 'error');
-            return;
-        }
-
-        const shippingFullName = shippingFullNameInput ? shippingFullNameInput.value : '';
-        const shippingEmail = shippingEmailInput ? shippingEmailInput.value : '';
-        const shippingPhone = shippingPhoneInput ? shippingPhoneInput.value : '';
-        const shippingDepartment = shippingDepartmentSelect ? shippingDepartmentSelect.value : '';
-        const shippingMunicipality = shippingMunicipalitySelect ? shippingMunicipalitySelect.value : '';
-        const shippingAddress = shippingAddressInput ? shippingAddressInput.value : '';
-        const cartItems = window.getCart();
-        const totalAmount = window.getCartTotal();
-
-        if (!shippingFullName || !shippingEmail || !shippingPhone || !shippingDepartment || !shippingMunicipality || !shippingAddress || cartItems.length === 0) {
-            window.showAlert('Por favor, completa todos los campos y añade productos al carrito.', 'error');
-            return;
-        }
-
-        // Estructurar los datos de envío
-        const shippingInfo = {
-            department: shippingDepartment,
-            municipality: shippingMunicipality,
-            address: shippingAddress,
-            phone: shippingPhone,
-            email: shippingEmail
-        };
-
-        // Estructurar los detalles de la orden
-        const orderDetails = {
-            items: cartItems.map(item => ({
-                id: item.id,
-                name: item.name,
-                price: item.price,
-                quantity: item.quantity
-            })),
-            total: totalAmount,
-            fullName: shippingFullName,
-            shippingInfo: shippingInfo
-        };
-
-        const updateInventoryAndSaveOrder = httpsCallable(window.firebaseFunctions, 'updateInventoryAndSaveOrder');
-        
-        // Preparar el payload según el tipo de usuario
-        const payload = {
-            orderDetails: orderDetails,
-        };
-
-        // Si es usuario anónimo, enviar guestUserId
-        if (window.firebaseAuth.currentUser?.isAnonymous) {
-            payload.guestUserId = window.currentUserIdGlobal;
-        }
-
-        const result = await updateInventoryAndSaveOrder(payload);
-
-        if (result.data.success) {
-            console.log('Orden procesada con éxito.');
-            window.showAlert('Tu orden ha sido procesada con éxito.', 'success');
-            localStorage.removeItem('shoppingCart');
-            window.updateCartDisplay();
-        } else {
-            window.showAlert('Hubo un error al procesar tu orden. Por favor, intenta de nuevo.', 'error');
-        }
-
-    } catch (error) {
-        console.error('Error al procesar la orden:', error.message);
-        window.showAlert(`Error al procesar la orden: ${error.message}`, 'error');
-    }
-};
-
-// =============================================================================
-// FUNCIÓN PARA RENDERIZAR BOTONES DE PAYPAL
-// =============================================================================
+// Función para renderizar los botones de PayPal
 function renderPayPalButtons() {
     console.log('renderPayPalButtons: Función iniciada.');
     const cart = window.getCart();
@@ -213,8 +132,8 @@ function renderPayPalButtons() {
                     payerEmail: shippingEmail,
                     total: parseFloat(details.purchase_units[0].amount.value),
                     items: window.getCart(),
-                    fullName: shippingFullName,
-                    shippingInfo: {
+                    fullName: shippingFullName, // Añadido campo fullName
+                    shippingInfo: { // Estructura modificada para coincidir con la función Cloud
                         department: shippingDepartment,
                         municipality: shippingMunicipality,
                         address: shippingAddress,
@@ -223,24 +142,20 @@ function renderPayPalButtons() {
                     }
                 };
 
-                const updateInventoryAndSaveOrder = httpsCallable(window.firebaseFunctions, 'updateInventoryAndSaveOrder');
+                const functions = getFunctions();
+                const updateInventoryAndSaveOrder = httpsCallable(functions, 'updateInventoryAndSaveOrder');
 
-                // Preparar el payload según el tipo de usuario
-                const payload = {
-                    orderDetails: orderDetails,
-                };
-
-                // Si es usuario anónimo, enviar guestUserId
-                if (window.firebaseAuth.currentUser?.isAnonymous) {
-                    payload.guestUserId = window.currentUserIdGlobal;
-                }
-
-                const result = await updateInventoryAndSaveOrder(payload);
+                const result = await updateInventoryAndSaveOrder({
+                    items: window.getCart(),
+                    orderDetails: orderDetails, // Enviar el objeto completo
+                    userId: window.currentUserIdGlobal
+                });
 
                 console.log('Respuesta de la Cloud Function:', result.data);
                 window.showAlert('¡Tu pedido ha sido procesado y guardado con éxito! Gracias por tu compra.', 'success');
                 
                 localStorage.removeItem('shoppingCart');
+                sessionStorage.removeItem('guestUserId');
                 window.updateCartDisplay();
 
             } catch (error) {
@@ -259,110 +174,6 @@ function renderPayPalButtons() {
     }).render(buttonsDiv);
 }
 
-// =============================================================================
-// MANEJO DE LA INTERFAZ: Lógica para mostrar productos en el carrito y el total
-// =============================================================================
-window.updateCartDisplay = function() {
-    const cartItemsContainer = document.getElementById('cartItemsContainer');
-    const emptyCartMessage = document.getElementById('emptyCartMessage');
-    const cartTotalElement = document.getElementById('cartTotal');
-    const cartItemCountElement = document.getElementById('cartItemCount');
-    const navCarrito = document.getElementById('navCarrito');
-    
-    if (!cartItemsContainer || !emptyCartMessage || !cartTotalElement) {
-        console.error('Elementos del carrito no encontrados en el DOM');
-        return;
-    }
-
-    const cart = window.getCart();
-    
-    // Actualizar contador de items en el carrito
-    if (cartItemCountElement) {
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        cartItemCountElement.textContent = totalItems;
-        if (totalItems > 0) {
-            cartItemCountElement.classList.remove('hidden');
-        } else {
-            cartItemCountElement.classList.add('hidden');
-        }
-    }
-    
-    // Mostrar/ocultar carrito en nav
-    if (navCarrito) {
-        if (cart.length > 0) {
-            navCarrito.classList.remove('hidden');
-        } else {
-            navCarrito.classList.add('hidden');
-        }
-    }
-
-    // Limpiar contenedor
-    cartItemsContainer.innerHTML = '';
-
-    if (cart.length === 0) {
-        emptyCartMessage.classList.remove('hidden');
-        if (paypalButtonContainer) paypalButtonContainer.innerHTML = '';
-    } else {
-        emptyCartMessage.classList.add('hidden');
-        
-        // Renderizar cada item del carrito
-        cart.forEach(item => {
-            const itemElement = document.createElement('div');
-            itemElement.className = 'flex flex-col sm:flex-row items-center justify-between border-b border-gray-200 py-4 last:border-b-0';
-            itemElement.innerHTML = `
-                <div class="flex items-center space-x-4 mb-4 sm:mb-0">
-                    <img src="${item.imageUrl || 'https://placehold.co/100x100/F0F0F0/333333?text=Producto'}" alt="${item.name}" class="w-20 h-20 object-cover rounded-md">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900">${item.name}</h3>
-                        <p class="text-gray-600">Precio unitario: $${item.price.toFixed(2)}</p>
-                        <div class="flex items-center mt-2">
-                            <label for="quantity-${item.id}" class="mr-2">Cantidad:</label>
-                            <input type="number" id="quantity-${item.id}" value="${item.quantity}" min="1"
-                                   class="w-16 p-1 border rounded-md text-center quantity-input"
-                                   data-product-id="${item.id}">
-                        </div>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <span class="text-xl font-bold text-dark-blue">$${(item.price * item.quantity).toFixed(2)}</span>
-                    <button class="remove-from-cart-btn text-red-500 hover:text-red-700 transition duration-300" data-product-id="${item.id}">
-                        Eliminar
-                    </button>
-                </div>
-            `;
-            cartItemsContainer.appendChild(itemElement);
-        });
-
-        // Agregar event listeners para los botones de eliminar
-        document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
-            button.addEventListener('click', (event) => {
-                const productId = event.target.dataset.productId;
-                window.removeFromCart(productId);
-            });
-        });
-
-        // Agregar event listeners para los inputs de cantidad
-        document.querySelectorAll('.quantity-input').forEach(input => {
-            input.addEventListener('change', (event) => {
-                const productId = event.target.dataset.productId;
-                const newQuantity = parseInt(event.target.value);
-                window.updateCartItemQuantity(productId, newQuantity);
-            });
-        });
-
-        // Renderizar botones de PayPal si están disponibles
-        if (typeof paypal !== 'undefined') {
-            renderPayPalButtons();
-        }
-    }
-    
-    // Actualizar total
-    cartTotalElement.textContent = `$${window.getCartTotal().toFixed(2)}`;
-};
-
-// =============================================================================
-// INICIALIZACIÓN CUANDO EL DOM ESTÁ LISTO
-// =============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     const loginButton = document.getElementById('loginButton');
     const loggedInUserDisplay = document.getElementById('loggedInUserDisplay');
@@ -388,6 +199,98 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!shippingForm) {
         console.error('Error: El formulario de envío con ID "shippingDetailsForm" no se encontró en el DOM.');
     }
+
+    const auth = window.firebaseAuth;
+    const app = window.firebaseApp;
+    const storage = app ? getStorage(app) : null;
+    const db = window.firebaseDb;
+
+    window.currentUserIdGlobal = null;
+
+    function updateCartCountDisplay() {
+        const cart = window.getCart();
+        const totalItemsInCart = cart.reduce((total, item) => total + item.quantity, 0);
+        if (cartItemCountElement) {
+            cartItemCountElement.textContent = totalItemsInCart;
+            if (totalItemsInCart > 0) {
+                cartItemCountElement.classList.remove('hidden');
+            } else {
+                cartItemCountElement.classList.add('hidden');
+            }
+        }
+        if (navCarrito) {
+            navCarrito.classList.remove('hidden');
+        }
+    }
+
+    window.updateCartDisplay = function() {
+        updateCartCountDisplay();
+        const cart = window.getCart();
+        cartItemsContainer.innerHTML = '';
+
+        if (cart.length === 0) {
+            emptyCartMessage.classList.remove('hidden');
+            if (paypalButtonContainer) paypalButtonContainer.innerHTML = '';
+        } else {
+            emptyCartMessage.classList.add('hidden');
+            cart.forEach(item => {
+                const itemHtml = `
+                    <div class="flex flex-col sm:flex-row items-center justify-between border-b border-gray-200 py-4 last:border-b-0">
+                        <div class="flex items-center space-x-4 mb-4 sm:mb-0">
+                            <img src="${item.imageUrl || 'https://placehold.co/100x100/F0F0F0/333333?text=Producto'}" alt="${item.name}" class="w-20 h-20 object-cover rounded-md">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">${item.name}</h3>
+                                <p class="text-gray-600">Precio unitario: $${item.price.toFixed(2)}</p>
+                                <div class="flex items-center mt-2">
+                                    <label for="quantity-${item.id}" class="mr-2">Cantidad:</label>
+                                    <input type="number" id="quantity-${item.id}" value="${item.quantity}" min="1"
+                                           class="w-16 p-1 border rounded-md text-center quantity-input"
+                                           data-product-id="${item.id}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <span class="text-xl font-bold text-dark-blue">$${(item.price * item.quantity).toFixed(2)}</span>
+                            <button class="remove-from-cart-btn text-red-500 hover:text-red-700 transition duration-300" data-product-id="${item.id}">
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                cartItemsContainer.innerHTML += itemHtml;
+            });
+
+            document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const productId = event.target.dataset.productId;
+                    window.removeFromCart(productId);
+                });
+            });
+
+            document.querySelectorAll('.quantity-input').forEach(input => {
+                input.addEventListener('change', (event) => {
+                    const productId = event.target.dataset.productId;
+                    const newQuantity = parseInt(event.target.value);
+                    window.updateCartItemQuantity(productId, newQuantity);
+                });
+            });
+
+            if (shippingForm) {
+                shippingForm.addEventListener('input', () => {
+                    if (typeof paypal !== 'undefined' && window.getCart().length > 0) {
+                        renderPayPalButtons();
+                    }
+                });
+            }
+
+            if (typeof paypal !== 'undefined' && cart.length > 0) {
+                renderPayPalButtons();
+            } else if (cart.length > 0) {
+                window.loadPayPalSDK();
+            }
+        }
+        cartTotalElement.textContent = `$${window.getCartTotal().toFixed(2)}`;
+    };
 
     function loadShippingDepartments() {
         if (!shippingDepartmentSelect) return;
@@ -441,88 +344,101 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Escuchador de estado de autenticación de Firebase
-    onAuthStateChanged(window.firebaseAuth, async (user) => {
-        if (user) {
-            window.currentUserIdGlobal = user.uid;
-            if (loggedInUserDisplay) loggedInUserDisplay.classList.remove('hidden');
-            if (loginButton) loginButton.classList.add('hidden');
-            if (userNameDisplay) userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
+    if (auth) {
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                loginButton.classList.add('hidden');
+                loggedInUserDisplay.classList.remove('hidden');
+                userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
 
-            if (profileAvatarHeader) {
-                if (user.photoURL) {
-                    profileAvatarHeader.src = user.photoURL;
-                } else {
-                    try {
-                        const avatarRefPng = ref(window.firebaseStorage, `avatars/${user.uid}.png`);
-                        const avatarUrl = await getDownloadURL(avatarRefPng);
-                        profileAvatarHeader.src = avatarUrl;
-                    } catch (pngError) {
+                if (profileAvatarHeader) {
+                    if (user.photoURL) {
+                        profileAvatarHeader.src = user.photoURL;
+                    } else if (storage) {
                         try {
-                            const avatarRefJpg = ref(window.firebaseStorage, `avatars/${user.uid}.jpg`);
-                            const avatarUrl = await getDownloadURL(avatarRefJpg);
+                            const avatarRefPng = ref(storage, `avatars/${user.uid}.png`);
+                            const avatarUrl = await getDownloadURL(avatarRefPng);
                             profileAvatarHeader.src = avatarUrl;
-                        } catch (jpgError) {
-                            profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
-                        }
-                    }
-                }
-            }
-
-            if (window.firebaseDb && shippingForm) {
-                try {
-                    const userDocRef = doc(window.firebaseDb, "users", user.uid);
-                    const userDocSnap = await getDoc(userDocRef);
-                    if (userDocSnap.exists()) {
-                        const userData = userDocSnap.data();
-                        if (shippingFullNameInput) shippingFullNameInput.value = userData.fullName || '';
-                        if (shippingEmailInput) shippingEmailInput.value = userData.email || '';
-                        if (shippingPhoneInput) shippingPhoneInput.value = userData.phone || '';
-                        if (shippingAddressInput) shippingAddressInput.value = userData.address || '';
-                        if (userData.department && shippingDepartmentSelect) {
-                            shippingDepartmentSelect.value = userData.department;
-                            loadShippingMunicipalities(userData.department);
-                            if (userData.municipality && shippingMunicipalitySelect) {
-                                shippingMunicipalitySelect.value = userData.municipality;
+                        } catch (pngError) {
+                            try {
+                                const avatarRefJpg = ref(storage, `avatars/${user.uid}.jpg`);
+                                const avatarUrl = await getDownloadURL(avatarRefJpg);
+                                profileAvatarHeader.src = avatarUrl;
+                            } catch (jpgError) {
+                                profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
                             }
                         }
+                    } else {
+                        profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
                     }
-                } catch (error) {
-                    console.error("Error al precargar datos de envío del usuario:", error);
-                    window.showAlert("Error al cargar tus datos de envío. Por favor, introdúcelos manualmente.", "error");
                 }
-            }
+                window.currentUserIdGlobal = user.uid;
 
-        } else {
-            if (loggedInUserDisplay) loggedInUserDisplay.classList.add('hidden');
-            if (loginButton) loginButton.classList.remove('hidden');
-            if (profileAvatarHeader) profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
+                if (db && shippingForm) {
+                    try {
+                        const userDocRef = doc(db, "users", user.uid);
+                        const userDocSnap = await getDoc(userDocRef);
+                        if (userDocSnap.exists()) {
+                            const userData = userDocSnap.data();
+                            shippingFullNameInput.value = userData.fullName || '';
+                            shippingEmailInput.value = userData.email || '';
+                            shippingPhoneInput.value = userData.phone || '';
+                            shippingAddressInput.value = userData.address || '';
+                            if (userData.department) {
+                                shippingDepartmentSelect.value = userData.department;
+                                loadShippingMunicipalities(userData.department);
+                                if (userData.municipality) {
+                                    shippingMunicipalitySelect.value = userData.municipality;
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error al precargar datos de envío del usuario:", error);
+                        window.showAlert("Error al cargar tus datos de envío. Por favor, introdúcelos manualmente.", "error");
+                    }
+                }
 
-            try {
-                const anonymousUser = await signInAnonymously(window.firebaseAuth);
-                window.currentUserIdGlobal = anonymousUser.user.uid;
-                console.log("Sesión anónima iniciada con éxito.");
-            } catch (error) {
-                console.error("Error al iniciar sesión anónima:", error);
+            } else {
+                loginButton.classList.remove('hidden');
+                loggedInUserDisplay.classList.add('hidden');
+                if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
+
+                let guestId = sessionStorage.getItem('guestUserId');
+                if (!guestId) {
+                    guestId = crypto.randomUUID();
+                    sessionStorage.setItem('guestUserId', guestId);
+                }
+                window.currentUserIdGlobal = guestId;
             }
+            window.updateCartDisplay();
+        });
+    } else {
+        console.warn("Firebase Auth no está inicializado. Procediendo como invitado.");
+        loginButton.classList.remove('hidden');
+        loggedInUserDisplay.classList.add('hidden');
+        if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
+
+        let guestId = sessionStorage.getItem('guestUserId');
+        if (!guestId) {
+            guestId = crypto.randomUUID();
+            sessionStorage.setItem('guestUserId', guestId);
         }
+        window.currentUserIdGlobal = guestId;
         window.updateCartDisplay();
-        window.loadPayPalSDK();
-    });
+    }
 
-    // Manejo del botón "Cerrar Sesión"
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
-            try {
-                if (window.firebaseAuth.currentUser && !window.firebaseAuth.currentUser.isAnonymous) {
-                    await signOut(window.firebaseAuth);
+            if (auth) {
+                try {
+                    await signOut(auth);
                     window.showAlert('Has cerrado sesión correctamente.', 'success');
-                } else {
-                    window.showAlert('No estás en una sesión de usuario para cerrar.', 'info');
+                } catch (error) {
+                    console.error('Error al cerrar sesión:', error.message);
+                    window.showAlert('Error al cerrar sesión. Por favor, inténtalo de nuevo.', 'error');
                 }
-            } catch (error) {
-                console.error('Error al cerrar sesión:', error.message);
-                window.showAlert('Error al cerrar sesión. Por favor, inténtalo de nuevo.', 'error');
+            } else {
+                window.showAlert('Firebase Auth no está disponible para cerrar sesión.', 'error');
             }
         });
     }
