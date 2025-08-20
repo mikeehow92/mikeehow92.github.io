@@ -125,7 +125,7 @@ exports.api = onRequest(
 );
 
 // =============================================================================
-// 2. Función para Procesar Órdenes (VERSIÓN SIMPLIFICADA) - ACTUALIZADA A ESPAÑOL
+// 2. Función para Procesar Órdenes (VERSIÓN MEJORADA)
 // =============================================================================
 exports.updateInventoryAndSaveOrder = onCall(
   {
@@ -147,7 +147,16 @@ exports.updateInventoryAndSaveOrder = onCall(
         );
       }
 
-      const orderDetails = request.data.orderDetails;
+      // Desestructuramos los campos del objeto de datos para un acceso más sencillo
+      const {
+        orderDetails,
+        payerEmail,
+        payerId,
+        paymentStatus,
+        paypalTransactionId,
+        shippingDetails,
+      } = request.data;
+      
       if (!orderDetails) {
         throw new functions.https.HttpsError(
           "invalid-argument",
@@ -181,21 +190,28 @@ exports.updateInventoryAndSaveOrder = onCall(
         );
       }
 
-      // 4. Crear orden simple (sin transactions complejas)
+      // 4. Crear orden con todos los campos (sin transactions complejas)
       const orderRef = db.collection("orders").doc();
       const orderData = {
+        // Campos de la imagen "full info.png"
+        estado: "pendiente",
+        fechaOrden: admin.firestore.FieldValue.serverTimestamp(),
         items: orderDetails.items,
+        payerEmail: payerEmail || null,
+        payerId: payerId || null,
+        paymentStatus: paymentStatus || null,
+        paypalTransactionId: paypalTransactionId || null,
+        shippingDetails: shippingDetails || null,
         total: orderDetails.total,
         userId: userId,
+        // Campos de la imagen "actual.png" y lógica existente
         orderId: orderRef.id,
-        estado: "pendiente", // CAMBIO: status -> estado
-        fechaOrden: admin.firestore.FieldValue.serverTimestamp(), // CAMBIO: timestamp -> fechaOrden
         isGuestOrder: !request.auth,
         createdAt: new Date().toISOString(),
         debug: {
-          source: "simplified_version",
-          auth: request.auth ? request.auth.uid : "guest"
-        }
+          source: "full_version",
+          auth: request.auth ? request.auth.uid : "guest",
+        },
       };
 
       console.log("📝 Order data to save:", JSON.stringify(orderData, null, 2));
@@ -205,11 +221,12 @@ exports.updateInventoryAndSaveOrder = onCall(
       console.log("✅ Order saved in main collection:", orderRef.id);
 
       // 6. Guardar en subcolección del usuario
-      const userOrderRef = db.collection("users")
+      const userOrderRef = db
+        .collection("users")
         .doc(userId)
         .collection("orders")
         .doc(orderRef.id);
-      
+
       await userOrderRef.set(orderData);
       console.log("✅ Order saved in user subcollection:", orderRef.id);
 
@@ -221,7 +238,7 @@ exports.updateInventoryAndSaveOrder = onCall(
         timestamp: new Date().toISOString(),
         status: "success",
         itemsCount: orderDetails.items.length,
-        total: orderDetails.total
+        total: orderDetails.total,
       });
 
       console.log("🎉 Order created successfully:", orderRef.id);
@@ -232,30 +249,32 @@ exports.updateInventoryAndSaveOrder = onCall(
         message: "Orden creada exitosamente",
         debug: {
           timestamp: new Date().toISOString(),
-          version: "simplified"
-        }
+          version: "full",
+        },
       };
-
     } catch (error) {
       console.error("💥 ERROR in updateInventoryAndSaveOrder:", error);
       console.error("📋 Error stack:", error.stack);
 
       // Log del error
-      await db.collection("debug_logs").add({
-        type: "order_error",
-        error: error.message,
-        stack: error.stack,
-        timestamp: new Date().toISOString(),
-        status: "error",
-        data: request.data
-      }).catch(e => console.error("Failed to log error:", e));
+      await db
+        .collection("debug_logs")
+        .add({
+          type: "order_error",
+          error: error.message,
+          stack: error.stack,
+          timestamp: new Date().toISOString(),
+          status: "error",
+          data: request.data,
+        })
+        .catch((e) => console.error("Failed to log error:", e));
 
       throw new functions.https.HttpsError(
         "internal",
         error.message || "Error interno del servidor",
-        { 
+        {
           details: error.stack,
-          debug: "Check Firebase logs for more info"
+          debug: "Check Firebase logs for more info",
         }
       );
     }
