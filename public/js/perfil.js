@@ -268,16 +268,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             orders.sort((a, b) => {
-                const dateA = a.timestamp && typeof a.timestamp.toDate === 'function' ? a.timestamp.toDate() : new Date(0);
-                const dateB = b.timestamp && typeof b.timestamp.toDate === 'function' ? b.timestamp.toDate() : new Date(0);
+                const dateA = a.timestamp && a.timestamp.seconds ? new Date(a.timestamp.seconds * 1000) : new Date(0);
+                const dateB = b.timestamp && b.timestamp.seconds ? new Date(b.timestamp.seconds * 1000) : new Date(0);
                 return dateB - dateA; // Orden descendente
             });
 
             orders.forEach((order) => {
                 let orderDate = 'N/A';
-                if (order.timestamp && typeof order.timestamp.toDate === 'function') {
-                    // Convertir el Timestamp a un objeto Date y luego formatear
-                    const dateObject = order.timestamp.toDate();
+                // Usar los segundos del timestamp para crear una fecha
+                if (order.timestamp && order.timestamp.seconds) {
+                    const dateObject = new Date(order.timestamp.seconds * 1000);
                     const day = String(dateObject.getDate()).padStart(2, '0');
                     const month = String(dateObject.getMonth() + 1).padStart(2, '0'); // Los meses en JS son de 0-11
                     const year = dateObject.getFullYear();
