@@ -267,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 orders.push({ id: doc.id, ...doc.data() });
             });
 
+            // Ordena los pedidos por fecha.
             orders.sort((a, b) => {
                 const dateA = a.timestamp && a.timestamp.seconds ? new Date(a.timestamp.seconds * 1000) : new Date(0);
                 const dateB = b.timestamp && b.timestamp.seconds ? new Date(b.timestamp.seconds * 1000) : new Date(0);
