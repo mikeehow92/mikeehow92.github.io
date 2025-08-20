@@ -139,8 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 await loadRecentOrders(user.uid);
 
             } else {
-                window.showAlert('Debes iniciar sesión para ver tu perfil.', 'info');
-                window.location.href = 'login.html';
+                // *** SE ELIMINA LA REDIRECCIÓN A login.html AQUÍ ***
+                // Esto permite que el flujo de autenticación de login.html funcione sin interrupciones.
+                // Si el usuario no está autenticado, ya se le habrá redirigido desde la página de inicio.
+                console.log("Usuario no autenticado, no se redirige desde perfil.js");
             }
             window.updateCartDisplay();
         });
