@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addressModal = document.getElementById('addressModal');
     const closeAddressModalButton = document.getElementById('closeAddressModalButton');
     const editAddressForm = document.getElementById('editAddressForm');
-    const editPhone = document = document.getElementById('editPhone');
+    const editPhone = document.getElementById('editPhone');
     const editDepartment = document.getElementById('editDepartment');
     const editMunicipality = document.getElementById('editMunicipality');
     const editAddress = document.getElementById('editAddress');
@@ -262,16 +262,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 orders.push({ id: doc.id, ...doc.data() });
             });
 
-            // Ordenar por fechaOrden si existe y es un objeto con toDate
+            // Ordenar por timestamp si existe y es un objeto con toDate
             orders.sort((a, b) => {
-                const dateA = a.fechaOrden && typeof a.fechaOrden.toDate === 'function' ? a.fechaOrden.toDate() : new Date(0);
-                const dateB = b.fechaOrden && typeof b.fechaOrden.toDate === 'function' ? b.fechaOrden.toDate() : new Date(0);
+                const dateA = a.timestamp && typeof a.timestamp.toDate === 'function' ? a.timestamp.toDate() : new Date(0);
+                const dateB = b.timestamp && typeof b.timestamp.toDate === 'function' ? b.timestamp.toDate() : new Date(0);
                 return dateB - dateA; // Orden descendente
             });
 
 
             orders.forEach((order) => {
-                const orderDate = order.fechaOrden && typeof order.fechaOrden.toDate === 'function' ? order.fechaOrden.toDate().toLocaleDateString() : 'N/A';
+                const orderDate = order.timestamp && typeof order.timestamp.toDate === 'function' ? order.timestamp.toDate().toLocaleDateString() : 'N/A';
                 const orderStatus = order.estado || 'Pendiente'; // Usar 'estado' de la Cloud Function
                 const orderTotal = order.total ? `$${order.total.toFixed(2)}` : '$0.00';
 
