@@ -276,14 +276,13 @@ document.addEventListener('DOMContentLoaded', () => {
             orders.forEach((order) => {
                 let orderDate = 'N/A';
                 if (order.timestamp && typeof order.timestamp.toDate === 'function') {
-                    // Si el campo es un Timestamp de Firestore, convertirlo a una fecha legible
-                    orderDate = order.timestamp.toDate().toLocaleDateString('es-ES', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    });
+                    // Convertir el Timestamp a un objeto Date y luego formatear
+                    const dateObject = order.timestamp.toDate();
+                    const day = String(dateObject.getDate()).padStart(2, '0');
+                    const month = String(dateObject.getMonth() + 1).padStart(2, '0'); // Los meses en JS son de 0-11
+                    const year = dateObject.getFullYear();
+                    orderDate = `${day}/${month}/${year}`;
                 } else if (order.fechaOrden) {
-                    // Si el campo es una cadena de texto, usarlo directamente
                     orderDate = order.fechaOrden;
                 }
                 
