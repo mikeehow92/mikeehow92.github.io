@@ -14,15 +14,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutButtonHeader = document.getElementById('logoutButtonHeader');
     const cartItemCountElement = document.getElementById('cartItemCount'); // Obtener el elemento del contador de ítems del carrito
 
-
     // Elementos del cuerpo principal del perfil
     const profileName = document.getElementById('profileName');
     const profileEmail = document.getElementById('profileEmail');
     const profileLastLogin = document.getElementById('profileLastLogin');
     const profileAvatar = document.getElementById('profileAvatar');
     const ordersList = document.getElementById('ordersList');
-    const noOrdersMessage = document = document.getElementById('noOrdersMessage');
+    const noOrdersMessage = document.getElementById('noOrdersMessage');
     const logoutButtonProfile = document.getElementById('logoutButtonProfile');
+    const mainContent = document.querySelector('main'); // Referencia al contenido principal para ocultar/mostrar
+    const loadingMessage = document.getElementById('loadingMessage'); // Asume que tienes un mensaje de carga
 
     // Elementos de visualización de dirección
     const profilePhone = document.getElementById('profilePhone');
@@ -132,30 +133,39 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Manejo del estado de autenticación en el encabezado
+    // La lógica de redirección se maneja exclusivamente dentro de onAuthStateChanged
+    // para evitar redirecciones prematuras.
     if (auth) {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // Si hay un usuario logueado
                 loginButton.classList.add('hidden');
                 loggedInUserDisplay.classList.remove('hidden');
                 userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
+                
+                // Mostrar el contenido principal y ocultar el mensaje de carga
+                if (mainContent) mainContent.classList.remove('hidden');
+                if (loadingMessage) loadingMessage.classList.add('hidden');
 
                 // Cargar datos del perfil y pedidos
                 await loadUserProfile(user);
                 await loadRecentOrders(user.uid); // Pasar el UID del usuario logueado
 
             } else {
-                // Usuario no logueado, redirigir a la página de inicio de sesión
+                // Si no hay un usuario logueado
+                console.warn("Usuario no autenticado, redirigiendo a login.");
                 window.showAlert('Debes iniciar sesión para ver tu perfil.', 'info');
                 window.location.href = 'login.html';
             }
             window.updateCartDisplay(); // Llama a la función para actualizar el contador al cambiar el estado de autenticación
         });
     } else {
-        console.warn("Firebase Auth no está inicializado. La funcionalidad de autenticación en el encabezado no estará disponible.");
+        // En caso de que Firebase Auth no se haya inicializado por algún error
+        console.error("Firebase Auth no está disponible. Asegúrate de que common.js se carga correctamente.");
         window.showAlert("Error: Firebase Auth no está disponible. Redirigiendo a inicio de sesión.", "error");
         window.location.href = 'login.html';
-        window.updateCartDisplay(); // Llama a la función para actualizar el contador incluso sin autenticación
     }
+
 
     // Función para manejar el cierre de sesión (usada por ambos botones de logout)
     async function handleLogout() {
@@ -245,10 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         noOrdersMessage.classList.add('hidden');
 
         try {
-            // --- CAMBIO CLAVE AQUÍ: Leer de la subcolección de órdenes del usuario ---
             const ordersCollectionRef = collection(db, "users", userId, "orders"); // Ruta correcta
-            // NOTA: Se ha eliminado orderBy("timestamp", "desc") para evitar errores de índice.
-            // La ordenación se realizará en el cliente si es estrictamente necesaria.
             const querySnapshot = await getDocs(ordersCollectionRef);
 
             if (querySnapshot.empty) {
@@ -256,13 +263,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Convertir a array y ordenar en el cliente si es necesario
             const orders = [];
             querySnapshot.forEach((doc) => {
                 orders.push({ id: doc.id, ...doc.data() });
             });
 
-            // Ordenar por timestamp si existe y es un objeto con toDate
             orders.sort((a, b) => {
                 const dateA = a.timestamp && typeof a.timestamp.toDate === 'function' ? a.timestamp.toDate() : new Date(0);
                 const dateB = b.timestamp && typeof b.timestamp.toDate === 'function' ? b.timestamp.toDate() : new Date(0);
@@ -270,9 +275,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             orders.forEach((order) => {
-                // Aquí se realiza la corrección. Ahora se usa 'fechaOrden' directamente
                 const orderDate = order.fechaOrden || 'N/A';
-                const orderStatus = order.estado || 'Pendiente'; // Usar 'estado' de la Cloud Function
+                const orderStatus = order.estado || 'Pendiente';
                 const orderTotal = order.total ? `$${order.total.toFixed(2)}` : '$0.00';
 
                 let productsHtml = '';
