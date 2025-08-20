@@ -275,7 +275,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             orders.forEach((order) => {
                 let orderDate = 'N/A';
-                // Usar los segundos del timestamp para crear una fecha
+                
+                // Muestra en la consola lo que el código está recibiendo en el campo 'timestamp'
+                console.log("Datos del timestamp para el pedido:", order.timestamp);
+
+                // El código para convertir el Timestamp a una fecha legible
                 if (order.timestamp && order.timestamp.seconds) {
                     const dateObject = new Date(order.timestamp.seconds * 1000);
                     const day = String(dateObject.getDate()).padStart(2, '0');
