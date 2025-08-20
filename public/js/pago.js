@@ -125,32 +125,30 @@ function renderPayPalButtons() {
                 const shippingMunicipality = shippingMunicipalitySelect ? shippingMunicipalitySelect.value : '';
                 const shippingAddress = shippingAddressInput ? shippingAddressInput.value : '';
 
-                // Preparar datos para la función Cloud según la estructura esperada
-                const orderDetails = {
-                    items: window.getCart(),
-                    total: parseFloat(details.purchase_units[0].amount.value),
-                    // Campos adicionales que la función Cloud espera
-                    payerEmail: shippingEmail,
+                const payload = {
+                    payerEmail: details.payer.email_address,
                     payerId: details.payer.payer_id,
                     paymentStatus: details.status,
                     paypalTransactionId: details.id,
                     shippingDetails: {
                         fullName: shippingFullName,
-                        email: shippingEmail,
-                        phone: shippingPhone,
                         department: shippingDepartment,
                         municipality: shippingMunicipality,
-                        address: shippingAddress
-                    }
+                        address: shippingAddress,
+                        phone: shippingPhone,
+                        email: shippingEmail
+                    },
+                    orderDetails: {
+                        items: window.getCart(),
+                        total: parseFloat(details.purchase_units[0].amount.value),
+                    },
+                    userId: window.currentUserIdGlobal
                 };
 
                 const functions = getFunctions();
                 const updateInventoryAndSaveOrder = httpsCallable(functions, 'updateInventoryAndSaveOrder');
 
-                const result = await updateInventoryAndSaveOrder({
-                    orderDetails: orderDetails,
-                    userId: window.currentUserIdGlobal
-                });
+                const result = await updateInventoryAndSaveOrder(payload);
 
                 console.log('Respuesta de la Cloud Function:', result.data);
                 window.showAlert('¡Tu pedido ha sido procesado y guardado con éxito! Gracias por tu compra.', 'success');
