@@ -400,9 +400,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
             } else {
-                // REDIRECCIÓN A login.html SI EL USUARIO NO ESTÁ AUTENTICADO
-                console.log("Usuario no autenticado. Redirigiendo a login.html...");
-                window.location.href = 'login.html';
+                // LÓGICA CORREGIDA PARA MOSTRAR MENSAJE ANTES DE REDIRIGIR
+                console.log("Usuario no autenticado. Mostrando mensaje y redirigiendo...");
+                // Muestra un mensaje amigable
+                window.showAlert('Por favor, inicia sesión o crea una cuenta para completar tu orden. Redirigiendo en 3 segundos...', 'info');
+                // Redirige después de un breve retraso
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 3000); // 3000 milisegundos = 3 segundos
             }
             // Mover window.updateCartDisplay() fuera del onAuthStateChanged para que siempre se ejecute al cargar la página
         });
