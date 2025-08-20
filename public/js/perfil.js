@@ -267,29 +267,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 orders.push({ id: doc.id, ...doc.data() });
             });
 
-            // Ordena los pedidos por fecha.
+            // Ordena los pedidos por fecha. Usamos fechaOrden en lugar de timestamp.
             orders.sort((a, b) => {
-                const dateA = a.timestamp && a.timestamp.seconds ? new Date(a.timestamp.seconds * 1000) : new Date(0);
-                const dateB = b.timestamp && b.timestamp.seconds ? new Date(b.timestamp.seconds * 1000) : new Date(0);
+                const dateA = a.fechaOrden && a.fechaOrden.seconds ? new Date(a.fechaOrden.seconds * 1000) : new Date(0);
+                const dateB = b.fechaOrden && b.fechaOrden.seconds ? new Date(b.fechaOrden.seconds * 1000) : new Date(0);
                 return dateB - dateA; // Orden descendente
             });
 
             orders.forEach((order) => {
                 let orderDate = 'N/A';
                 
-                // Muestra en la consola lo que el código está recibiendo en el campo 'timestamp'
-                // Para que el mensaje sea más claro cuando el campo no existe.
-                console.log("Datos del timestamp para el pedido:", order.timestamp || "Campo 'timestamp' no encontrado");
-
-                // El código para convertir el Timestamp a una fecha legible
-                if (order.timestamp && order.timestamp.seconds) {
-                    const dateObject = new Date(order.timestamp.seconds * 1000);
+                // Usamos el campo fechaOrden, que es el que existe en la base de datos.
+                if (order.fechaOrden && order.fechaOrden.seconds) {
+                    const dateObject = new Date(order.fechaOrden.seconds * 1000);
                     const day = String(dateObject.getDate()).padStart(2, '0');
                     const month = String(dateObject.getMonth() + 1).padStart(2, '0'); // Los meses en JS son de 0-11
                     const year = dateObject.getFullYear();
                     orderDate = `${day}/${month}/${year}`;
-                } else if (order.fechaOrden) {
-                    orderDate = order.fechaOrden;
                 }
                 
                 const orderStatus = order.estado || 'Pendiente';
