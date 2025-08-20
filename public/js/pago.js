@@ -125,20 +125,22 @@ function renderPayPalButtons() {
                 const shippingMunicipality = shippingMunicipalitySelect ? shippingMunicipalitySelect.value : '';
                 const shippingAddress = shippingAddressInput ? shippingAddressInput.value : '';
 
+                // Preparar datos para la función Cloud según la estructura esperada
                 const orderDetails = {
-                    paypalTransactionId: details.id,
-                    paymentStatus: details.status,
-                    payerId: details.payer.payer_id,
-                    payerEmail: shippingEmail,
-                    total: parseFloat(details.purchase_units[0].amount.value),
                     items: window.getCart(),
-                    fullName: shippingFullName, // Añadido campo fullName
-                    shippingInfo: { // Estructura modificada para coincidir con la función Cloud
+                    total: parseFloat(details.purchase_units[0].amount.value),
+                    // Campos adicionales que la función Cloud espera
+                    payerEmail: shippingEmail,
+                    payerId: details.payer.payer_id,
+                    paymentStatus: details.status,
+                    paypalTransactionId: details.id,
+                    shippingDetails: {
+                        fullName: shippingFullName,
+                        email: shippingEmail,
+                        phone: shippingPhone,
                         department: shippingDepartment,
                         municipality: shippingMunicipality,
-                        address: shippingAddress,
-                        phone: shippingPhone,
-                        email: shippingEmail
+                        address: shippingAddress
                     }
                 };
 
@@ -146,8 +148,7 @@ function renderPayPalButtons() {
                 const updateInventoryAndSaveOrder = httpsCallable(functions, 'updateInventoryAndSaveOrder');
 
                 const result = await updateInventoryAndSaveOrder({
-                    items: window.getCart(),
-                    orderDetails: orderDetails, // Enviar el objeto completo
+                    orderDetails: orderDetails,
                     userId: window.currentUserIdGlobal
                 });
 
