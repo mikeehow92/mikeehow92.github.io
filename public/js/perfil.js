@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userNameDisplay = document.getElementById('userNameDisplay');
     const navCarrito = document.getElementById('navCarrito');
     const logoutButtonHeader = document.getElementById('logoutButtonHeader');
-    const cartItemCountElement = document.getElementById('cartItemCount'); // Obtener el elemento del contador de ítems del carrito
+    const cartItemCountElement = document.getElementById('cartItemCount');
 
 
     // Elementos del cuerpo principal del perfil
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileDepartment = document.getElementById('profileDepartment');
     const profileMunicipality = document.getElementById('profileMunicipality');
     const profileAddress = document.getElementById('profileAddress');
-    const editAddressButton = document.getElementById('editAddressButton'); // Nuevo botón para editar dirección
+    const editAddressButton = document.getElementById('editAddressButton');
 
     // Elementos del modal de selección de avatar
     const selectAvatarButton = document.getElementById('selectAvatarButton');
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addressModal = document.getElementById('addressModal');
     const closeAddressModalButton = document.getElementById('closeAddressModalButton');
     const editAddressForm = document.getElementById('editAddressForm');
-    const editPhone = document.getElementById('editPhone');
+    const editPhone = document = document.getElementById('editPhone');
     const editDepartment = document.getElementById('editDepartment');
     const editMunicipality = document.getElementById('editMunicipality');
     const editAddress = document.getElementById('editAddress');
@@ -54,9 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const auth = window.firebaseAuth;
     const db = window.firebaseDb;
     const app = window.firebaseApp;
-    const storage = app ? getStorage(app) : null; // Inicializa Storage solo si app está disponible
+    const storage = app ? getStorage(app) : null;
 
-    // Datos de Departamentos y Municipios de El Salvador (ejemplo, duplicado para perfil.js)
+    // Datos de Departamentos y Municipios de El Salvador
     const departmentsAndMunicipalities = {
         "Ahuachapán": ["Ahuachapán", "Apaneca", "Atiquizaya", "Concepción de Ataco", "El Refugio", "Jujutla", "San Francisco Menéndez", "San Lorenzo", "San Pedro Puxtla", "Tacuba", "Turín"],
         "Cabañas": ["Cinquera", "Dolores", "Guacotecti", "Ilobasco", "Sensuntepeque", "Tejutepeque", "Victoria"],
@@ -109,29 +109,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Función para actualizar el contador del carrito en el header
     function updateCartCountDisplay() {
-        const cart = window.getCart(); // Obtiene el carrito desde common.js
+        const cart = window.getCart();
         const totalItemsInCart = cart.reduce((total, item) => total + item.quantity, 0);
         if (cartItemCountElement) {
             cartItemCountElement.textContent = totalItemsInCart;
             if (totalItemsInCart > 0) {
-                cartItemCountElement.classList.remove('hidden'); // Muestra el contador si hay ítems
+                cartItemCountElement.classList.remove('hidden');
             } else {
-                cartItemCountElement.classList.add('hidden'); // Oculta el contador si no hay ítems
+                cartItemCountElement.classList.add('hidden');
             }
         }
-        // Asegura que el enlace del carrito sea visible si hay ítems o si la página lo requiere
         if (navCarrito) {
             navCarrito.classList.remove('hidden');
         }
     }
 
-    // Define la función global updateCartDisplay para esta página.
     window.updateCartDisplay = function() {
         updateCartCountDisplay();
-        // Lógica adicional específica de UI para perfil.html si es necesaria
     };
 
-    // Manejo del estado de autenticación en el encabezado
     if (auth) {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -139,25 +135,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 loggedInUserDisplay.classList.remove('hidden');
                 userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
 
-                // Cargar datos del perfil y pedidos
                 await loadUserProfile(user);
-                await loadRecentOrders(user.uid); // Pasar el UID del usuario logueado
+                await loadRecentOrders(user.uid);
 
             } else {
-                // Usuario no logueado, redirigir a la página de inicio de sesión
                 window.showAlert('Debes iniciar sesión para ver tu perfil.', 'info');
                 window.location.href = 'login.html';
             }
-            window.updateCartDisplay(); // Llama a la función para actualizar el contador al cambiar el estado de autenticación
+            window.updateCartDisplay();
         });
     } else {
         console.warn("Firebase Auth no está inicializado. La funcionalidad de autenticación en el encabezado no estará disponible.");
         window.showAlert("Error: Firebase Auth no está disponible. Redirigiendo a inicio de sesión.", "error");
         window.location.href = 'login.html';
-        window.updateCartDisplay(); // Llama a la función para actualizar el contador incluso sin autenticación
+        window.updateCartDisplay();
     }
 
-    // Función para manejar el cierre de sesión (usada por ambos botones de logout)
     async function handleLogout() {
         if (auth) {
             try {
@@ -173,18 +166,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Event listeners para botones de encabezado
     if (loginButton) loginButton.addEventListener('click', () => { window.location.href = 'login.html'; });
     if (logoutButtonHeader) logoutButtonHeader.addEventListener('click', handleLogout);
     if (logoutButtonProfile) logoutButtonProfile.addEventListener('click', handleLogout);
 
-    // Función para cargar datos del perfil del usuario
     async function loadUserProfile(user) {
         profileName.textContent = user.displayName || 'Cargando Nombre...';
         profileEmail.textContent = user.email || 'Cargando Correo...';
         profileLastLogin.textContent = user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleString() : 'N/A';
 
-        // Cargar avatar: 우선순위: user.photoURL -> Storage (UID.png/jpg) -> Placeholder
         if (user.photoURL) {
             profileAvatar.src = user.photoURL;
         } else {
@@ -207,7 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Cargar datos adicionales del perfil desde Firestore (incluyendo dirección)
         try {
             const userDocRef = doc(db, "users", user.uid);
             const userDocSnap = await getDoc(userDocRef);
@@ -219,11 +208,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileMunicipality.textContent = userData.municipality || 'N/A';
                 profileAddress.textContent = userData.address || 'N/A';
 
-                // Precargar el modal de edición de dirección con los datos actuales
                 editPhone.value = userData.phone || '';
-                loadDepartments(editDepartment); // Cargar departamentos
-                editDepartment.value = userData.department || ''; // Seleccionar departamento actual
-                loadMunicipalities(editMunicipality, userData.department, userData.municipality); // Cargar y seleccionar municipio
+                loadDepartments(editDepartment);
+                editDepartment.value = userData.department || '';
+                loadMunicipalities(editMunicipality, userData.department, userData.municipality);
                 editAddress.value = userData.address || '';
 
             } else {
@@ -239,16 +227,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Función para cargar pedidos recientes
     async function loadRecentOrders(userId) {
         ordersList.innerHTML = '';
         noOrdersMessage.classList.add('hidden');
 
         try {
-            // --- CAMBIO CLAVE AQUÍ: Leer de la subcolección de órdenes del usuario ---
-            const ordersCollectionRef = collection(db, "users", userId, "orders"); // Ruta correcta
-            // NOTA: Se ha eliminado orderBy("timestamp", "desc") para evitar errores de índice.
-            // La ordenación se realizará en el cliente si es estrictamente necesaria.
+            const ordersCollectionRef = collection(db, "users", userId, "orders");
             const querySnapshot = await getDocs(ordersCollectionRef);
 
             if (querySnapshot.empty) {
@@ -256,23 +240,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Convertir a array y ordenar en el cliente si es necesario
             const orders = [];
             querySnapshot.forEach((doc) => {
                 orders.push({ id: doc.id, ...doc.data() });
             });
 
-            // Ordenar por timestamp si existe y es un objeto con toDate
             orders.sort((a, b) => {
-                const dateA = a.timestamp && typeof a.timestamp.toDate === 'function' ? a.timestamp.toDate() : new Date(0);
-                const dateB = b.timestamp && typeof b.timestamp.toDate === 'function' ? b.timestamp.toDate() : new Date(0);
-                return dateB - dateA; // Orden descendente
+                const dateA = a.fechaOrden && typeof a.fechaOrden.toDate === 'function' ? a.fechaOrden.toDate() : new Date(0);
+                const dateB = b.fechaOrden && typeof b.fechaOrden.toDate === 'function' ? b.fechaOrden.toDate() : new Date(0);
+                return dateB - dateA;
             });
 
-
             orders.forEach((order) => {
-                const orderDate = order.timestamp && typeof order.timestamp.toDate === 'function' ? order.timestamp.toDate().toLocaleDateString() : 'N/A';
-                const orderStatus = order.estado || 'Pendiente'; // Usar 'estado' de la Cloud Function
+                const orderDate = order.fechaOrden && typeof order.fechaOrden.toDate === 'function' ? order.fechaOrden.toDate().toLocaleDateString() : 'N/A';
+                const orderStatus = order.estado || 'Pendiente';
                 const orderTotal = order.total ? `$${order.total.toFixed(2)}` : '$0.00';
 
                 let productsHtml = '';
@@ -295,17 +276,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("Error al cargar pedidos:", error);
-            window.showAlert("Error al cargar tus pedidos recientes: " + error.message, "error"); // Mostrar mensaje de error más específico
+            window.showAlert("Error al cargar tus pedidos recientes: " + error.message, "error");
             noOrdersMessage.textContent = "Error al cargar pedidos.";
             noOrdersMessage.classList.remove('hidden');
         }
     }
 
-    // --- Lógica para el Modal de Selección de Avatar ---
-
-    // Función para cargar avatares predeterminados desde Storage
     async function loadPredeterminedAvatars() {
-        avatarGallery.innerHTML = ''; // Limpiar galería
+        avatarGallery.innerHTML = '';
         loadingAvatarsMessage.classList.remove('hidden');
         errorAvatarsMessage.classList.add('hidden');
         noAvatarsMessage.classList.add('hidden');
@@ -318,8 +296,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const avatarsRef = ref(storage, 'avatars'); // Referencia a la carpeta 'avatars'
-            const result = await listAll(avatarsRef); // Listar todos los ítems en la carpeta
+            const avatarsRef = ref(storage, 'avatars');
+            const result = await listAll(avatarsRef);
 
             if (result.items.length === 0) {
                 noAvatarsMessage.classList.remove('hidden');
@@ -333,12 +311,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 avatarImg.src = url;
                 avatarImg.alt = itemRef.name;
                 avatarImg.className = 'w-24 h-24 object-cover rounded-full cursor-pointer border-2 border-transparent hover:border-blue-500 transition duration-200';
-                avatarImg.dataset.avatarUrl = url; // Guardar la URL para fácil acceso al seleccionar
+                avatarImg.dataset.avatarUrl = url;
 
                 avatarImg.addEventListener('click', async () => {
-                    // Actualizar el avatar del perfil
                     profileAvatar.src = url;
-                    // Actualizar photoURL en Firebase Auth para persistencia
                     if (auth.currentUser) {
                         try {
                             await updateProfile(auth.currentUser, { photoURL: url });
@@ -348,11 +324,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             window.showAlert('Error al guardar el avatar en tu perfil.', 'error');
                         }
                     }
-                    avatarModal.classList.add('hidden'); // Cerrar el modal
+                    avatarModal.classList.add('hidden');
                 });
                 avatarGallery.appendChild(avatarImg);
             }
-            loadingAvatarsMessage.classList.add('hidden'); // Ocultar mensaje de carga
+            loadingAvatarsMessage.classList.add('hidden');
         } catch (error) {
             console.error('Error al listar avatares de Storage:', error);
             errorAvatarsMessage.textContent = `Error al cargar avatares: ${error.message}. Verifica las reglas de Storage.`;
@@ -361,11 +337,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Event listeners para abrir/cerrar el modal de avatar
     if (selectAvatarButton) {
         selectAvatarButton.addEventListener('click', () => {
             avatarModal.classList.remove('hidden');
-            loadPredeterminedAvatars(); // Cargar avatares cada vez que se abre el modal
+            loadPredeterminedAvatars();
         });
     }
 
@@ -375,35 +350,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cerrar modal de avatar al hacer clic fuera de él
     avatarModal.addEventListener('click', (event) => {
         if (event.target === avatarModal) {
             avatarModal.classList.add('hidden');
         }
     });
 
-    // --- Lógica para el Modal de Edición de Dirección ---
-
-    // Event listener para abrir el modal de edición de dirección
     if (editAddressButton) {
         editAddressButton.addEventListener('click', () => {
             addressModal.classList.remove('hidden');
-            // Asegurarse de que los datos actuales del usuario estén cargados en el formulario
-            // Esto ya se hace en loadUserProfile, pero se puede llamar explícitamente si es necesario
             if (auth.currentUser) {
-                loadUserProfile(auth.currentUser); // Recargar para asegurar que los campos estén llenos
+                loadUserProfile(auth.currentUser);
             }
         });
     }
 
-    // Event listener para cerrar el modal de edición de dirección
     if (closeAddressModalButton) {
         closeAddressModalButton.addEventListener('click', () => {
             addressModal.classList.add('hidden');
         });
     }
 
-    // Cerrar modal de edición de dirección al hacer clic fuera de él
     if (addressModal) {
         addressModal.addEventListener('click', (event) => {
             if (event.target === addressModal) {
@@ -412,15 +379,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Event listener para el cambio de departamento en el modal de edición
     editDepartment.addEventListener('change', (event) => {
         loadMunicipalities(editMunicipality, event.target.value);
     });
 
-    // Manejo del envío del formulario de edición de dirección
     if (editAddressForm) {
         editAddressForm.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Previene el envío por defecto del formulario
+            event.preventDefault();
 
             const user = auth.currentUser;
             if (!user) {
@@ -433,7 +398,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const newMunicipality = editMunicipality.value;
             const newAddress = editAddress.value.trim();
 
-            // Validaciones básicas
             if (!newPhone || !newDepartment || !newMunicipality || !newAddress) {
                 window.showAlert('Todos los campos de dirección son obligatorios.', 'error');
                 return;
@@ -449,8 +413,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 window.showAlert('Dirección actualizada con éxito.', 'success');
-                addressModal.classList.add('hidden'); // Cerrar el modal
-                await loadUserProfile(user); // Recargar los datos del perfil para mostrar los cambios
+                addressModal.classList.add('hidden');
+                await loadUserProfile(user);
             } catch (error) {
                 console.error('Error al actualizar la dirección en Firestore:', error);
                 window.showAlert('Error al guardar la dirección. Por favor, inténtalo de nuevo.', 'error');
@@ -458,6 +422,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cargar los departamentos iniciales para el modal de edición
     loadDepartments(editDepartment);
 });
