@@ -38,104 +38,73 @@ function saveCart(cart) {
     if (typeof window.updateCartDisplay === 'function') {
         window.updateCartDisplay();
     } else {
-        console.warn("window.updateCartDisplay no está definida. La UI del carrito no se actualizará.");
+        console.warn("La función window.updateCartDisplay no está definida. La UI del carrito no se actualizará.");
     }
 }
 
 // Añadir un producto al carrito
 function addToCart(product) {
-    let cart = getCart();
-    const existingProductIndex = cart.findIndex(item => item.id === product.id);
+    const cart = getCart();
+    const existingItem = cart.find(item => item.id === product.id);
 
-    if (existingProductIndex > -1) {
-        // Si el producto ya existe, incrementa la cantidad
-        cart[existingProductIndex].quantity += product.quantity || 1;
+    if (existingItem) {
+        existingItem.quantity += 1;
     } else {
-        // Si no existe, añade el nuevo producto
-        cart.push({ ...product, quantity: product.quantity || 1 });
+        cart.push({ ...product, quantity: 1 });
     }
     saveCart(cart);
-    showAlert(`"${product.name}" añadido al carrito.`, 'success');
+    showAlert('Producto añadido al carrito.', 'success');
 }
 
-// Eliminar un producto del carrito
+// Remover un producto del carrito
 function removeFromCart(productId) {
-    let cart = getCart();
-    cart = cart.filter(item => item.id !== productId);
-    saveCart(cart);
+    const cart = getCart();
+    const updatedCart = cart.filter(item => item.id !== productId);
+    saveCart(updatedCart);
     showAlert('Producto eliminado del carrito.', 'info');
 }
 
-// Actualizar cantidad de un producto en el carrito
-function updateCartItemQuantity(productId, newQuantity) {
-    let cart = getCart();
-    const item = cart.find(item => item.id === productId);
-    if (item) {
-        item.quantity = newQuantity;
-        if (item.quantity <= 0) {
-            removeFromCart(productId); // Si la cantidad es 0 o menos, eliminar
+// Actualizar la cantidad de un artículo en el carrito
+function updateCartItemQuantity(productId, quantity) {
+    const cart = getCart();
+    const itemToUpdate = cart.find(item => item.id === productId);
+
+    if (itemToUpdate) {
+        if (quantity > 0) {
+            itemToUpdate.quantity = quantity;
         } else {
-            saveCart(cart);
+            removeFromCart(productId);
+            return;
         }
     }
+    saveCart(cart);
 }
 
 // Calcular el total del carrito
 function getCartTotal() {
-    return getCart().reduce((total, item) => total + (item.price * item.quantity), 0);
+    const cart = getCart();
+    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
 }
 
-// NOTA IMPORTANTE:
-// La función `updateCartDisplay` ya NO se define aquí en common.js.
-// Cada script de página (index.js, productos.js, pago.js, detalle-producto.js)
-// será responsable de definir `window.updateCartDisplay = function() { ... };`
-// para su lógica específica de actualización de UI.
-
-
-// --- Integración con PayPal ---
-
-// Comentario: Carga el SDK de PayPal de forma asíncrona.
-// Reemplaza 'TU_CLIENT_ID_DE_PAYPAL' con tu ID de cliente de PayPal real.
-// Para un entorno de desarrollo, puedes usar 'sb' (sandbox).
-const PAYPAL_CLIENT_ID = 'AVQpOYnmo31PwFuK1rNOHJN-zp6cHl1BdMkac2K0PhJ2ucmHSosW8iKg4fWHiF817wVu6y9jcAL9ibFd'; // <-- ¡IMPORTANTE! Reemplaza esto con tu ID de cliente
-
-function loadPayPalSDK() {
-    if (document.getElementById('paypal-sdk')) {
-        return; // SDK ya cargado
-    }
-    const script = document.createElement('script');
-    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD`;
-    script.id = 'paypal-sdk';
-    script.onload = () => {
-        console.log('SDK de PayPal cargado.');
-        // Dispara un evento para que las páginas sepan que el SDK está listo
-        document.dispatchEvent(new CustomEvent('paypalSDKLoaded'));
-    };
-    script.onerror = () => {
-        console.error('Error al cargar el SDK de PayPal.');
-        showAlert('Error al cargar PayPal. Por favor, inténtalo de nuevo más tarde.', 'error');
-    };
-    document.head.appendChild(script);
-}
-
-// Exportar funciones para que otras páginas puedan usarlas
+// Exponer las funciones del carrito al ámbito global
 window.getCart = getCart;
+window.saveCart = saveCart;
 window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;
 window.updateCartItemQuantity = updateCartItemQuantity;
 window.getCartTotal = getCartTotal;
-window.loadPayPalSDK = loadPayPalSDK;
-window.showAlert = showAlert; // Asegura que showAlert sea accesible globalmente
-// window.updateCartDisplay NO se exporta aquí, se espera que cada página lo defina.
 
-// --- Inicialización de Firebase (Descomenta y configura con tus credenciales) ---
-// Comentario: Es crucial que esta inicialización se haga una vez y se exporte.
-// Puedes instalar Firebase con: npm install firebase
-// Luego, asegúrate de que los imports apunten a la versión modular correcta.
+// --- Lógica de Firebase y Autenticación (se ejecuta al cargar la página) ---
+
+// Recomendación: Mantén la inicialización de Firebase aquí. Esto asegura que la
+// inicialización se haga una vez y se exporte.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+// AÑADIDO: Importa getFunctions para Cloud Functions
+import { getFunctions } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCR-axayENUg4FFb4jj0uVW2BnfwQ5EiXY",
@@ -151,19 +120,117 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
+// AÑADIDO: Inicializa Firebase Functions
+const functions = getFunctions(app);
 
 // Exporta las instancias de Firebase para que otros scripts puedan usarlas
 window.firebaseApp = app;
 window.firebaseDb = db;
 window.firebaseAuth = auth;
+window.firebaseStorage = storage;
+// AÑADIDO: Exporta firebaseFunctions
+window.firebaseFunctions = functions;
 
-// Opcional: Puedes añadir un listener global para el estado de autenticación aquí
-// Si lo haces, asegúrate de que no duplique la lógica en index.js o perfil.js
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        console.log("Usuario autenticado globalmente:", user.uid);
-    } else {
-        console.log("Usuario no autenticado globalmente.");
+
+document.addEventListener('DOMContentLoaded', () => {
+    const loginButton = document.getElementById('loginButton');
+    const loggedInUserDisplay = document.getElementById('loggedInUserDisplay');
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    const profileAvatarHeader = document.getElementById('profileAvatarHeader');
+    const logoutButton = document.getElementById('logoutButton');
+
+    // Maneja el estado de la autenticación
+    onAuthStateChanged(auth, async (user) => {
+        const navCarrito = document.getElementById('navCarrito');
+        const cartItemCountElement = document.getElementById('cartItemCount');
+
+        if (user) {
+            console.log("Usuario autenticado:", user.uid);
+            window.currentUserIdGlobal = user.uid;
+            
+            // Oculta el botón de login y muestra la info del usuario
+            if (loginButton) loginButton.classList.add('hidden');
+            if (loggedInUserDisplay) loggedInUserDisplay.classList.remove('hidden');
+            if (userNameDisplay) userNameDisplay.textContent = user.displayName || user.email;
+
+            // Carga la foto de perfil del usuario desde Storage
+            if (profileAvatarHeader && storage) {
+                try {
+                    const avatarRefPng = ref(storage, `avatars/${user.uid}.png`);
+                    const avatarUrl = await getDownloadURL(avatarRefPng);
+                    profileAvatarHeader.src = avatarUrl;
+                } catch (pngError) {
+                    try {
+                        const avatarRefJpg = ref(storage, `avatars/${user.uid}.jpg`);
+                        const avatarUrl = await getDownloadURL(avatarRefJpg);
+                        profileAvatarHeader.src = avatarUrl;
+                    } catch (jpgError) {
+                        profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
+                    }
+                }
+            }
+
+        } else {
+            console.log("No hay usuario autenticado. Sesión como invitado.");
+            // Muestra el botón de login y oculta la info del usuario
+            if (loginButton) loginButton.classList.remove('hidden');
+            if (loggedInUserDisplay) loggedInUserDisplay.classList.add('hidden');
+            if (profileAvatarHeader) profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A';
+
+            // Crea o recupera un ID de invitado para el carrito
+            let guestId = sessionStorage.getItem('guestUserId');
+            if (!guestId) {
+                guestId = `guest_${crypto.randomUUID()}`;
+                sessionStorage.setItem('guestUserId', guestId);
+            }
+            window.currentUserIdGlobal = guestId;
+        }
+
+        // Si la página tiene el carrito, actualiza la visualización
+        if (navCarrito) {
+            navCarrito.classList.remove('hidden');
+            const cartItemCount = getCart().length;
+            if (cartItemCountElement) {
+                cartItemCountElement.textContent = cartItemCount;
+                cartItemCountElement.classList.toggle('hidden', cartItemCount === 0);
+            }
+        }
+    });
+
+    if (loginButton) {
+        loginButton.addEventListener('click', () => {
+            window.location.href = 'login.html';
+        });
+    }
+
+    if (logoutButton) {
+        logoutButton.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showAlert('Has cerrado sesión correctamente.', 'success');
+                console.log("Cierre de sesión exitoso.");
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error.message);
+                showAlert('Error al cerrar sesión. Por favor, inténtalo de nuevo.', 'error');
+            }
+        });
+    }
+
+    // Código para manejar la carga dinámica del SDK de PayPal
+    window.loadPayPalSDK = function() {
+        const paypalScriptId = 'paypal-sdk-script';
+        if (!document.getElementById(paypalScriptId)) {
+            const script = document.createElement('script');
+            script.id = paypalScriptId;
+            script.src = `https://www.paypal.com/sdk/js?client-id=AQJv8-r9dF987T3GkP1h9H9wA_xL9ZtN8_WqgV9V8_R4mS5D4_wYv4T8_xQkK9P6_zV7z8R6v_g8j9k&currency=USD`;
+            script.async = true;
+            script.onload = () => {
+                console.log('PayPal SDK cargado dinámicamente.');
+                document.dispatchEvent(new CustomEvent('paypalSDKLoaded'));
+            };
+            document.body.appendChild(script);
+        }
     }
 });
-
