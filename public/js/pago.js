@@ -347,6 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (auth) {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // Lógica existente para usuarios autenticados
                 loginButton.classList.add('hidden');
                 loggedInUserDisplay.classList.remove('hidden');
                 userNameDisplay.textContent = user.displayName || user.email || 'Tu Usuario';
@@ -399,34 +400,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
             } else {
-                loginButton.classList.remove('hidden');
-                loggedInUserDisplay.classList.add('hidden');
-                if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
-
-                let guestId = sessionStorage.getItem('guestUserId');
-                if (!guestId) {
-                    guestId = crypto.randomUUID();
-                    sessionStorage.setItem('guestUserId', guestId);
-                }
-                window.currentUserIdGlobal = guestId;
+                // REDIRECCIÓN A login.html SI EL USUARIO NO ESTÁ AUTENTICADO
+                console.log("Usuario no autenticado. Redirigiendo a login.html...");
+                window.location.href = 'login.html';
             }
-            window.updateCartDisplay();
+            // Mover window.updateCartDisplay() fuera del onAuthStateChanged para que siempre se ejecute al cargar la página
         });
     } else {
-        console.warn("Firebase Auth no está inicializado. Procediendo como invitado.");
-        loginButton.classList.remove('hidden');
-        loggedInUserDisplay.classList.add('hidden');
-        if (profileAvatarHeader) { profileAvatarHeader.src = 'https://placehold.co/40x40/F0F0F0/333333?text=A'; }
-
-        let guestId = sessionStorage.getItem('guestUserId');
-        if (!guestId) {
-            guestId = crypto.randomUUID();
-            sessionStorage.setItem('guestUserId', guestId);
-        }
-        window.currentUserIdGlobal = guestId;
-        window.updateCartDisplay();
+        // Manejar el caso si Firebase Auth no está inicializado (poco probable en una app bien configurada)
+        console.warn("Firebase Auth no está inicializado. Redirigiendo a login.html.");
+        window.location.href = 'login.html';
     }
 
+    // Lógica para el botón de cerrar sesión (sin cambios)
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
             if (auth) {
@@ -443,8 +429,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    window.updateCartDisplay();
     window.loadPayPalSDK();
-
+    
     document.addEventListener('paypalSDKLoaded', () => {
         console.log('Evento paypalSDKLoaded disparado. Actualizando display del carrito para renderizar botones.');
         window.updateCartDisplay();
