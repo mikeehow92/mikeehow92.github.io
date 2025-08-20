@@ -35,6 +35,16 @@ let shippingAddressInput;
 let paypalButtonContainer;
 let validationMessageDiv;
 
+// Función para obtener o crear el ID de usuario invitado
+function getOrCreateGuestUserId() {
+    let guestId = sessionStorage.getItem('guestUserId');
+    if (!guestId) {
+        guestId = crypto.randomUUID();
+        sessionStorage.setItem('guestUserId', guestId);
+    }
+    return guestId;
+}
+
 // Función para renderizar los botones de PayPal
 function renderPayPalButtons() {
     console.log('renderPayPalButtons: Función iniciada.');
@@ -125,6 +135,13 @@ function renderPayPalButtons() {
                 const shippingMunicipality = shippingMunicipalitySelect ? shippingMunicipalitySelect.value : '';
                 const shippingAddress = shippingAddressInput ? shippingAddressInput.value : '';
 
+                // **CAMBIO IMPORTANTE AQUÍ**
+                // Aseguramos que el userId esté disponible antes de la llamada a la función
+                const userId = window.currentUserIdGlobal || getOrCreateGuestUserId();
+                if (!userId) {
+                    throw new Error("No se pudo determinar un ID de usuario.");
+                }
+
                 const payload = {
                     payerEmail: details.payer.email_address,
                     payerId: details.payer.payer_id,
@@ -142,7 +159,7 @@ function renderPayPalButtons() {
                         items: window.getCart(),
                         total: parseFloat(details.purchase_units[0].amount.value),
                     },
-                    userId: window.currentUserIdGlobal
+                    userId: userId // Usamos la variable local `userId`
                 };
 
                 const functions = getFunctions();
