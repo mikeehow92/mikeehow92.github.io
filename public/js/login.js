@@ -1,7 +1,7 @@
 // js/login.js
 
 // Importa las funciones necesarias de Firebase Auth al inicio del módulo
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     // Manejo del botón "Iniciar Sesión" en el header
@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loginForm = document.getElementById('loginForm');
     const registerLink = document.getElementById('registerLink');
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 
     if (loginForm) {
         loginForm.addEventListener('submit', async (event) => {
@@ -56,6 +57,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // window.showAlert('Intento de inicio de sesión. (Funcionalidad de Firebase Authentication pendiente)', 'info');
             // loginForm.reset(); // Opcional: limpiar el formulario después del intento
+        });
+    }
+    
+    // Nuevo manejador para el enlace "Olvidaste tu contraseña?"
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', async (event) => {
+            event.preventDefault(); // Evita que la página se recargue
+
+            // Solicita el correo electrónico al usuario antes de enviar el enlace de restablecimiento
+            const email = prompt("Por favor, ingresa tu correo electrónico para restablecer la contraseña:");
+
+            if (email) {
+                try {
+                    const auth = window.firebaseAuth; // Asumiendo que auth se exporta desde common.js
+
+                    if (!auth) {
+                        console.error("Firebase Auth no está inicializado.");
+                        window.showAlert("Error: No se pudo conectar con el servicio de autenticación.", "error");
+                        return;
+                    }
+
+                    // Envía el correo de restablecimiento de contraseña
+                    await sendPasswordResetEmail(auth, email);
+
+                    // Muestra una alerta de éxito
+                    window.showAlert("Se ha enviado un correo electrónico para restablecer tu contraseña. Revisa tu bandeja de entrada.", "success");
+                    console.log("Correo de restablecimiento enviado a:", email);
+                } catch (error) {
+                    console.error("Error al enviar el correo de restablecimiento:", error.message);
+                    let errorMessage = "Ocurrió un error al intentar enviar el correo. Por favor, inténtalo de nuevo.";
+                    if (error.code === 'auth/invalid-email') {
+                        errorMessage = 'El formato del correo electrónico es inválido.';
+                    } else if (error.code === 'auth/user-not-found') {
+                        errorMessage = 'No se encontró ningún usuario con ese correo electrónico.';
+                    }
+                    window.showAlert(errorMessage, "error");
+                }
+            } else {
+                window.showAlert("El restablecimiento de contraseña fue cancelado.", "info");
+            }
         });
     }
 
