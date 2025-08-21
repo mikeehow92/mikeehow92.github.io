@@ -17,7 +17,7 @@ function showAlert(message, type = 'info') {
 
     setTimeout(() => {
         alertBox.remove();
-    }, 5000); // Elimina la alerta después de 5 segundos
+    }, 7000); // Elimina la alerta después de 5 segundos
 }
 
 // Reemplaza el 'alert' global con nuestra función personalizada
