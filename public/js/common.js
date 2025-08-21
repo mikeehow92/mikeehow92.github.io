@@ -17,7 +17,7 @@ function showAlert(message, type = 'info') {
 
     setTimeout(() => {
         alertBox.remove();
-    }, 3000); // Elimina la alerta después de 3 segundos
+    }, 5000); // Elimina la alerta después de 5 segundos
 }
 
 // Reemplaza el 'alert' global con nuestra función personalizada
@@ -166,4 +166,3 @@ onAuthStateChanged(auth, (user) => {
         console.log("Usuario no autenticado globalmente.");
     }
 });
-
