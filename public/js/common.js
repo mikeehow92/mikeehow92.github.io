@@ -94,52 +94,21 @@ function getCartTotal() {
 
 // --- Integración con PayPal ---
 
-// Importa funciones de Firestore para leer datos
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// Comentario: Carga el SDK de PayPal de forma asíncrona.
+// Reemplaza 'TU_CLIENT_ID_DE_PAYPAL' con tu ID de cliente de PayPal real.
+// Para un entorno de desarrollo, puedes usar 'sb' (sandbox).
+const PAYPAL_CLIENT_ID = 'AVQpOYnmo31PwFuK1rNOHJN-zp6cHl1BdMkac2K0PhJ2ucmHSosW8iKg4fWHiF817wVu6y9jcAL9ibFd'; // <-- ¡IMPORTANTE! Reemplaza esto con tu ID de cliente
 
-async function getPayPalClientId() {
-    try {
-        const db = window.firebaseDb;
-        if (!db) {
-            console.error("La instancia de Firestore no está disponible.");
-            showAlert('Error de configuración. La tienda no puede procesar pagos.', 'error');
-            return null;
-        }
-        
-        const docRef = doc(db, "config", "api_keys");
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            console.log("Clave de PayPal obtenida de Firebase.");
-            return data.paypalClientId;
-        } else {
-            console.error("No se encontró el documento de configuración de claves en Firestore.");
-            showAlert('Error de configuración. Clave de PayPal no encontrada.', 'error');
-            return null;
-        }
-    } catch (error) {
-        console.error("Error al obtener la clave de PayPal:", error);
-        showAlert('Hubo un problema al cargar la configuración de pago.', 'error');
-        return null;
-    }
-}
-
-async function loadPayPalSDK() {
+function loadPayPalSDK() {
     if (document.getElementById('paypal-sdk')) {
         return; // SDK ya cargado
     }
-
-    const PAYPAL_CLIENT_ID = await getPayPalClientId();
-    if (!PAYPAL_CLIENT_ID) {
-        return; // Si no hay ID, no cargamos el SDK
-    }
-    
     const script = document.createElement('script');
     script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD`;
     script.id = 'paypal-sdk';
     script.onload = () => {
         console.log('SDK de PayPal cargado.');
+        // Dispara un evento para que las páginas sepan que el SDK está listo
         document.dispatchEvent(new CustomEvent('paypalSDKLoaded'));
     };
     script.onerror = () => {
@@ -156,9 +125,8 @@ window.removeFromCart = removeFromCart;
 window.updateCartItemQuantity = updateCartItemQuantity;
 window.getCartTotal = getCartTotal;
 window.loadPayPalSDK = loadPayPalSDK;
-window.showAlert = showAlert; 
+window.showAlert = showAlert; // Asegura que showAlert sea accesible globalmente
 // window.updateCartDisplay NO se exporta aquí, se espera que cada página lo defina.
-
 
 // --- Inicialización de Firebase (Descomenta y configura con tus credenciales) ---
 // Comentario: Es crucial que esta inicialización se haga una vez y se exporte.
