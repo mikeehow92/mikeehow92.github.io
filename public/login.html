@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - MiTienda503</title>
-    <!-- Enlace a Tailwind CSS CDN para estilos rápidos y responsivos -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -21,36 +20,27 @@
             }
         }
     </script>
-    <!-- Enlace a tu archivo CSS personalizado global -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="font-inter bg-gray-100 text-gray-800 flex flex-col min-h-screen">
 
-    <!-- Encabezado (Header) - Común a todas las páginas -->
     <header class="bg-dark-blue text-white p-4 shadow-md">
         <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
-            <!-- Logo -->
             <div class="text-2xl font-bold mb-4 md:mb-0">
-                <!-- Se cambió la clase de altura de h-8 a h-12 para hacer el logo más grande -->
                 <img src="https://firebasestorage.googleapis.com/v0/b/mitienda-c2609.firebasestorage.app/o/pagina%20web%2Flogo.png?alt=media&token=3ea4712e-75fa-4917-bd39-f5bf95bf8f85" alt="Logo MiTienda503" class="h-12 inline-block">
             </div>
 
-            <!-- Menú de Navegación -->
             <nav class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-6 text-lg">
                 <a href="index.html" class="hover:text-gray-300 transition duration-300">Inicio</a>
                 <a href="productos.html" class="hover:text-gray-300 transition duration-300">Productos</a>
                 <a href="index.html#contacto" class="hover:text-gray-300 transition duration-300">Contacto</a>
-                <!-- Estos enlaces se mostrarán dinámicamente si el usuario está logueado -->
                 <a href="pago.html" id="navCarrito" class="hover:text-gray-300 transition duration-300 hidden">Carrito</a>
-                <!-- El enlace "Mi Perfil" se ha eliminado de la navegación principal ya que solo se mostrará junto al avatar una vez logueado -->
-            </nav>
+                </nav>
 
-            <!-- Contenedor para el botón de Iniciar Sesión o el nombre de usuario/perfil -->
             <div id="authButtons" class="mt-4 md:mt-0">
                 <button id="loginButton" class="bg-red-button hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition duration-300">
                     Iniciar Sesión
                 </button>
-                <!-- Se mostrará cuando el usuario esté logueado -->
                 <div id="loggedInUserDisplay" class="hidden flex items-center space-x-4">
                     <span id="userNameDisplay" class="text-white text-lg font-semibold"></span>
                     <a href="perfil.html" class="text-white hover:text-gray-300 transition duration-300 text-lg">Perfil</a>
@@ -62,7 +52,6 @@
         </div>
     </header>
 
-    <!-- Contenido Principal - Formulario de Inicio de Sesión -->
     <main class="flex-grow flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
             <h2 class="text-3xl font-bold text-dark-blue text-center mb-6 flex items-center justify-center">
@@ -81,6 +70,9 @@
                     <label for="passwordLogin" class="block text-gray-700 text-sm font-bold mb-2">Contraseña</label>
                     <input type="password" id="passwordLogin" name="passwordLogin" class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-dark-blue focus:border-transparent" placeholder="Tu Contraseña" required>
                 </div>
+                <div>
+                    <a href="#" id="forgotPasswordLink" class="text-sm text-dark-blue hover:underline font-semibold text-right block mt-2">¿Olvidaste tu contraseña?</a>
+                </div>
 
                 <button type="submit" class="bg-dark-blue hover:bg-blue-800 text-white font-semibold py-3 px-6 rounded-full shadow-lg transition duration-300 w-full flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -96,16 +88,13 @@
         </div>
     </main>
 
-    <!-- Pie de Página (Footer) - Común a todas las páginas -->
     <footer class="bg-dark-blue text-white py-8 text-center mt-auto">
         <div class="container mx-auto">
             <p>&copy; 2024 MiTienda503. Todos los derechos reservados.</p>
         </div>
     </footer>
 
-    <!-- Enlace al archivo JavaScript común -->
     <script type="module" src="js/common.js"></script>
-    <!-- Enlace al archivo JavaScript específico de esta página -->
     <script type="module" src="js/login.js"></script>
 </body>
 </html>
