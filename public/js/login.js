@@ -81,8 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Envía el correo de restablecimiento de contraseña
                     await sendPasswordResetEmail(auth, email);
 
-                    // Muestra una alerta de éxito
-                    window.showAlert("Se ha enviado un correo electrónico para restablecer tu contraseña. Revisa tu bandeja de entrada.", "success");
+                    // Muestra una alerta de éxito con la nueva instrucción
+                    window.showAlert("Se ha enviado un correo electrónico para restablecer tu contraseña. Si no lo encuentras en tu bandeja de entrada principal, revisa la carpeta de spam o correo no deseado.", "success");
                     console.log("Correo de restablecimiento enviado a:", email);
                 } catch (error) {
                     console.error("Error al enviar el correo de restablecimiento:", error.message);
