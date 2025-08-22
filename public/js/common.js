@@ -97,7 +97,7 @@ function getCartTotal() {
 // Comentario: Carga el SDK de PayPal de forma asíncrona.
 // Reemplaza 'TU_CLIENT_ID_DE_PAYPAL' con tu ID de cliente de PayPal real.
 // Para un entorno de desarrollo, puedes usar 'sb' (sandbox).
-const PAYPAL_CLIENT_ID = 'AVQpOYnmo31PwFuK1rNOHJN-zp6cHl1BdMkac2K0PhJ2ucmHSosW8iKg4fWHiF817wVu6y9jcAL9ibFd'; // <-- ¡IMPORTANTE! Reemplaza esto con tu ID de cliente
+const PAYPAL_CLIENT_ID = 'AYvuvDlVBkn_66_bE4rex4NgJO2u0u_8KqP3N7_CZRKTNhex-rWlPHMps4ADWHMGl5492veYVpLlG9Bj'; // 
 
 function loadPayPalSDK() {
     if (document.getElementById('paypal-sdk')) {
